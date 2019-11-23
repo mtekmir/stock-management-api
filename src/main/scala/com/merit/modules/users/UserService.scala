@@ -2,7 +2,6 @@ package com.merit.modules.users
 
 import slick.dbio.DBIO
 import slick.jdbc.PostgresProfile
-import users._
 import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future

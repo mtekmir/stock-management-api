@@ -6,15 +6,17 @@ import com.merit.modules.excel.ExcelService
 import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Route
 import com.merit.api.products.GetProduct
+import com.merit.modules.categories.CategoryService
 
 object ProductRoutes extends Directives {
   def apply(
     brandService: BrandService,
     productService: ProductService,
-    excelService: ExcelService
+    excelService: ExcelService,
+    categoryService: CategoryService
   )(implicit ec: ExecutionContext): Route =
     pathPrefix("products") {
-      ImportRoute(brandService, productService, excelService) ~
+      ImportRoute(productService, excelService) ~
       GetProduct(productService)
     }
 }

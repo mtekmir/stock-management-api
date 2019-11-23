@@ -12,7 +12,7 @@ sealed trait Response {
 
 case class UnSuccessfulProductImport(
   message: String,
-  duplicates: Vector[DuplicateBarcode]
+  duplicates: Seq[DuplicateBarcode]
 ) extends Response
 
 case class SuccessfulProductImport(

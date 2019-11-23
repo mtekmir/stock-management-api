@@ -8,10 +8,10 @@ import scala.concurrent.duration.Duration
 import scala.util.Success
 import com.merit.modules.excel.ExcelService
 import scala.concurrent.ExecutionContext
+import com.merit.modules.categories.CategoryService
 
 object ImportRoute extends Directives with JsonSupport {
   def apply(
-    brandService: BrandService,
     productService: ProductService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext) =
@@ -23,11 +23,7 @@ object ImportRoute extends Directives with JsonSupport {
         if (duplicates.length > 0) {
           complete(UnSuccessfulProductImport("File contains duplicates", duplicates))
         } else {
-          val ids = for {
-            _   <- brandService.batchInsertExcelRows(rows)
-            ids <- productService.batchInsertExcelRows(rows)
-          } yield ids
-          complete(ids)
+          complete(productService.batchInsertExcelRows(rows))
         }
       }
     }

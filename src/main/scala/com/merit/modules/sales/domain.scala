@@ -29,7 +29,7 @@ case class SaleSummaryProduct(
 object SaleSummaryProduct {
   def fromProductRow(p: ProductDTO, soldQty: Int): SaleSummaryProduct = {
     import p._
-    SaleSummaryProduct(barcode, Some(name), Some(variation), Some(qty + soldQty), Some(qty))
+    SaleSummaryProduct(barcode, Some(name), variation, Some(qty + soldQty), Some(qty))
   } 
 }
 

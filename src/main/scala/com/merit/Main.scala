@@ -1,4 +1,3 @@
-import java.io.File
 
 import org.apache.poi.ss.usermodel._
 import scala.jdk.CollectionConverters._
@@ -18,6 +17,7 @@ import com.merit.modules.excel.ExcelService
 import api.Router
 import com.merit.modules.sales.{SaleRepo, SaleService}
 import com.merit.modules.users.{UserRepo, UserService}
+import com.merit.modules.categories.{CategoryRepo, CategoryService}
 
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,23 +27,32 @@ object Main extends App {
   val db     = Database.forConfig("db")
   val schema = Schema(DbProfile)
   schema.createTables(db)
-  val productRepo = ProductRepo(schema)
-  val brandRepo   = BrandRepo(schema)
-  val saleRepo    = SaleRepo(schema)
-  val userRepo    = UserRepo(schema)
+  val productRepo  = ProductRepo(schema)
+  val brandRepo    = BrandRepo(schema)
+  val saleRepo     = SaleRepo(schema)
+  val userRepo     = UserRepo(schema)
+  val categoryRepo = CategoryRepo(schema)
 
-  val productService = ProductService(db, brandRepo, productRepo)
-  val brandService   = BrandService(db, brandRepo)
-  val excelService   = ExcelService()
-  val saleService    = SaleService(db, saleRepo, productRepo)
-  val userService    = UserService(db, userRepo)
+  val productService  = ProductService(db, brandRepo, productRepo, categoryRepo)
+  val brandService    = BrandService(db, brandRepo)
+  val categoryService = CategoryService(db, categoryRepo)
+  val excelService    = ExcelService()
+  val saleService     = SaleService(db, saleRepo, productRepo)
+  val userService     = UserService(db, userRepo)
 
   def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
 
   exec(userService.populateUsers)
 
   val routes =
-    Router(saleService, productService, brandService, excelService, userService)
+    Router(
+      saleService,
+      productService,
+      brandService,
+      excelService,
+      userService,
+      categoryService
+    )
 
   Http().bindAndHandle(routes, "localhost", 3000).onComplete {
     case Success(_) => println("Server is op on 3000")

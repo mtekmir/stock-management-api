@@ -7,13 +7,12 @@ import com.merit.modules.excel.ExcelSaleRow
 import slick.jdbc.PostgresProfile
 import scala.concurrent.Future
 import PostgresProfile.api._
-import products._
 import org.joda.time.DateTime
 import com.merit.modules.brands.BrandRepo
 
 trait SaleService {
-  def getExcelImportSummary(row: Vector[ExcelSaleRow]): Future[SaleSummary]
-  def insertFromExcel(rows: Vector[ExcelSaleRow], date: DateTime): Future[SaleDTO]
+  def getExcelImportSummary(row: Seq[ExcelSaleRow]): Future[SaleSummary]
+  def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleDTO]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
 }
 
@@ -24,7 +23,7 @@ object SaleService {
     productRepo: ProductRepo[DBIO]
   )(implicit ec: ExecutionContext) = new SaleService {
     def getExcelImportSummary(
-      rows: Vector[ExcelSaleRow]
+      rows: Seq[ExcelSaleRow]
     ): Future[SaleSummary] = { // * Runs after the import
       val excelRowsMap =
         rows.foldLeft(Map[String, Int]())((m, r) => (m + (r.barcode -> r.qty)))
@@ -41,7 +40,7 @@ object SaleService {
       db.run(DBIO.sequence(dbios)).map(p => SaleSummary(p.toSeq))
     }
 
-    def insertFromExcel(rows: Vector[ExcelSaleRow], date: DateTime): Future[SaleDTO] = {
+    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleDTO] = {
       val dbio: DBIO[SaleDTO] = for {
         soldProducts <- productRepo.findAll(rows.map(_.barcode))
         sale         <- saleRepo.add(SaleRow(date))
@@ -66,7 +65,7 @@ object SaleService {
         case rows if rows.length < 1 => None
         case rows =>
           val products = rows.foldLeft(Seq[ProductDTO]())(
-            (s, p) => s :+ ProductDTO.fromRow(p._2, p._4).copy(qty = p._3)
+            (s, p) => s :+ ProductDTO.fromRow(p._2, p._4, p._5).copy(qty = p._3)
           )
           Some(SaleDTO(rows(0)._1.id, rows(0)._1.createdAt, products))
       }

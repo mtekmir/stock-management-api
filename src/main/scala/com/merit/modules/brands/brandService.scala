@@ -4,38 +4,35 @@ import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext
 import slick.jdbc.JdbcBackend
 import scala.concurrent.Future
-import slick.jdbc.PostgresProfile
 import com.merit.modules.excel.ExcelProductRow
+import slick.jdbc.PostgresProfile.api._
 
 trait BrandService {
-  // def insertIfNotExists(brand: BrandRow): Task[BrandID]
-  def batchInsert(bs: Vector[BrandRow]): Future[Vector[BrandID]]
-  def batchInsertExcelRows(rows: Vector[ExcelProductRow]): Future[Vector[BrandID]]
-  def insert(brand: BrandRow): Future[BrandID]
+  def batchInsert(bs: Seq[BrandRow]): Future[Seq[BrandRow]]
+  def insert(brand: BrandRow): Future[BrandRow]
+  def getAll: Future[Seq[BrandRow]]
 }
 
 object BrandService {
-  def apply(db: PostgresProfile.backend.Database, brandRepo: BrandRepo[DBIO])(
+  def apply(db: Database, brandRepo: BrandRepo[DBIO])(
     implicit ec: ExecutionContext
   ) = new BrandService {
-    private def insertIfNotExists(brand: BrandRow): DBIO[BrandID] =
+    private def insertIfNotExists(brand: BrandRow): DBIO[BrandRow] =
       brandRepo.getByName(brand.name).flatMap {
-        case Some(b) => DBIO.successful(b.id)
-        case None    => brandRepo.add(brand)
-      }
+        case Some(b) => DBIO.successful(b)
+        case None    => brandRepo.insert(brand)
+      }.transactionally
 
-    def batchInsert(bs: Vector[BrandRow]): Future[Vector[BrandID]] = {
+    def batchInsert(bs: Seq[BrandRow]): Future[Seq[BrandRow]] = {
       val action = bs.map(insertIfNotExists)
 
       db.run(DBIO.sequence(action))
     }
 
-    def batchInsertExcelRows(rows: Vector[ExcelProductRow]): Future[Vector[BrandID]] =
-      batchInsert(rows.map {
-        case ExcelProductRow(_, _, _, _, _, _, brand) => BrandRow(brand)
-      })
-
-    def insert(brand: BrandRow): Future[BrandID] =
+    def insert(brand: BrandRow): Future[BrandRow] =
       db.run(insertIfNotExists(brand))
+
+    def getAll: Future[Seq[BrandRow]] = 
+      db.run(brandRepo.getAll)
   }
 }

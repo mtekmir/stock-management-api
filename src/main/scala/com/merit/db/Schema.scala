@@ -15,6 +15,7 @@ import com.merit.modules.stockOrders.{StockOrderID, StockOrderRow}
 import org.joda.time.DateTime
 import com.merit.modules.sales.{SaleID, SaleRow}
 import com.merit.modules.users.{UserID, UserRow}
+import com.merit.modules.categories.{CategoryRow, CategoryID}
 
 class Schema(val profile: JdbcProfile) {
   import profile.api._
@@ -28,22 +29,39 @@ class Schema(val profile: JdbcProfile) {
   }
 
   class ProductTable(t: Tag) extends Table[ProductRow](t, "products") {
-    def id        = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
-    def barcode   = column[String]("barcode")
-    def sku       = column[String]("sku")
-    def name      = column[String]("name")
-    def price     = column[Double]("price")
-    def qty       = column[Int]("qty")
-    def variation = column[String]("variation")
-    def brandId   = column[BrandID]("brandId")
+    def id         = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
+    def barcode    = column[String]("barcode")
+    def sku        = column[String]("sku")
+    def name       = column[String]("name")
+    def price      = column[Double]("price")
+    def qty        = column[Int]("qty")
+    def variation  = column[Option[String]]("variation")
+    def brandId    = column[Option[BrandID]]("brandId")
+    def categoryId = column[Option[CategoryID]]("categoryId")
 
-    def * = (barcode, sku, name, price, qty, variation, brandId, id).mapTo[ProductRow]
+    def * =
+      (barcode, sku, name, price, qty, variation, brandId, categoryId, id)
+        .mapTo[ProductRow]
 
     def brand =
       foreignKey("brand_pk", brandId, brands)(_.id, onDelete = ForeignKeyAction.SetNull)
+    def category =
+      foreignKey("category_pk", categoryId, categories)(
+        _.id,
+        onDelete = ForeignKeyAction.SetNull
+      )
   }
 
   lazy val products = TableQuery[ProductTable]
+
+  class CategoryTable(t: Tag) extends Table[CategoryRow](t, "categories") {
+    def id   = column[CategoryID]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name", O.Unique)
+
+    def * = (name, id).mapTo[CategoryRow]
+  }
+
+  lazy val categories = TableQuery[CategoryTable]
 
   class BrandTable(t: Tag) extends Table[BrandRow](t, "brands") {
     def id   = column[BrandID]("id", O.PrimaryKey, O.AutoInc)
@@ -99,13 +117,14 @@ class Schema(val profile: JdbcProfile) {
 
   lazy val stockOrders = TableQuery[StockOrderTable]
 
-  class OrderedProductsTable(t: Tag) extends Table[OrderedProductRow](t, "ordered_products") {
-    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def productId = column[ProductID]("productId")
+  class OrderedProductsTable(t: Tag)
+      extends Table[OrderedProductRow](t, "ordered_products") {
+    def id           = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def productId    = column[ProductID]("productId")
     def stockOrderId = column[StockOrderID]("stockOrderId")
-    def qty = column[Int]("qty")
+    def qty          = column[Int]("qty")
 
-    def productFk = foreignKey("product_fk", productId, products)(_.id)
+    def productFk    = foreignKey("product_fk", productId, products)(_.id)
     def stockOrderFk = foreignKey("stock_order_fk", stockOrderId, stockOrders)(_.id)
 
     def * = (productId, stockOrderId, qty, id).mapTo[OrderedProductRow]
@@ -113,8 +132,18 @@ class Schema(val profile: JdbcProfile) {
 
   lazy val orderedProducts = TableQuery[OrderedProductsTable]
 
-  def createTables(db: Database)(implicit ec: ExecutionContext): Vector[Unit] = {
-    val tables   = Vector(brands, products, sales, soldProducts, users, stockOrders, orderedProducts)
+  def createTables(db: Database)(implicit ec: ExecutionContext): Seq[Unit] = {
+    val tables =
+      Seq(
+        brands,
+        categories,
+        products,
+        sales,
+        soldProducts,
+        users,
+        stockOrders,
+        orderedProducts
+      )
     val existing = db.run(MTable.getTables)
 
     val f = existing.flatMap(ts => {

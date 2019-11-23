@@ -12,6 +12,7 @@ import com.merit.api.AuthDirectives
 import com.merit.api.users.LoginRoute
 import com.merit.modules.users.UserService
 import com.merit.api.users.UserRoutes
+import com.merit.modules.categories.CategoryService
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -19,10 +20,11 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     productService: ProductService,
     brandService: BrandService,
     excelService: ExcelService,
-    userService: UserService
+    userService: UserService,
+    categoryService: CategoryService
   )(implicit ec: ExecutionContext): Route =
     authenticated { userId =>
-      ProductRoutes(brandService, productService, excelService) ~
+      ProductRoutes(brandService, productService, excelService, categoryService) ~
       SaleRoutes(saleService, productService, excelService) ~
       UserRoutes(userId, userService)
     } ~ LoginRoute(userService)

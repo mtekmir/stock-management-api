@@ -3,9 +3,13 @@ name := "excel-parser"
 version := "0.1"
 
 scalaVersion := "2.13.1"
+
 val akkaVersion     = "2.5.25"
 val akkaHttpVersion = "10.1.9"
 val circeVersion    = "0.12.3"
+
+testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
+resolvers += "justwrote" at "https://repo.justwrote.it/releases/"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka"  %% "akka-actor"          % akkaVersion,
@@ -30,4 +34,9 @@ libraryDependencies ++= Seq(
   "com.pauldijou"      %% "jwt-core"            % "4.2.0",
   "org.mindrot"        % "jbcrypt"              % "0.4"
 )
-// resolvers += "typesafe" at "http://repo.typesafe.com/typesafe/releases/"
+
+// Test
+libraryDependencies ++= Seq(
+  "org.specs2"         %% "specs2-core"          % "4.6.0" % Test,
+  "it.justwrote"       % "scala-faker_2.11"      % "0.3"
+)
