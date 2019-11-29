@@ -4,6 +4,7 @@ import com.merit.modules.excel.ExcelProductRow
 import scala.util.Random
 import ProductUtils._
 import TestUtils._
+import com.merit.modules.excel.ExcelStockOrderRow
 
 object ExcelTestUtils {
   def getExcelProductRows(n: Int): Seq[ExcelProductRow] =
@@ -20,4 +21,9 @@ object ExcelTestUtils {
           Some(randomCategoryName)
         )
     ).toSeq
+
+  def excelProductRowToStockOrderRow(row: ExcelProductRow): ExcelStockOrderRow = {
+    import row._
+    ExcelStockOrderRow(name, sku, variation, barcode, qty, price, category, brand)
+  }
 }

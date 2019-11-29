@@ -27,9 +27,9 @@ case class StockOrderSummaryProduct(
 )
 
 object StockOrderSummaryProduct {
-  def fromProductDTO(p: ProductDTO, prevQty: Int = 0): StockOrderSummaryProduct = {
+  def fromProductDTO(p: ProductDTO, newQty: Int, prevQty: Int = 0): StockOrderSummaryProduct = {
     import p._
-    StockOrderSummaryProduct(id, barcode, name, variation, prevQty, newQty = qty)
+    StockOrderSummaryProduct(id, barcode, name, variation, prevQty, newQty)
   } 
 
   def fromProductRow(p: ProductRow): StockOrderSummaryProduct = {

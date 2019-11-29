@@ -1,4 +1,3 @@
-
 import org.apache.poi.ss.usermodel._
 import scala.jdk.CollectionConverters._
 import db.{DbProfile, Schema}
@@ -18,13 +17,21 @@ import api.Router
 import com.merit.modules.sales.{SaleRepo, SaleService}
 import com.merit.modules.users.{UserRepo, UserService}
 import com.merit.modules.categories.{CategoryRepo, CategoryService}
+import com.typesafe.config.ConfigFactory
+import com.merit.db.DbSettings
+import pureconfig._
+import pureconfig.generic.auto._
+import com.merit.db.Db
 
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val system       = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
-  val db     = Database.forConfig("db")
+  private val dbSettings = loadConfigOrThrow[DbSettings](ConfigFactory.load, "db")
+
+  val db     = Db(dbSettings)
+  
   val schema = Schema(DbProfile)
   schema.createTables(db)
   val productRepo  = ProductRepo(schema)

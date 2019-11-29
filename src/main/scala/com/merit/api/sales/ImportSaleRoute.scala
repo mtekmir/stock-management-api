@@ -22,12 +22,6 @@ object ImportSaleRoute extends Directives with JsonSupport {
 
         val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
         
-
-        val summary = for {
-          _       <- saleService.insertFromExcel(rows, DateTime.parse(date, dateFormatter))
-          summary <- saleService.getExcelImportSummary(rows)
-        } yield summary
-
-        complete(summary)
+        complete(saleService.insertFromExcel(rows, DateTime.parse(date, dateFormatter)))
     }
 }

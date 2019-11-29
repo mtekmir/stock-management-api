@@ -18,7 +18,11 @@ case class ExcelProductRow(
 ) extends ExcelRow
 
 object ExcelProductRow {
-  def toProductRow(row: ExcelProductRow, brandId: Option[BrandID], categoryId: Option[CategoryID]): ProductRow = {
+  def toProductRow(
+    row: ExcelProductRow,
+    brandId: Option[BrandID],
+    categoryId: Option[CategoryID]
+  ): ProductRow = {
     import row._
     ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId)
   }
@@ -43,10 +47,14 @@ case class ExcelStockOrderRow(
   price: Double,
   category: Option[String],
   brand: Option[String]
-) extends ExcelRow 
+) extends ExcelRow
 
 object ExcelStockOrderRow {
-  def toProductRow(row: ExcelStockOrderRow, brandId: Option[BrandID], categoryId: Option[CategoryID]): ProductRow = {
+  def toProductRow(
+    row: ExcelStockOrderRow,
+    brandId: Option[BrandID],
+    categoryId: Option[CategoryID]
+  ): ProductRow = {
     import row._
 
     ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId)

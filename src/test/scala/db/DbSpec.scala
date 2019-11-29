@@ -9,9 +9,16 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import org.specs2.specification.AfterAll
+import pureconfig._
+import pureconfig.generic.auto._
+import com.typesafe.config.ConfigFactory
+import com.merit.db.DbSettings
+import com.merit.db.Db
 
 trait DbSpec extends Specification with AfterAll {
-  val db = Database.forConfig("db")
+  private val dbSettings = loadConfigOrThrow[DbSettings](ConfigFactory.load, "db")
+
+  val db     = Db(dbSettings)
   val schema = Schema(DbProfile)
   schema.createTables(db)(scala.concurrent.ExecutionContext.global)
 

@@ -39,14 +39,14 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
     }
 
     "should get multiple products by barcode" in new TestScope {
-      val ps = Seq(createProduct, createProduct)
+      val ps = Seq(createProduct, createProduct).sortBy(_.barcode)
       val res = run(
         for {
           _        <- productRepo.batchInsert(ps)
           products <- productRepo.findAll(ps.map(_.barcode))
         } yield products.map(_.copy(id = ProductID.zero))
       )
-      res must beEqualTo(ps.map(p => rowToDTO(p))).await
+      res.map(_.sortBy(_.barcode)) must beEqualTo(ps.map(p => rowToDTO(p))).await
     }
 
     "should get multiple products with Category and Brand by barcode" in new TestScope {

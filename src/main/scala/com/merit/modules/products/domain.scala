@@ -60,4 +60,9 @@ object ProductDTO {
     import productRow._
     ProductDTO(id, barcode, sku, name, price, qty, variation, brand.map(_.name), category.map(_.name))
   }
+
+  def toRow(dto: ProductDTO, brandId: Option[BrandID], categoryId: Option[CategoryID]): ProductRow = {
+    import dto._
+    ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId, id)
+  }
 }

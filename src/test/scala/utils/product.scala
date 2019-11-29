@@ -10,7 +10,7 @@ object ProductUtils {
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
   def randomBetween(n: Int)                = Random.nextInt(n)
   def randomPrice                          = Random.nextDouble()
-  def randomQty                            = Random.nextInt()
+  def randomQty                            = Random.nextInt(20)
   def randomBarcode                        = randomBetween(100000000).toString
   def randomSku                            = randomBetween(1000000).toString
   def randomProductName                    = randomFrom(products)
@@ -54,14 +54,4 @@ object ProductUtils {
     import row._
     ProductDTO(ProductID.zero, barcode, sku, name, price, qty, variation, brand, category)
   }
-  // def checkProductsEq(row: ProductRow, dto: ProductDTO): Boolean = {
-  //   val detailsEq = row match {
-  //     case ProductRow(b, s, n, p, q, v, brand, category, _) =>
-  //       dto.barcode == b && dto.sku == s && dto.name == n && dto.price == p && dto.qty == q && dto.variation == v
-  //   }
-  //   val brandEq = row.brandId match {
-  //     case None    => dto.brand.isEmpty
-  //     case Some(_) => dto.brand.isDefined
-  //   }
-  // }
 }

@@ -5,6 +5,7 @@ import slick.jdbc.PostgresProfile
 import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import slick.jdbc.JdbcBackend.Database
 
 trait UserService {
   def get(id: UserID): Future[Option[UserDTO]]
@@ -20,7 +21,7 @@ object UserService {
   def checkPassword(pw: String, hash: String): Boolean =
     BCrypt.checkpw(pw, hash)
 
-  def apply(db: PostgresProfile.backend.Database, userRepo: UserRepo[DBIO])(
+  def apply(db: Database, userRepo: UserRepo[DBIO])(
     implicit ec: ExecutionContext
   ): UserService =
     new UserService {

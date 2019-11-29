@@ -11,6 +11,7 @@ import com.merit.modules.categories.CategoryID
 import slick.jdbc.PostgresProfile.api._
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
+import slick.jdbc.JdbcBackend.Database
 
 trait ProductService {
   def batchInsertExcelRows(rows: Seq[ExcelProductRow]): Future[Seq[ProductRow]]
@@ -22,7 +23,7 @@ trait ProductService {
 
 object ProductService {
   def apply(
-    db: PostgresProfile.backend.Database,
+    db: Database,
     brandRepo: BrandRepo[DBIO],
     productRepo: ProductRepo[DBIO],
     categoryRepo: CategoryRepo[DBIO]

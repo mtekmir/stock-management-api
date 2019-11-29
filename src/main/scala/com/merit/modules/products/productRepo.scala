@@ -8,9 +8,10 @@ import com.merit.modules.categories.CategoryRow
 
 trait ProductRepo[DbTask[_]] {
   def get(barcode: String): DbTask[Option[ProductDTO]]
+  def getRow(barcode: String): DbTask[Option[ProductRow]]
   def getAll: DbTask[Seq[ProductDTO]]
   def findAll(barcodes: Seq[String]): DbTask[Seq[ProductDTO]]
-  def insert(product: ProductRow): DbTask[ProductID]
+  def insert(product: ProductRow): DbTask[ProductRow]
   def batchInsert(products: Seq[ProductRow]): DbTask[Seq[ProductRow]]
   def deductQuantity(barcode: String, qty: Int): DbTask[Int]
   def addQuantity(barcode: String, qty: Int): DbTask[Int]
@@ -36,6 +37,9 @@ object ProductRepo {
             case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
           }
         }
+      
+      def getRow(barcode: String): DBIO[Option[ProductRow]] = 
+        products.filter(_.barcode === barcode).result.headOption
 
       def getAll: DBIO[Seq[ProductDTO]] = 
         withBrandAndCategory(products).result.map {
@@ -51,8 +55,8 @@ object ProductRepo {
           }
         }
 
-      def insert(product: ProductRow): DBIO[ProductID] =
-        products returning products.map(_.id) += product
+      def insert(product: ProductRow): DBIO[ProductRow] =
+        products returning products += product
 
       def batchInsert(ps: Seq[ProductRow]): DBIO[Seq[ProductRow]] =
         products returning products ++= ps

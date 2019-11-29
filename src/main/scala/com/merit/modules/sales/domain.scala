@@ -27,12 +27,13 @@ case class SaleSummaryProduct(
 )
 
 object SaleSummaryProduct {
-  def fromProductRow(p: ProductDTO, soldQty: Int): SaleSummaryProduct = {
+  def fromProductDTO(p: ProductDTO, soldQty: Int): SaleSummaryProduct = {
     import p._
-    SaleSummaryProduct(barcode, Some(name), variation, Some(qty + soldQty), Some(qty))
+    SaleSummaryProduct(barcode, Some(name), variation, Some(qty), Some(qty - soldQty))
   } 
 }
 
 case class SaleSummary(
+  id: SaleID,
   products: Seq[SaleSummaryProduct]
 )
