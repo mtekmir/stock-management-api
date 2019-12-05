@@ -60,7 +60,7 @@ object StockOrderService {
       createdAt: DateTime,
       products: Seq[ExcelStockOrderRow]
     ): Future[StockOrderSummary] = {
-
+      // todo test the case of duplicate products
       val barcodeToQty =
         products.foldLeft(Map[String, Int]())((m, p) => m + (p.barcode -> p.qty))
 

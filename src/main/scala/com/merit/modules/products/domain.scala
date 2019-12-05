@@ -9,6 +9,8 @@ import com.merit.modules.categories.CategoryID
 import com.merit.modules.categories.CategoryRow
 import com.merit.modules.excel.ExcelStockOrderRow
 import com.merit.modules.excel.ExcelProductRow
+import scala.util.Try
+import scala.math.BigDecimal.RoundingMode
 
 case class ProductID(value: Long) extends AnyVal with MappedTo[Long]
 
@@ -16,25 +18,35 @@ object ProductID {
   def zero: ProductID = ProductID(0L)
 }
 
+case class Currency(value: BigDecimal)
+
+object Currency {
+  def format(c: BigDecimal): BigDecimal = c.setScale(2, RoundingMode.DOWN)
+  def isValid(input: String): Boolean   = Try(BigDecimal(input)).isSuccess
+
+  def from(input: String): Option[Currency] =
+    Try(BigDecimal(input)).toOption.map(c => Currency(format(c)))
+  def fromDb(input: BigDecimal): Currency = Currency(format(BigDecimal(input.toString)))
+}
+
 final case class ProductRow(
   barcode: String,
   sku: String,
   name: String,
-  price: Double,
+  price: Option[Currency],
   qty: Int,
   variation: Option[String],
   brandId: Option[BrandID],
   categoryId: Option[CategoryID],
   id: ProductID = ProductID(0)
-) 
-
+)
 
 final case class SoldProductRow(
   productId: ProductID,
   saleId: SaleID,
   qty: Int = 1,
   id: Long = 0L
-) 
+)
 
 final case class OrderedProductRow(
   productId: ProductID,
@@ -48,7 +60,7 @@ final case class ProductDTO(
   barcode: String,
   sku: String,
   name: String,
-  price: Double,
+  price: Option[Currency],
   qty: Int,
   variation: Option[String],
   brand: Option[String],
@@ -56,12 +68,30 @@ final case class ProductDTO(
 )
 
 object ProductDTO {
-  def fromRow(productRow: ProductRow, brand: Option[BrandRow] = None, category: Option[CategoryRow] = None): ProductDTO = {
+  def fromRow(
+    productRow: ProductRow,
+    brand: Option[BrandRow] = None,
+    category: Option[CategoryRow] = None
+  ): ProductDTO = {
     import productRow._
-    ProductDTO(id, barcode, sku, name, price, qty, variation, brand.map(_.name), category.map(_.name))
+    ProductDTO(
+      id,
+      barcode,
+      sku,
+      name,
+      price,
+      qty,
+      variation,
+      brand.map(_.name),
+      category.map(_.name)
+    )
   }
 
-  def toRow(dto: ProductDTO, brandId: Option[BrandID], categoryId: Option[CategoryID]): ProductRow = {
+  def toRow(
+    dto: ProductDTO,
+    brandId: Option[BrandID],
+    categoryId: Option[CategoryID]
+  ): ProductRow = {
     import dto._
     ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId, id)
   }

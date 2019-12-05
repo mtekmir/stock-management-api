@@ -10,6 +10,7 @@ import com.merit.modules.sales.SaleID
 import com.merit.modules.products.ProductID
 import com.merit.modules.brands.BrandID
 import com.merit.modules.users.UserID
+import com.merit.modules.excel.ValidationErrorTypes
 
 import org.joda.time.format.DateTimeFormat
 
@@ -32,4 +33,6 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val encodeUserId: Encoder[UserID] = (id: UserID) =>
     Encoder.encodeUUID(id.value)
+
+  implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] = Encoder.enumEncoder(ValidationErrorTypes)
 }

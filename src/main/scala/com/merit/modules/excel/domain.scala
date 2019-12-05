@@ -3,6 +3,7 @@ import com.merit.modules.products.ProductRow
 import com.merit.modules.brands.BrandID
 import com.merit.modules.categories.CategoryID
 import com.merit.modules.brands.BrandRow
+import com.merit.modules.products.Currency
 
 sealed trait ExcelRow
 
@@ -11,7 +12,7 @@ case class ExcelProductRow(
   variation: Option[String],
   sku: String,
   name: String,
-  price: Double,
+  price: Option[Currency],
   qty: Int,
   brand: Option[String],
   category: Option[String]
@@ -28,11 +29,6 @@ object ExcelProductRow {
   }
 }
 
-case class DuplicateBarcode(
-  barcode: String,
-  rowIndex: Seq[Int]
-)
-
 case class ExcelSaleRow(
   barcode: String,
   qty: Int = 1
@@ -44,7 +40,7 @@ case class ExcelStockOrderRow(
   variation: Option[String],
   barcode: String,
   qty: Int,
-  price: Double,
+  price: Option[Currency],
   category: Option[String],
   brand: Option[String]
 ) extends ExcelRow
@@ -59,4 +55,46 @@ object ExcelStockOrderRow {
 
     ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId)
   }
+}
+
+object ValidationErrorTypes extends Enumeration {
+  type ErrorType = Value
+  val DuplicateBarcodeError, EmptyBarcodeError, EmptySkuError, EmptyQtyError,
+    InvalidBarcodeError, InvalidQtyError, InvalidPriceError = Value
+}
+
+final case class ExcelError(
+  message: String,
+  validationErrors: Seq[ExcelValidationError]
+)
+
+case class ExcelValidationError(
+  rows: Seq[Int],
+  errorType: ValidationErrorTypes.Value
+) {
+  import ExcelErrorMessages._
+  import ValidationErrorTypes._
+  val message = errorType match {
+    case DuplicateBarcodeError => duplicateBarcode
+    case EmptyBarcodeError     => emptyBarcode
+    case EmptyQtyError         => emptyQty
+    case EmptySkuError         => emptySku
+    case InvalidBarcodeError   => invalidBarcode
+    case InvalidQtyError       => invalidQty
+    case InvalidPriceError     => invalidPrice
+  }
+}
+
+object ExcelErrorMessages {
+  val emptyBarcode                   = "Barcode must not be empty"
+  val emptySku                       = "Sku must not be empty"
+  val emptyQty                       = "Quantity must not be empty"
+  val duplicateBarcode               = "Duplicate barcodes"
+  val invalidBarcode                 = "Barcode is invalid"
+  val invalidQty                     = "Quantity is not a number"
+  val invalidPrice                   = "Invalid price value"
+
+  val invalidProductImportMessage    = "Product import contains invalid rows"
+  val invalidSaleImportMessage       = "Sale import contains invalid rows"
+  val invalidStockOrderImportMessage = "Stock order import contains invalid rows"
 }

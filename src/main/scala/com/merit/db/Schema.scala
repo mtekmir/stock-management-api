@@ -1,7 +1,7 @@
 package db
 
 import slick.lifted._
-import com.merit.modules.products.{ProductID, ProductRow, SoldProductRow, OrderedProductRow}
+import com.merit.modules.products.{ProductID, ProductRow, SoldProductRow, OrderedProductRow, Currency}
 import com.merit.modules.brands.{BrandID, BrandRow}
 import slick.driver.JdbcProfile
 import slick.jdbc.meta.MTable
@@ -26,14 +26,20 @@ class Schema(val profile: JdbcProfile) {
         dt => new Timestamp(dt.getMillis),
         ts => new DateTime(ts.getTime)
       )
+    
+    implicit val currencyType = MappedColumnType.base[Currency, BigDecimal](
+      c => c.value,
+      bd => Currency.fromDb(bd)
+    )
   }
 
   class ProductTable(t: Tag) extends Table[ProductRow](t, "products") {
+    import CustomColumnTypes._
     def id         = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
     def barcode    = column[String]("barcode")
     def sku        = column[String]("sku")
     def name       = column[String]("name")
-    def price      = column[Double]("price")
+    def price      = column[Option[Currency]]("price", O.SqlType("NUMERIC(10, 2)"))
     def qty        = column[Int]("qty")
     def variation  = column[Option[String]]("variation")
     def brandId    = column[Option[BrandID]]("brandId")

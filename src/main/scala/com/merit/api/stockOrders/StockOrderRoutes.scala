@@ -14,6 +14,7 @@ object StockOrderRoutes extends Directives with JsonSupport {
     productService: ProductService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext): Route = {
-    ImportStockOrderRoute(stockOrderService, productService, excelService)
+    ImportStockOrderRoute(stockOrderService, productService, excelService) ~
+    GetStockOrderTemplateRoute()
   }
 }

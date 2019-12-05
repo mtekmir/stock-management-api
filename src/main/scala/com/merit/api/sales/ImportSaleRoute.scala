@@ -9,6 +9,7 @@ import com.merit.modules.excel.ExcelService
 import api.ImportSaleRequest
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
+import akka.http.scaladsl.model.StatusCodes.BadRequest
 
 object ImportSaleRoute extends Directives with JsonSupport {
   def apply(
@@ -18,10 +19,16 @@ object ImportSaleRoute extends Directives with JsonSupport {
   )(implicit ec: ExecutionContext) =
     (path("import") & formFields('date.as[String]) & uploadedFile("file")) {
       case (date, (metadata, file)) =>
-        val rows = excelService.parseSaleImportFile(file)
-
+        val rows          = excelService.parseSaleImportFile(file)
         val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-        
-        complete(saleService.insertFromExcel(rows, DateTime.parse(date, dateFormatter)))
+
+        rows match {
+          case Left(error) => complete(BadRequest -> error)
+          case Right(rows) =>
+            complete(
+              saleService.insertFromExcel(rows, DateTime.parse(date, dateFormatter))
+            )
+        }
+
     }
 }

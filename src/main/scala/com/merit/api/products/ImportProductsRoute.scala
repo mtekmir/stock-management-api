@@ -9,6 +9,7 @@ import scala.util.Success
 import com.merit.modules.excel.ExcelService
 import scala.concurrent.ExecutionContext
 import com.merit.modules.categories.CategoryService
+import akka.http.scaladsl.model.StatusCodes.BadRequest
 
 object ImportRoute extends Directives with JsonSupport {
   def apply(
@@ -18,12 +19,10 @@ object ImportRoute extends Directives with JsonSupport {
     (path("import") & uploadedFile("file")) {
       case (metadata, file) => {
         val rows       = excelService.parseProductImportFile(file)
-        val duplicates = excelService.validateProductRows(rows)
-
-        if (duplicates.length > 0) {
-          complete(UnSuccessfulProductImport("File contains duplicates", duplicates))
-        } else {
-          complete(productService.batchInsertExcelRows(rows))
+        
+        rows match {
+          case Left(error) => complete(BadRequest -> error)
+          case Right(rows) => complete(productService.batchInsertExcelRows(rows))
         }
       }
     }
