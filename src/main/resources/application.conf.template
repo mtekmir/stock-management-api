@@ -5,9 +5,7 @@ db = {
   username = postgres
   password = postgres
   numThreads = 15
-  minConnections = 10
-  maxConnections = 50
-  queueSize = 1000
+  maxPoolSize = 50
   prep-stmt-cache-size = 250
   prep-stmt-cache-sql-limit = 2048,
   use-server-prep-stmts = true
@@ -16,4 +14,20 @@ db = {
 
 jwt = {
   secret = "secret"
+}
+
+email = {
+  host = "smtp.googlemail.com"
+  port = 465
+  username = mail@mail.com
+  password = 12345678
+}
+
+email-service-dispatcher {
+  type = Dispatcher
+  executor = "thread-pool-executor"
+  thread-pool-executor {
+    fixed-pool-size = 1
+  }
+  throughput = 1
 }

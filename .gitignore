@@ -4,3 +4,5 @@
 project/.bloop
 target
 *.class
+
+src/main/resources/application.conf

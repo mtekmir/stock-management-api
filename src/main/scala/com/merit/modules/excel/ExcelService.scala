@@ -14,6 +14,7 @@ import org.apache.poi.ss.usermodel.CellType
 import ValidationErrorTypes._
 import ExcelErrorMessages._
 import com.merit.modules.products.Currency
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 
 object FileFor extends Enumeration {
   type FileFor = Value
@@ -21,7 +22,6 @@ object FileFor extends Enumeration {
 }
 
 trait ExcelService {
-  // def processFile(file: File, fileFor: FileFor.Value): (Seq[String], Seq[Seq[String]])
   def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]]
   def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]]
   def parseStockOrderImportFile(file: File): Either[ExcelError, Seq[ExcelStockOrderRow]]
@@ -90,8 +90,8 @@ object ExcelService {
         .toSeq
 
     def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]] = {
-
       val (_, rows) = processFile(file, FileFor.Product)
+
       val errors = rows.collect {
         case (Seq(barcode, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
           ExcelValidationError(Seq(index), EmptyBarcodeError)
@@ -214,5 +214,4 @@ object ExcelService {
       }
     }
   }
-
 }

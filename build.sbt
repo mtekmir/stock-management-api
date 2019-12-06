@@ -46,3 +46,8 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.0.0"
 )
+
+// Email
+libraryDependencies ++= Seq(
+  "org.apache.commons" % "commons-email" % "1.5"
+)
