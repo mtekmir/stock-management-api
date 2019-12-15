@@ -13,6 +13,7 @@ import com.merit.modules.users.UserID
 import com.merit.modules.excel.ValidationErrorTypes
 
 import org.joda.time.format.DateTimeFormat
+import com.merit.modules.products.Currency
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -22,17 +23,18 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val decodeDateTime: Decoder[DateTime] =
     Decoder.instance(d => d.as[String].map(s => DateTime.parse(s, dateFormatter)))
 
-  implicit val encodeSaleId: Encoder[SaleID] = (id: SaleID) =>
-    Encoder.encodeLong(id.value)
-    
+  implicit val encodeSaleId: Encoder[SaleID] = (id: SaleID) => Encoder.encodeLong(id.value)
+
   implicit val encodeProductId: Encoder[ProductID] = (id: ProductID) =>
     Encoder.encodeLong(id.value)
 
-  implicit val encodeBrandId: Encoder[BrandID] = (id: BrandID) =>
-    Encoder.encodeLong(id.value)
+  implicit val encodeBrandId: Encoder[BrandID] = (id: BrandID) => Encoder.encodeLong(id.value)
 
-  implicit val encodeUserId: Encoder[UserID] = (id: UserID) =>
-    Encoder.encodeUUID(id.value)
+  implicit val encodeUserId: Encoder[UserID] = (id: UserID) => Encoder.encodeUUID(id.value)
 
-  implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] = Encoder.enumEncoder(ValidationErrorTypes)
+  implicit val encodeCurrency: Encoder[Currency] = (currency: Currency) =>
+    Encoder.encodeBigDecimal(currency.value)
+
+  implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] =
+    Encoder.enumEncoder(ValidationErrorTypes)
 }

@@ -46,9 +46,9 @@ object ExcelService {
             .getOrElse(formatter.formatCellValue(c))
 
       val (columnCount, barcodeColumn) = fileFor match {
-        case FileFor.Product    => (8, 0)
+        case FileFor.Product    => (10, 0)
         case FileFor.Sale       => (2, 0)
-        case FileFor.StockOrder => (8, 3)
+        case FileFor.StockOrder => (10, 3)
       }
 
       def rowToCells(sheet: Sheet)(rowNum: Int) = {
@@ -93,20 +93,25 @@ object ExcelService {
       val (_, rows) = processFile(file, FileFor.Product)
 
       val errors = rows.collect {
-        case (Seq(barcode, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
+        case (Seq(barcode, _, _, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
           ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(barcode, _, _, _, _, _, _, _), index)
+        case (Seq(barcode, _, _, _, _, _, _, _, _, _), index)
             if Try(barcode.toLong).isFailure || barcode.length <= 6 || barcode.length >= 14 =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, sku, _, _, _, _, _), index) if sku.isEmpty =>
+        case (Seq(_, _, sku, _, _, _, _, _, _, _), index) if sku.isEmpty =>
           ExcelValidationError(Seq(index), EmptySkuError)
-        case (Seq(_, _, _, _, _, qty, _, _), index) if qty.isEmpty =>
+        case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if qty.isEmpty =>
           ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, _, qty, _, _), index) if !qty.forall(_.isDigit) =>
+        case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if !qty.forall(_.isDigit) =>
           ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, price, _, _, _), index)
+        case (Seq(_, _, _, _, price, _, _, _, _, _), index)
             if !price.isEmpty && !Currency.isValid(price) =>
           ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, _, _, discountPrice, _, _, _, _), index)
+            if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
+          ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
+          ExcelValidationError(Seq(index), InvalidTaxRateError)
       }
 
       val barcodes       = rows.map(_._1.head)
@@ -127,16 +132,18 @@ object ExcelService {
       errors ++ duplicates match {
         case Seq() =>
           rows.map {
-            case (Seq(barcode, variation, sku, name, price, qty, brand, category), _) =>
+            case (Seq(barcode, variation, sku, name, price, discountPrice, qty, brand, category, taxRate), _) =>
               ExcelProductRow(
                 barcode,
                 Option(variation).filter(_.nonEmpty),
                 sku,
                 name,
                 Currency.from(price),
+                Currency.from(discountPrice),
                 qty.toInt,
                 Option(brand).filter(_.nonEmpty),
-                Option(category).filter(_.nonEmpty)
+                Option(category).filter(_.nonEmpty),
+                Option(taxRate).filter(_.nonEmpty).map(_.toInt)
               )
           }.asRight
         case _ =>
@@ -179,25 +186,30 @@ object ExcelService {
       val (_, rows) = processFile(file, FileFor.StockOrder)
 
       val errors = rows.collect {
-        case (Seq(_, _, _, barcode, _, _, _, _), index) if barcode.isEmpty =>
+        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index) if barcode.isEmpty =>
           ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(_, _, _, barcode, _, _, _, _), index)
+        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index)
             if !barcode
               .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14 =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, _, _, qty, _, _, _), index) if qty.isEmpty =>
+        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if qty.isEmpty =>
           ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, qty, _, _, _), index) if !qty.forall(_.isDigit) =>
+        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if !qty.forall(_.isDigit) =>
           ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, _, price, _, _), index)
+        case (Seq(_, _, _, _, _, price, _, _, _, _), index)
             if !price.isEmpty && !Currency.isValid(price) =>
           ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, _, _, _, discountPrice, _, _, _), index)
+            if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
+          ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
+          ExcelValidationError(Seq(index), InvalidTaxRateError)
       }
 
       errors match {
         case Seq() =>
           rows.map {
-            case (Seq(name, sku, variation, barcode, qty, price, category, brand), _) =>
+            case (Seq(name, sku, variation, barcode, qty, price, discountPrice, category, brand, taxRate), _) =>
               ExcelStockOrderRow(
                 name,
                 sku,
@@ -205,8 +217,10 @@ object ExcelService {
                 barcode,
                 qty.toInt,
                 Currency.from(price),
+                Currency.from(discountPrice),
                 Option(category).filter(_.nonEmpty),
-                Option(brand).filter(_.nonEmpty)
+                Option(brand).filter(_.nonEmpty),
+                Option(taxRate).filter(_.nonEmpty).map(_.toInt)
               )
           }.asRight
         case es =>

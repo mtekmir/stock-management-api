@@ -11,10 +11,10 @@ import scala.concurrent.ExecutionContext
 object StockOrderRoutes extends Directives with JsonSupport {
   def apply(
     stockOrderService: StockOrderService,
-    productService: ProductService,
     excelService: ExcelService
-  )(implicit ec: ExecutionContext): Route = {
-    ImportStockOrderRoute(stockOrderService, productService, excelService) ~
-    GetStockOrderTemplateRoute()
-  }
+  )(implicit ec: ExecutionContext): Route =
+    pathPrefix("stock-orders") {
+      ImportStockOrderRoute(stockOrderService, excelService) ~
+      GetStockOrderTemplateRoute()
+    }
 }

@@ -4,5 +4,6 @@
 project/.bloop
 target
 *.class
+.DS_STORE
 
 src/main/resources/application.conf

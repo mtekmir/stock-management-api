@@ -36,8 +36,10 @@ object ProductUtils {
       randomSku,
       randomProductName,
       randomPrice,
+      randomPrice,
       randomQty,
       Some("variation"),
+      Some(randomBetween(20)),
       None,
       None
     )
@@ -48,13 +50,37 @@ object ProductUtils {
     c: Option[String] = None
   ): ProductDTO = {
     import row._
-    ProductDTO(ProductID.zero, barcode, sku, name, price, qty, variation, b, c)
+    ProductDTO(
+      ProductID.zero,
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      b,
+      c
+    )
   }
 
   def excelRowToDTO(
     row: ExcelProductRow
   ): ProductDTO = {
     import row._
-    ProductDTO(ProductID.zero, barcode, sku, name, price, qty, variation, brand, category)
+    ProductDTO(
+      ProductID.zero,
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brand,
+      category
+    )
   }
 }

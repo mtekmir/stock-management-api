@@ -14,7 +14,6 @@ import akka.http.scaladsl.model.StatusCodes.BadRequest
 object ImportStockOrderRoute extends Directives with JsonSupport {
   def apply(
     stockOrderService: StockOrderService,
-    productService: ProductService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext): Route =
     (path("import") & formFields('date.as[String]) & uploadedFile("file")) {

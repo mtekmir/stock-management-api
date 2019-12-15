@@ -174,9 +174,11 @@ class ExcelServiceProductValidationSpec extends Specification {
       "AO9303-394",
       "Nike Air Zoom Vapor",
       Currency.from("700.0"),
+      None,
       4,
       Some("Nike"),
-      Some("Erkek Ayakkabi")
+      Some("Erkek Ayakkabi"),
+      None
     )
     def readFile(name: String) = {
       val file = new File(s"$testFilesPath/$name")

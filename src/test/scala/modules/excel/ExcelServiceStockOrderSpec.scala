@@ -66,7 +66,7 @@ class ExcelServiceStockOrderSpec extends Specification {
     }
 
     val onlyBarcodeProduct =
-      ExcelStockOrderRow("", "", None, "3324921648019", 9, None, None, None)
+      ExcelStockOrderRow("", "", None, "3324921648019", 9, None, None, None, None, None)
     val fullProduct = ExcelStockOrderRow(
       "LOONY DAMP X 2",
       "700034-184",
@@ -74,8 +74,10 @@ class ExcelServiceStockOrderSpec extends Specification {
       "3324921320236",
       200,
       Currency.from("39.99"),
+      None,
       Some("Titresim Onleyici"),
-      Some("Babolat")
+      Some("Babolat"),
+      None
     )
   }
 }

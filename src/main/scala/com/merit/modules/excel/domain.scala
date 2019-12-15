@@ -13,9 +13,11 @@ case class ExcelProductRow(
   sku: String,
   name: String,
   price: Option[Currency],
+  discountPrice: Option[Currency],
   qty: Int,
   brand: Option[String],
-  category: Option[String]
+  category: Option[String],
+  taxRate: Option[Int]
 ) extends ExcelRow
 
 object ExcelProductRow {
@@ -25,7 +27,18 @@ object ExcelProductRow {
     categoryId: Option[CategoryID]
   ): ProductRow = {
     import row._
-    ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId)
+    ProductRow(
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brandId,
+      categoryId
+    )
   }
 }
 
@@ -41,8 +54,10 @@ case class ExcelStockOrderRow(
   barcode: String,
   qty: Int,
   price: Option[Currency],
+  discountPrice: Option[Currency],
   category: Option[String],
-  brand: Option[String]
+  brand: Option[String],
+  taxRate: Option[Int]
 ) extends ExcelRow
 
 object ExcelStockOrderRow {
@@ -53,14 +68,14 @@ object ExcelStockOrderRow {
   ): ProductRow = {
     import row._
 
-    ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId)
+    ProductRow(barcode, sku, name, price, discountPrice, qty, variation, taxRate, brandId, categoryId)
   }
 }
 
 object ValidationErrorTypes extends Enumeration {
   type ErrorType = Value
   val DuplicateBarcodeError, EmptyBarcodeError, EmptySkuError, EmptyQtyError,
-    InvalidBarcodeError, InvalidQtyError, InvalidPriceError = Value
+    InvalidBarcodeError, InvalidQtyError, InvalidPriceError, InvalidTaxRateError = Value
 }
 
 final case class ExcelError(
@@ -82,17 +97,19 @@ case class ExcelValidationError(
     case InvalidBarcodeError   => invalidBarcode
     case InvalidQtyError       => invalidQty
     case InvalidPriceError     => invalidPrice
+    case InvalidTaxRateError   => invalidTaxRate
   }
 }
 
 object ExcelErrorMessages {
-  val emptyBarcode                   = "Barcode must not be empty"
-  val emptySku                       = "Sku must not be empty"
-  val emptyQty                       = "Quantity must not be empty"
-  val duplicateBarcode               = "Duplicate barcodes"
-  val invalidBarcode                 = "Barcode is invalid"
-  val invalidQty                     = "Quantity is not a number"
-  val invalidPrice                   = "Invalid price value"
+  val emptyBarcode     = "Barcode must not be empty"
+  val emptySku         = "Sku must not be empty"
+  val emptyQty         = "Quantity must not be empty"
+  val duplicateBarcode = "Duplicate barcodes"
+  val invalidBarcode   = "Barcode is invalid"
+  val invalidQty       = "Quantity is not a number"
+  val invalidPrice     = "Invalid price value"
+  val invalidTaxRate   = "Invalid tax rate"
 
   val invalidProductImportMessage    = "Product import contains invalid rows"
   val invalidSaleImportMessage       = "Sale import contains invalid rows"

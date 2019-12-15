@@ -34,8 +34,10 @@ final case class ProductRow(
   sku: String,
   name: String,
   price: Option[Currency],
+  discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],
+  taxRate: Option[Int],
   brandId: Option[BrandID],
   categoryId: Option[CategoryID],
   id: ProductID = ProductID(0)
@@ -61,8 +63,10 @@ final case class ProductDTO(
   sku: String,
   name: String,
   price: Option[Currency],
+  discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],
+  taxRate: Option[Int],
   brand: Option[String],
   category: Option[String]
 )
@@ -80,8 +84,10 @@ object ProductDTO {
       sku,
       name,
       price,
+      discountPrice,
       qty,
       variation,
+      taxRate,
       brand.map(_.name),
       category.map(_.name)
     )
@@ -93,6 +99,18 @@ object ProductDTO {
     categoryId: Option[CategoryID]
   ): ProductRow = {
     import dto._
-    ProductRow(barcode, sku, name, price, qty, variation, brandId, categoryId, id)
+    ProductRow(
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brandId,
+      categoryId,
+      id
+    )
   }
 }

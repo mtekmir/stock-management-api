@@ -26,7 +26,7 @@ class Schema(val profile: JdbcProfile) {
         dt => new Timestamp(dt.getMillis),
         ts => new DateTime(ts.getTime)
       )
-    
+
     implicit val currencyType = MappedColumnType.base[Currency, BigDecimal](
       c => c.value,
       bd => Currency.fromDb(bd)
@@ -35,18 +35,20 @@ class Schema(val profile: JdbcProfile) {
 
   class ProductTable(t: Tag) extends Table[ProductRow](t, "products") {
     import CustomColumnTypes._
-    def id         = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
-    def barcode    = column[String]("barcode")
-    def sku        = column[String]("sku")
-    def name       = column[String]("name")
-    def price      = column[Option[Currency]]("price", O.SqlType("NUMERIC(10, 2)"))
-    def qty        = column[Int]("qty")
-    def variation  = column[Option[String]]("variation")
-    def brandId    = column[Option[BrandID]]("brandId")
-    def categoryId = column[Option[CategoryID]]("categoryId")
+    def id            = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
+    def barcode       = column[String]("barcode")
+    def sku           = column[String]("sku")
+    def name          = column[String]("name")
+    def price         = column[Option[Currency]]("price", O.SqlType("NUMERIC(10, 2)"))
+    def discountPrice = column[Option[Currency]]("discountPrice", O.SqlType("NUMERIC(10, 2)"))
+    def qty           = column[Int]("qty")
+    def variation     = column[Option[String]]("variation")
+    def taxRate       = column[Option[Int]]("taxRate")
+    def brandId       = column[Option[BrandID]]("brandId")
+    def categoryId    = column[Option[CategoryID]]("categoryId")
 
     def * =
-      (barcode, sku, name, price, qty, variation, brandId, categoryId, id)
+      (barcode, sku, name, price, discountPrice, qty, variation, taxRate, brandId, categoryId, id)
         .mapTo[ProductRow]
 
     def brand =
@@ -123,8 +125,7 @@ class Schema(val profile: JdbcProfile) {
 
   lazy val stockOrders = TableQuery[StockOrderTable]
 
-  class OrderedProductsTable(t: Tag)
-      extends Table[OrderedProductRow](t, "ordered_products") {
+  class OrderedProductsTable(t: Tag) extends Table[OrderedProductRow](t, "ordered_products") {
     def id           = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def productId    = column[ProductID]("productId")
     def stockOrderId = column[StockOrderID]("stockOrderId")

@@ -22,6 +22,8 @@ import pureconfig._
 import pureconfig.generic.auto._
 import com.merit.modules.emails.{EmailSettings, EmailServiceActor, EmailMessage}
 import akka.actor.Props
+import com.merit.modules.stockOrders.StockOrderRepo
+import com.merit.modules.stockOrders.StockOrderService
 
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,11 +38,12 @@ object Main extends App {
 
   val schema = Schema(DbProfile)
   schema.createTables(db)
-  val productRepo  = ProductRepo(schema)
-  val brandRepo    = BrandRepo(schema)
-  val saleRepo     = SaleRepo(schema)
-  val userRepo     = UserRepo(schema)
-  val categoryRepo = CategoryRepo(schema)
+  val productRepo    = ProductRepo(schema)
+  val brandRepo      = BrandRepo(schema)
+  val saleRepo       = SaleRepo(schema)
+  val userRepo       = UserRepo(schema)
+  val categoryRepo   = CategoryRepo(schema)
+  val stockOrderRepo = StockOrderRepo(schema)
 
   val productService  = ProductService(db, brandRepo, productRepo, categoryRepo)
   val brandService    = BrandService(db, brandRepo)
@@ -48,14 +51,14 @@ object Main extends App {
   val excelService    = ExcelService()
   val saleService     = SaleService(db, saleRepo, productRepo)
   val userService     = UserService(db, userRepo)
+  val stockOrderService =
+    StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo)
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailSettings)), name = "EmailService")
 
   def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
 
   exec(userService.populateUsers)
-
-  emailService ! EmailMessage("m.tekmir@gmail.com", "asd", "asd")
 
   val routes =
     Router(
@@ -64,7 +67,8 @@ object Main extends App {
       brandService,
       excelService,
       userService,
-      categoryService
+      categoryService,
+      stockOrderService
     )
 
   Http().bindAndHandle(routes, "localhost", 3000).onComplete {

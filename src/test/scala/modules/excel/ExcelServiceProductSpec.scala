@@ -12,7 +12,7 @@ class ExcelServiceSpec extends Specification {
       val products = readFile("10products.xlsx")
       products.map {
         _.map {
-          case ExcelProductRow(_, _, _, _, _, _, _, _) => 1
+          case ExcelProductRow(_, _, _, _, _, _, _, _, _, _) => 1
         }
       }.map(_.sum) must beEqualTo(Right(10))
     }
@@ -32,28 +32,50 @@ class ExcelServiceSpec extends Specification {
       products must beEqualTo(
         Right(
           Seq(
-            sampleProduct1.copy(name = "Nike 1", sku = "AO9303-393"),
+            sampleProduct1.copy(
+              name = "Nike 1",
+              sku = "AO9303-393",
+              discountPrice = Currency.from("499.89"),
+              taxRate = Some(8)
+            ),
             sampleProduct1
-              .copy(barcode = "32149023411", name = "Nike 2"),
+              .copy(
+                barcode = "32149023411",
+                name = "Nike 2",
+                discountPrice = Currency.from("399.11"),
+                taxRate = Some(8)
+              ),
             sampleProduct1.copy(
               barcode = "32149023415",
               name = "Nike 3",
-              qty = 11
+              qty = 11,
+              discountPrice = Some(Currency(299.90)),
+              taxRate = Some(18)
             ),
             sampleProduct1
-              .copy(barcode = "3214902341212", sku = "AJ9303-395", name = "Nike Air"),
+              .copy(
+                barcode = "3214902341212",
+                sku = "AJ9303-395",
+                name = "Nike Air",
+                discountPrice = Some(Currency(100.99)),
+                taxRate = Some(20)
+              ),
             sampleProduct1.copy(
               barcode = "3214902342",
               sku = "AO9303-397",
               name = "Nike Zoom",
               price = Currency.from("100.22"),
-              category = Some("Men's Shoe")
+              category = Some("Men's Shoe"),
+              discountPrice = Some(Currency(299.01)),
+              taxRate = Some(8)
             ),
             sampleProduct1.copy(
               barcode = "32149023410",
               sku = "AO9303-394",
               name = "Nike D",
-              qty = 22
+              qty = 22,
+              discountPrice = Some(Currency(920.29)),
+              taxRate = Some(10)
             ),
             sampleProduct1.copy(
               barcode = "32149023412",
@@ -62,7 +84,9 @@ class ExcelServiceSpec extends Specification {
               qty = 34,
               price = Currency.from("888.99"),
               category = Some("Women's Shoe"),
-              brand = Some("Asics")
+              brand = Some("Asics"),
+              discountPrice = Some(Currency(919.91)),
+              taxRate = Some(9)
             ),
             sampleProduct1.copy(
               barcode = "321490234123",
@@ -179,9 +203,11 @@ class ExcelServiceSpec extends Specification {
       "AO9303-394",
       "Nike Air Zoom Vapor",
       Currency.from("700.00"),
+      None,
       4,
       Some("Nike"),
-      Some("Erkek Ayakkabi")
+      Some("Erkek Ayakkabi"),
+      None
     )
     def readFile(name: String) = {
       val file = new File(s"$testFilesPath/$name")
