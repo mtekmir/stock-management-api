@@ -15,6 +15,7 @@ import com.merit.modules.sales.SaleRow
 import org.joda.time.DateTime
 import com.merit.modules.sales.SaleID
 import com.merit.modules.products.SoldProductRow
+import slick.dbio.DBIO
 
 class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
 
@@ -58,6 +59,20 @@ class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers
       res.map(_.map(_._2.barcode).sorted) must beEqualTo(sampleProducts.map(_.barcode)).await
       // Qtys
       res.map(_.map(_._3)) must beEqualTo((1 to 5).map(i => i)).await
+    }
+
+    "should update synced property on sold product" in new TestScope {
+      val sale = run(
+        for {
+          products <- insertTestData
+          saleRow <- saleRepo.add(SaleRow())
+          _ <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
+          _ <- DBIO.sequence(products.map(p => saleRepo.syncSoldProduct(saleRow.id, p.id, true)))
+          sale <- saleRepo.get(saleRow.id)
+        } yield (sale)
+      )
+
+      sale.map(_.map(_._4).fold(true)(_ && _)) must beTrue.await
     }
   }
 

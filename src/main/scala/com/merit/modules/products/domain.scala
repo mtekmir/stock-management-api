@@ -47,6 +47,7 @@ final case class SoldProductRow(
   productId: ProductID,
   saleId: SaleID,
   qty: Int = 1,
+  synced: Boolean = false,
   id: Long = 0L
 )
 

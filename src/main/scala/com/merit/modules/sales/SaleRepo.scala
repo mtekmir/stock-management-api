@@ -4,6 +4,7 @@ import com.merit.modules.products.{ProductRow, SoldProductRow}
 import com.merit.modules.brands.BrandRow
 import db.Schema
 import com.merit.modules.categories.CategoryRow
+import com.merit.modules.products.ProductID
 
 trait SaleRepo[DbTask[_]] {
   def add(sale: SaleRow): DbTask[SaleRow]
@@ -12,7 +13,8 @@ trait SaleRepo[DbTask[_]] {
   ): DbTask[Seq[SoldProductRow]]
   def get(
     id: SaleID
-  ): DbTask[Seq[(SaleRow, ProductRow, Int, Option[BrandRow], Option[CategoryRow])]]
+  ): DbTask[Seq[(SaleRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]]
+  def syncSoldProduct(saleId: SaleID, productId: ProductID, synced: Boolean): DbTask[Int]
 }
 
 object SaleRepo {
@@ -30,7 +32,7 @@ object SaleRepo {
 
     def get(
       id: SaleID
-    ): DBIO[Seq[(SaleRow, ProductRow, Int, Option[BrandRow], Option[CategoryRow])]] =
+    ): DBIO[Seq[(SaleRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]] =
       sales
         .filter(_.id === id)
         .join(soldProducts)
@@ -50,8 +52,11 @@ object SaleRepo {
             products.categoryId === categories.id
         }
         .map {
-          case ((((s, sp), p), b), c) => (s, p, sp.qty, b, c)
+          case ((((s, sp), p), b), c) => (s, p, sp.qty, sp.synced, b, c)
         }
         .result
+    
+      def syncSoldProduct(saleId: SaleID, productId: ProductID, synced: Boolean): DBIO[Int] = 
+        soldProducts.filter(p => p.productId === productId && p.saleId === saleId).map(_.synced).update(synced)
   }
 }

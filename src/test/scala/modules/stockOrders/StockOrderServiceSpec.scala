@@ -141,10 +141,10 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         )
       } yield stockOrder
       res.map(_.date) must beEqualTo(now).await
-      res.map(_.created.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.newQty))) must beEqualTo(
+      res.map(_.created.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered))) must beEqualTo(
         pToCreate.map(p => (p.barcode, 0, p.qty))
       ).await(1, timeout)
-      res.map(_.updated.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.newQty))) must beEqualTo(
+      res.map(_.updated.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered + p.prevQty))) must beEqualTo(
         pToUpdate.map(p => (p.barcode, p.qty, p.qty * 2))
       ).await(1, timeout)
     }

@@ -5,7 +5,7 @@ import slick.jdbc.JdbcBackend.Database
 import slick.util.AsyncExecutor
 import slick.jdbc.JdbcBackend.DatabaseDef
 
-case class DbSettings(
+case class DbConfig(
   username: String,
   password: String,
   url: String,
@@ -18,8 +18,8 @@ case class DbSettings(
   useServerPrepStmts: Boolean
 )
 
-class DbConfig(
-  settings: DbSettings
+class Db(
+  settings: DbConfig
 ) {
   lazy val dataSource: HikariDataSource = {
     val jdbcConfig = new HikariConfig()
@@ -51,5 +51,5 @@ class DbConfig(
 }
 
 object Db {
-  def apply(settings: DbSettings): DatabaseDef = new DbConfig(settings).connect
+  def apply(settings: DbConfig): DatabaseDef = new Db(settings).connect
 }

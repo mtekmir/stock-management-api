@@ -107,7 +107,7 @@ object StockOrderService {
         )
       } yield
         orderedProducts.map(
-          p => StockOrderSummaryProduct.fromProductDTO(p._1, prevQty = p._1.qty, newQty = p._2 + p._1.qty)
+          p => StockOrderSummaryProduct.fromProductDTO(p._1, prevQty = p._1.qty, ordered = p._2)
         )).transactionally
 
       // * Create stock order
@@ -121,7 +121,7 @@ object StockOrderService {
               OrderedProductRow(
                 p.id,
                 stockOrder.id,
-                p.newQty - p.prevQty
+                p.ordered
               )
           )
         )

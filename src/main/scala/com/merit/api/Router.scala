@@ -15,6 +15,7 @@ import com.merit.api.users.UserRoutes
 import com.merit.modules.categories.CategoryService
 import com.merit.api.stockOrders.StockOrderRoutes
 import com.merit.modules.stockOrders.StockOrderService
+import com.merit.api.sales.SyncSaleRoute
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -26,10 +27,12 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     categoryService: CategoryService,
     stockOrderService: StockOrderService
   )(implicit ec: ExecutionContext): Route =
-    authenticated { userId =>
-      ProductRoutes(brandService, productService, excelService, categoryService) ~
-      SaleRoutes(saleService, productService, excelService) ~
-      StockOrderRoutes(stockOrderService, excelService) ~
-      UserRoutes(userId, userService)
-    } ~ LoginRoute(userService)
+    LoginRoute(userService) ~
+      SyncSaleRoute(saleService) ~
+      authenticated { userId =>
+        ProductRoutes(brandService, productService, excelService, categoryService) ~
+        SaleRoutes(saleService, productService, excelService) ~
+        StockOrderRoutes(stockOrderService, excelService) ~
+        UserRoutes(userId, userService)
+      }
 }

@@ -12,8 +12,7 @@ import com.typesafe.config.ConfigFactory
 import slick.jdbc.PostgresProfile
 import pureconfig._
 import pureconfig.generic.auto._
-import com.merit.db.DbSettings
-import com.merit.db.Db
+import com.merit.db.{DbConfig, Db}
 
 trait ServiceSpec extends Specification with BeforeAll with AfterAll {
   private val dbname =
@@ -21,7 +20,7 @@ trait ServiceSpec extends Specification with BeforeAll with AfterAll {
   private val driver =
     "org.postgresql.Driver"
 
-  private val dbSettings = loadConfigOrThrow[DbSettings](ConfigFactory.load, "db")
+  private val dbSettings = loadConfigOrThrow[DbConfig](ConfigFactory.load, "db")
 
   val db1 = Db(dbSettings)
   var db  = db1

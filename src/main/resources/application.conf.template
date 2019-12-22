@@ -31,3 +31,13 @@ email-service-dispatcher {
   }
   throughput = 1
 }
+
+sqs-client {
+  profile = "a" 
+}
+
+crawler { 
+  queue-url = "a"
+  username = "a"
+  password = "a"
+}

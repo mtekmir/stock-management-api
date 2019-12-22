@@ -6,6 +6,9 @@ import com.merit.modules.products.ProductID
 import com.merit.modules.excel.ExcelProductRow
 import scala.math.BigDecimal.RoundingMode
 import com.merit.modules.products.Currency
+import com.merit.modules.sales.SaleDTOProduct
+import com.merit.modules.sales.SaleSummaryProduct
+import com.merit.modules.stockOrders.StockOrderSummaryProduct
 
 object ProductUtils {
   private val random                       = Random
@@ -82,5 +85,33 @@ object ProductUtils {
       brand,
       category
     )
+  }
+
+  def excelRowToSaleDTOProduct(row: ExcelProductRow): SaleDTOProduct = {
+    import row._
+    SaleDTOProduct(
+      ProductID.zero,
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brand,
+      category,
+      false
+    )
+  }
+
+  def productRowToSaleSummaryProduct(p: ProductRow, soldQty: Int) = {
+    import p._
+    SaleSummaryProduct(p.id, p.barcode, p.name, p.variation, p.qty, soldQty)
+  }
+
+  def productRowToStockOrderSummaryProduct(p: ProductRow, ordered: Int) = {
+    import p._
+    StockOrderSummaryProduct(p.id, p.barcode, p.name, p.variation, p.qty, ordered)
   }
 }

@@ -10,10 +10,12 @@ import PostgresProfile.api._
 import org.joda.time.DateTime
 import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
+import com.merit.external.crawler.SyncSaleResponse
 
 trait SaleService {
   def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
+  def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]]
 }
 
 object SaleService {
@@ -22,7 +24,6 @@ object SaleService {
     saleRepo: SaleRepo[DBIO],
     productRepo: ProductRepo[DBIO]
   )(implicit ec: ExecutionContext) = new SaleService {
-
     def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary] =
       db.run(
         (for {
@@ -56,10 +57,17 @@ object SaleService {
       db.run(saleRepo.get(id)).map {
         case rows if rows.length < 1 => None
         case rows =>
-          val products = rows.foldLeft(Seq[ProductDTO]())(
-            (s, p) => s :+ ProductDTO.fromRow(p._2, p._4, p._5).copy(qty = p._3)
+          val products = rows.foldLeft(Seq[SaleDTOProduct]())(
+            (s, p) => s :+ SaleDTOProduct.fromRow(p._2, p._5, p._6, p._4).copy(qty = p._3)
           )
           Some(SaleDTO(rows(0)._1.id, rows(0)._1.createdAt, products))
       }
+
+    def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]] =
+      db.run(
+        DBIO.sequence(
+          result.products.map(p => saleRepo.syncSoldProduct(result.saleId, p.id, p.synced))
+        )
+      )
   }
 }

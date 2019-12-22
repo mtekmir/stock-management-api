@@ -1,4 +1,5 @@
 package api.sales
+
 import akka.http.scaladsl.server.Directives
 import api.JsonSupport
 import com.merit.modules.sales.SaleService

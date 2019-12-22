@@ -12,11 +12,10 @@ import org.specs2.specification.AfterAll
 import pureconfig._
 import pureconfig.generic.auto._
 import com.typesafe.config.ConfigFactory
-import com.merit.db.DbSettings
-import com.merit.db.Db
+import com.merit.db.{Db, DbConfig}
 
 trait DbSpec extends Specification with AfterAll {
-  private val dbSettings = loadConfigOrThrow[DbSettings](ConfigFactory.load, "db")
+  private val dbSettings = loadConfigOrThrow[DbConfig](ConfigFactory.load, "db")
 
   val db     = Db(dbSettings)
   val schema = Schema(DbProfile)

@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 
-class EmailServiceActor(emailSettings: EmailSettings) extends Actor with ActorLogging {
+class EmailServiceActor(emailSettings: EmailConfig) extends Actor with ActorLogging {
   implicit val ec: ExecutionContext =
     context.system.dispatchers.lookup("email-service-dispatcher")
   private var attempts: Int    = 0

@@ -1,4 +1,5 @@
 package api.sales
+
 import akka.http.scaladsl.server.Directives
 import api.JsonSupport
 import com.merit.modules.sales.SaleService
@@ -7,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import com.merit.modules.excel.ExcelService
 import akka.http.scaladsl.server.Route
 import com.merit.api.sales.GetSaleTemplateRoute
+import com.merit.api.sales.SyncSaleRoute
 
 object SaleRoutes extends Directives with JsonSupport {
   def apply(

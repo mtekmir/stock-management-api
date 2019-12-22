@@ -33,13 +33,15 @@ libraryDependencies ++= Seq(
   "org.joda"               % "joda-convert"         % "2.2.1",
   "com.pauldijou"          %% "jwt-core"            % "4.2.0",
   "org.mindrot"            % "jbcrypt"              % "0.4",
+  "com.github.pureconfig"  %% "pureconfig"          % "0.12.1",
   "software.amazon.awssdk" % "aws-sdk-java"         % "2.10.35"
 )
 
 // Test
 libraryDependencies ++= Seq(
-  "org.specs2"   %% "specs2-core"     % "4.6.0" % Test,
-  "it.justwrote" % "scala-faker_2.11" % "0.3"
+  "org.specs2"    %% "specs2-core"     % "4.6.0" % Test,
+  "it.justwrote"  % "scala-faker_2.11" % "0.3",
+  "org.scalamock" %% "scalamock"       % "4.4.0" % Test
 )
 
 // cats

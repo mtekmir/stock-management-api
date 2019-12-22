@@ -1,4 +1,5 @@
 package com.merit.api.sales
+
 import akka.http.scaladsl.server.Directives
 import com.merit.api.AuthDirectives
 import akka.http.scaladsl.server.Route

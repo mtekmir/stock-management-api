@@ -23,18 +23,18 @@ case class StockOrderSummaryProduct(
   name: String,
   variation: Option[String] = None,
   prevQty: Int = 0,
-  newQty: Int
+  ordered: Int
 )
 
 object StockOrderSummaryProduct {
-  def fromProductDTO(p: ProductDTO, newQty: Int, prevQty: Int = 0): StockOrderSummaryProduct = {
+  def fromProductDTO(p: ProductDTO, prevQty: Int = 0, ordered: Int): StockOrderSummaryProduct = {
     import p._
-    StockOrderSummaryProduct(id, barcode, name, variation, prevQty, newQty)
+    StockOrderSummaryProduct(id, barcode, name, variation, prevQty, ordered)
   } 
 
   def fromProductRow(p: ProductRow): StockOrderSummaryProduct = {
     import p._
-    StockOrderSummaryProduct(id, barcode, name, variation, prevQty = 0, newQty = qty)
+    StockOrderSummaryProduct(id, barcode, name, variation, prevQty = 0, qty)
   } 
 }
 

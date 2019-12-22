@@ -48,8 +48,19 @@ class Schema(val profile: JdbcProfile) {
     def categoryId    = column[Option[CategoryID]]("categoryId")
 
     def * =
-      (barcode, sku, name, price, discountPrice, qty, variation, taxRate, brandId, categoryId, id)
-        .mapTo[ProductRow]
+      (
+        barcode,
+        sku,
+        name,
+        price,
+        discountPrice,
+        qty,
+        variation,
+        taxRate,
+        brandId,
+        categoryId,
+        id
+      ).mapTo[ProductRow]
 
     def brand =
       foreignKey("brand_pk", brandId, brands)(_.id, onDelete = ForeignKeyAction.SetNull)
@@ -95,11 +106,12 @@ class Schema(val profile: JdbcProfile) {
     def productId = column[ProductID]("productId")
     def saleId    = column[SaleID]("saleId")
     def qty       = column[Int]("qty")
+    def synced    = column[Boolean]("synced")
 
     def productFk = foreignKey("product_fk", productId, products)(_.id)
     def saleFk    = foreignKey("sale_fk", saleId, sales)(_.id)
 
-    def * = (productId, saleId, qty, id).mapTo[SoldProductRow]
+    def * = (productId, saleId, qty, synced, id).mapTo[SoldProductRow]
   }
 
   lazy val soldProducts = TableQuery[SoldProductTable]

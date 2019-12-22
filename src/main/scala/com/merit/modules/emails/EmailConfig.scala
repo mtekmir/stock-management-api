@@ -1,6 +1,6 @@
 package com.merit.modules.emails
 
-case class EmailSettings(
+case class EmailConfig(
   host: String,
   port: Int,
   username: String,
