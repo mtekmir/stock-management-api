@@ -36,7 +36,15 @@ object Main extends App {
   implicit val system       = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
-  val appConfig @ AppConfig(awsConfig, dbConfig, emailConfig, crawlerClientConfig, _) = Config().load()
+  val appConfig @ AppConfig(
+    awsConfig,
+    dbConfig,
+    emailConfig,
+    crawlerClientConfig,
+    _,
+    httpConfig
+  ) =
+    Config().load()
 
   val db = Db(dbConfig)
 
@@ -82,8 +90,10 @@ object Main extends App {
       appConfig
     )
 
-  Http().bindAndHandle(routes, "localhost", 3111).onComplete {
-    case Success(_) => println("Server is up on 3111")
-    case Failure(e) => println(e)
-  }
+  Http()
+    .bindAndHandle(routes, httpConfig.interface, httpConfig.port)
+    .onComplete {
+      case Success(_) => println(s"Server is up on ${httpConfig.port}")
+      case Failure(e) => println(e)
+    }
 }

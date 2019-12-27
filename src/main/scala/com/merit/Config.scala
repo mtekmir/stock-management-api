@@ -40,12 +40,18 @@ case class JwtConfig(
   secret: String
 )
 
+case class HttpConfig(
+  interface: String,
+  port: Int
+)
+
 case class AppConfig(
   aWSConfig: AwsConfig,
   dbConfig: DbConfig,
   emailConfig: EmailConfig,
   crawlerClientConfig: CrawlerClientConfig,
-  jwtConfig: JwtConfig
+  jwtConfig: JwtConfig,
+  httpConfig: HttpConfig
 )
 
 trait Config {
@@ -55,10 +61,12 @@ trait Config {
 object Config {
   def apply() = new Config {
     private val environment        = sys.env.getOrElse("PROJECT_ENV", "development")
+    private val port               = sys.env.get("PORT")
     private val config             = ConfigFactory.load
     private val localDbConfig      = loadConfigOrThrow[DbConfig](config, "db")
     private val emailConfig        = loadConfigOrThrow[EmailConfig](config, "email")
     private val aWSConfig          = loadConfigOrThrow[AwsConfig](config, "aws")
+    private val httpConfig         = loadConfigOrThrow[HttpConfig](config, "http")
     private val parameterUrlPrefix = s"/stock-management-service/$environment/"
 
     private val sSM = SsmClient.create()
@@ -102,7 +110,8 @@ object Config {
       dbConfig,
       emailConfig,
       crawlerClientConfig,
-      jwtConfig
+      jwtConfig,
+      httpConfig.copy(port = port.map(_.toInt).getOrElse(3111))
     )
   }
 }
