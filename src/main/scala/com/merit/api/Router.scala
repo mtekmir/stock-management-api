@@ -17,6 +17,8 @@ import com.merit.modules.categories.CategoryService
 import com.merit.api.stockOrders.StockOrderRoutes
 import com.merit.modules.stockOrders.StockOrderService
 import com.merit.api.sales.SyncSaleRoute
+import akka.http.scaladsl.server.directives.Credentials
+import com.merit.AppConfig
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -26,16 +28,26 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     excelService: ExcelService,
     userService: UserService,
     categoryService: CategoryService,
-    stockOrderService: StockOrderService
-  )(implicit ec: ExecutionContext): Route =
+    stockOrderService: StockOrderService,
+    config: AppConfig
+  )(implicit ec: ExecutionContext): Route = {
+    def crawlerAuthenticator(credentials: Credentials): Option[Boolean] =
+      credentials match {
+        case c @ Credentials.Provided(config.crawlerClientConfig.username)
+            if c.verify(config.crawlerClientConfig.password) =>
+          Some(true)
+        case _ => None
+      }
+
     cors() {
-      LoginRoute(userService) ~
-      SyncSaleRoute(saleService) ~
-      authenticated { userId =>
+      LoginRoute(userService, config.jwtConfig) ~
+      SyncSaleRoute(saleService, crawlerAuthenticator) ~
+      authenticated(config.jwtConfig) { userId =>
         ProductRoutes(brandService, productService, excelService, categoryService) ~
         SaleRoutes(saleService, productService, excelService) ~
         StockOrderRoutes(stockOrderService, excelService) ~
         UserRoutes(userId, userService)
       }
     }
+  }
 }

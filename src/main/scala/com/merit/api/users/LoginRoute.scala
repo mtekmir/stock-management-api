@@ -9,12 +9,13 @@ import akka.http.scaladsl.server.AuthorizationFailedRejection
 import scala.util.Success
 import scala.util.Failure
 import akka.http.scaladsl.model.StatusCodes._
+import com.merit.JwtConfig
 
 object LoginRoute extends Directives with AuthDirectives with JsonSupport {
-  def apply(userService: UserService): Route =
+  def apply(userService: UserService, jwtConfig: JwtConfig): Route =
     (path("login") & entity(as[LoginRequest])) { loginReq =>
       onComplete(userService.login(loginReq.email, loginReq.password)) {
-        case Success(Some(user)) => complete(issueJwt(user.id))
+        case Success(Some(user)) => complete(issueJwt(user.id, jwtConfig.secret))
         case Success(None)       => complete(AuthorizationFailedRejection)
         case Failure(e) =>
           println(e)

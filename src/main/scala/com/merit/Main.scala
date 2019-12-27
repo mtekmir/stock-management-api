@@ -36,8 +36,7 @@ object Main extends App {
   implicit val system       = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
-  val AppConfig(awsConfig, dbConfig, emailConfig, crawlerClientConfig) = Config().load()
-
+  val appConfig @ AppConfig(awsConfig, dbConfig, emailConfig, crawlerClientConfig, _) = Config().load()
 
   val db = Db(dbConfig)
 
@@ -79,7 +78,8 @@ object Main extends App {
       excelService,
       userService,
       categoryService,
-      stockOrderService
+      stockOrderService,
+      appConfig
     )
 
   Http().bindAndHandle(routes, "localhost", 3111).onComplete {

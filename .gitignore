@@ -6,7 +6,6 @@ target
 *.class
 .DS_STORE
 
-src/main/resources/application.conf
 app-assembly.jar
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

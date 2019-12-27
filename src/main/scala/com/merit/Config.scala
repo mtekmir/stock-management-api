@@ -36,11 +36,16 @@ case class CrawlerClientConfig(
   password: String
 )
 
+case class JwtConfig(
+  secret: String
+)
+
 case class AppConfig(
   aWSConfig: AwsConfig,
   dbConfig: DbConfig,
   emailConfig: EmailConfig,
-  crawlerClientConfig: CrawlerClientConfig
+  crawlerClientConfig: CrawlerClientConfig,
+  jwtConfig: JwtConfig
 )
 
 trait Config {
@@ -49,17 +54,16 @@ trait Config {
 
 object Config {
   def apply() = new Config {
-    private val config              = ConfigFactory.load
-    private val environment         = config.getString("environment")
-    private val localDbConfig       = loadConfigOrThrow[DbConfig](config, "db")
-    private val emailConfig         = loadConfigOrThrow[EmailConfig](config, "email")
-    private val crawlerClientConfig = loadConfigOrThrow[CrawlerClientConfig](config, "crawler")
-    private val aWSConfig           = loadConfigOrThrow[AwsConfig](config, "aws")
-    private val parameterUrlPrefix  = s"/stock-management-service/$environment/"
+    private val environment        = sys.env.getOrElse("PROJECT_ENV", "development")
+    private val config             = ConfigFactory.load
+    private val localDbConfig      = loadConfigOrThrow[DbConfig](config, "db")
+    private val emailConfig        = loadConfigOrThrow[EmailConfig](config, "email")
+    private val aWSConfig          = loadConfigOrThrow[AwsConfig](config, "aws")
+    private val parameterUrlPrefix = s"/stock-management-service/$environment/"
 
     private val sSM = SsmClient.create()
 
-    def getParameter(name: String) =
+    def getParam(name: String): Try[String] =
       Try(
         sSM
           .getParameter(
@@ -69,7 +73,11 @@ object Config {
               .withDecryption(true)
               .build()
           )
-      ).map(_.parameter().value()).get
+      ).map(_.parameter().value())
+
+    def getParameter(name: String): String = getParam(name).get
+    def getParameterOrElse(name: String, default: String): String =
+      getParam(name).getOrElse(default)
 
     val dbConfig = environment match {
       case "production" =>
@@ -81,11 +89,20 @@ object Config {
       case _ => localDbConfig
     }
 
+    val crawlerClientConfig = CrawlerClientConfig(
+      queueUrl = getParameter("crawler-queue-url"),
+      username = getParameter("crawler-username"),
+      password = getParameter("crawler-password")
+    )
+
+    val jwtConfig = JwtConfig(secret = getParameterOrElse("jwt-secret", "secret"))
+
     def load() = AppConfig(
       aWSConfig,
       dbConfig,
       emailConfig,
-      crawlerClientConfig
+      crawlerClientConfig,
+      jwtConfig
     )
   }
 }

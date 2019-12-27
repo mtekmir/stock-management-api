@@ -15,21 +15,13 @@ import com.typesafe.config.ConfigFactory
 import com.merit.modules.sales.SaleID
 
 object SyncSaleRoute extends Directives with JsonSupport {
-  private val crawlerClientConfig =
-    loadConfigOrThrow[CrawlerClientConfig](ConfigFactory.load(), "crawler")
-
-  def authenticator(credentials: Credentials): Option[Boolean] =
-    credentials match {
-      case c @ Credentials.Provided(crawlerClientConfig.username)
-          if c.verify(crawlerClientConfig.password) =>
-        Some(true)
-      case _ => None
-    }
-
-  def apply(saleService: SaleService): Route =
+  def apply(
+    saleService: SaleService,
+    crawlerAuthenticator: (Credentials) => Option[Boolean]
+  ): Route =
     (path("synced-sale") & post) {
       entity(as[SyncSaleResponse]) { s =>
-        authenticateBasic("crawler route", authenticator) { _ =>
+        authenticateBasic("crawler route", crawlerAuthenticator) { _ =>
           onComplete(saleService.saveSyncResult(s)) {
             case Failure(exception)    => complete(InternalServerError -> exception)
             case scala.util.Success(_) => complete(OK)
