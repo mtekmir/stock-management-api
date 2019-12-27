@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.modules.stockOrders.StockOrderSummary
 import com.merit.modules.stockOrders.StockOrderSummaryProduct
+import com.merit.CrawlerClientConfig
 
 trait CrawlerClient {
   def sendSale(sale: SaleSummary): Future[(SyncSaleMessage, SendMessageResponse)]

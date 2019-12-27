@@ -1,0 +1,9 @@
+FROM mozilla/sbt:latest
+
+WORKDIR /app
+
+COPY . .
+
+EXPOSE 3111
+
+CMD ["sbt", "test"]

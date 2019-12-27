@@ -6,6 +6,7 @@ import org.apache.commons.mail.{SimpleEmail, Email}
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import com.merit.EmailConfig
 
 class EmailServiceActor(emailSettings: EmailConfig) extends Actor with ActorLogging {
   implicit val ec: ExecutionContext =

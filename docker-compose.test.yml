@@ -1,0 +1,17 @@
+version: '3'
+services:
+  test-db:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+  api:
+    build: 
+      dockerfile: Dockerfile.test
+      context: .
+    ports:
+      - "3111:3111"
+    links:
+      - test-db

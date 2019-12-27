@@ -12,7 +12,8 @@ import com.typesafe.config.ConfigFactory
 import slick.jdbc.PostgresProfile
 import pureconfig._
 import pureconfig.generic.auto._
-import com.merit.db.{DbConfig, Db}
+import com.merit.db.Db
+import com.merit.DbConfig
 
 trait ServiceSpec extends Specification with BeforeAll with AfterAll {
   private val dbname =

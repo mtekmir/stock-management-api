@@ -1,6 +1,7 @@
 package api
 
 import akka.http.scaladsl.server.Directives
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.merit.modules.sales.SaleService
 import com.merit.modules.products.ProductService
 import com.merit.modules.brands.BrandService
@@ -27,7 +28,8 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     categoryService: CategoryService,
     stockOrderService: StockOrderService
   )(implicit ec: ExecutionContext): Route =
-    LoginRoute(userService) ~
+    cors() {
+      LoginRoute(userService) ~
       SyncSaleRoute(saleService) ~
       authenticated { userId =>
         ProductRoutes(brandService, productService, excelService, categoryService) ~
@@ -35,4 +37,5 @@ object Router extends Directives with AuthDirectives with JsonSupport {
         StockOrderRoutes(stockOrderService, excelService) ~
         UserRoutes(userId, userService)
       }
+    }
 }

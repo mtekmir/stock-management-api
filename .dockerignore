@@ -1,0 +1,12 @@
+.metals
+.idea
+.bloop
+.git
+project/.bloop
+project/target
+target
+
+.elasticbeanstalk/*
+.git
+.gitignore
+!target/scala-2.13/app-assembly.jar

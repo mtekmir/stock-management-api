@@ -1,8 +1,16 @@
-name := "excel-parser"
+name := "stock-management-service"
 
 version := "0.1"
 
 scalaVersion := "2.13.1"
+
+test in assembly := {}
+assemblyJarName in assembly := s"app-assembly.jar"
+assemblyMergeStrategy in assembly := {
+  case PathList("reference.conf") => MergeStrategy.concat
+  case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}
 
 val akkaVersion     = "2.5.25"
 val akkaHttpVersion = "10.1.9"
@@ -34,7 +42,8 @@ libraryDependencies ++= Seq(
   "com.pauldijou"          %% "jwt-core"            % "4.2.0",
   "org.mindrot"            % "jbcrypt"              % "0.4",
   "com.github.pureconfig"  %% "pureconfig"          % "0.12.1",
-  "software.amazon.awssdk" % "aws-sdk-java"         % "2.10.35"
+  "software.amazon.awssdk" % "aws-sdk-java"         % "2.10.35",
+  "ch.megard"              %% "akka-http-cors"      % "0.4.1"
 )
 
 // Test

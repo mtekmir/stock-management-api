@@ -9,12 +9,6 @@ object AdjustmentType extends Enumeration {
   val Decrease, Increase, NoChange = Value
 }
 
-case class CrawlerClientConfig(
-  queueUrl: String,
-  username: String,
-  password: String
-)
-
 case class SyncMessageProduct(
   id: ProductID,
   barcode: String,

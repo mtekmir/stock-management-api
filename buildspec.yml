@@ -1,0 +1,30 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk8
+    commands:
+      - echo Installing API dependencies
+      - sbt update
+      - echo Finished installing API dependencies
+  pre_build:
+    commands:
+      - echo Skipping Tests
+      # - sbt test
+      # - echo Finished testing API
+  build:
+    commands:
+      - echo Packaging Service
+      - sbt assembly
+      - echo Logging in to Docker hub
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+      - echo Building docker image
+      - docker build -t mtekmir/stock-management-service .
+      - echo Pushing docker image to docker hub
+      - docker push mtekmir/stock-management-service:latest
+      - echo Finished deploying
+
+# cache:
+#   paths:
+#     - './.metals'

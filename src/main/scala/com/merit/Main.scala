@@ -17,28 +17,27 @@ import com.merit.modules.sales.{SaleRepo, SaleService}
 import com.merit.modules.users.{UserRepo, UserService}
 import com.merit.modules.categories.{CategoryRepo, CategoryService}
 import com.typesafe.config.ConfigFactory
-import com.merit.db.{DbConfig, Db}
+import com.merit.db.Db
 import pureconfig._
 import pureconfig.generic.auto._
-import com.merit.modules.emails.{EmailConfig, EmailServiceActor, EmailMessage}
+import com.merit.modules.emails.{EmailServiceActor, EmailMessage}
 import akka.actor.Props
 import com.merit.modules.stockOrders.StockOrderRepo
 import com.merit.modules.stockOrders.StockOrderService
-import com.merit.external.crawler.{CrawlerClientConfig, CrawlerClient}
+import com.merit.external.crawler.CrawlerClient
 import com.merit.modules.sales.{SaleSummary, SaleID, SaleSummaryProduct}
-import com.merit.external.sqsClient.SqsClientConfig
+import com.merit.AwsConfig
 import com.merit.external.sqsClient.SqsClient
+import com.merit.modules.products.ProductID
+import com.merit.{Config, AppConfig}
 
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val system       = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
-  private val config              = ConfigFactory.load
-  private val dbConfig            = loadConfigOrThrow[DbConfig](config, "db")
-  private val emailConfig         = loadConfigOrThrow[EmailConfig](config, "email")
-  private val crawlerClientConfig = loadConfigOrThrow[CrawlerClientConfig](config, "crawler")
-  private val sqsClientConfig     = loadConfigOrThrow[SqsClientConfig](config, "sqs-client")
+  val AppConfig(awsConfig, dbConfig, emailConfig, crawlerClientConfig) = Config().load()
+
 
   val db = Db(dbConfig)
 
@@ -62,10 +61,10 @@ object Main extends App {
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
 
-  val sqsClient     = SqsClient(sqsClientConfig)
+  val sqsClient     = SqsClient(awsConfig)
   val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
   // crawlerClient.sendSale(
-  //   SaleSummary(SaleID(1L), Seq(SaleSummaryProduct("000000000004", None, None, None, Some(1))))
+  //   SaleSummary(SaleID(1L), Seq(SaleSummaryProduct(ProductID.zero, "000000000004", "test", None, 2, 2)))
   // )
 
   def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)

@@ -4,7 +4,7 @@ import org.specs2.matcher.FutureMatchers
 import org.scalamock.specs2.MockContext
 import com.merit.external.sqsClient.SqsClient
 import com.merit.external.crawler.CrawlerClient
-import com.merit.external.crawler.CrawlerClientConfig
+import com.merit.CrawlerClientConfig
 import org.specs2.concurrent.ExecutionEnv
 import utils.ProductUtils._
 import com.merit.modules.stockOrders.StockOrderSummary

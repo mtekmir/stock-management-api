@@ -1,18 +1,11 @@
-FROM openjdk:8
+FROM openjdk:8-jre-alpine
 
-ARG SBT_VERSION="1.2.8"
+RUN mkdir -p /opt/app
 
-RUN \
-  curl -L -o sbt-$SBT_VERSION.deb http://dl.bintray.com/sbt/debian/sbt-$SBT_VERSION.deb && \
-  dpkg -i sbt-$SBT_VERSION.deb && \
-  rm sbt-$SBT_VERSION.deb && \
-  apt-get update && \
-  apt-get install sbt && \
-  sbt sbtVersion
+WORKDIR /opt/app
 
-WORKDIR /app
-ADD . /app
+COPY ./target/scala-2.13/app-assembly.jar ./
 
-EXPOSE 9000
+EXPOSE 3111
 
-CMD ["sbt", "run"]
+CMD java -jar app-assembly.jar

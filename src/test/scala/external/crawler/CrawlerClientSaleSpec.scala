@@ -6,7 +6,7 @@ import org.specs2.specification.Scope
 import org.scalamock.specs2.MockContext
 import com.merit.external.crawler.CrawlerClient
 import com.merit.external.sqsClient.SqsClient
-import com.merit.external.crawler.CrawlerClientConfig
+import com.merit.CrawlerClientConfig
 import com.merit.modules.sales.SaleSummary
 import com.merit.modules.sales.SaleID
 import utils.ProductUtils._

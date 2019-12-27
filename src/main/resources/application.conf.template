@@ -1,22 +1,20 @@
-db = {
+
+environment = "development"
+
+db {
   driver = org.postgresql.Driver
   url = "jdbc:postgresql://localhost:5433/postgres"
-  keepAliveConnection = true
   username = postgres
   password = postgres
-  numThreads = 15
-  maxPoolSize = 50
-  prep-stmt-cache-size = 250
-  prep-stmt-cache-sql-limit = 2048,
-  use-server-prep-stmts = true
-  cache-prep-stmts = true
+  num-threads = 15
+  max-pool-size = 50
 }
 
-jwt = {
+jwt {
   secret = "secret"
 }
 
-email = {
+email {
   host = "smtp.googlemail.com"
   port = 465
   username = mail@mail.com
@@ -40,4 +38,8 @@ crawler {
   queue-url = "a"
   username = "a"
   password = "a"
+}
+
+akka-http-cors {
+  allowed-methods = ["GET", "POST", "PUT", "HEAD", "OPTIONS", "DELETE"]
 }
