@@ -17,7 +17,6 @@ val akkaHttpVersion = "10.1.9"
 val circeVersion    = "0.12.3"
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
-resolvers += "justwrote" at "https://repo.justwrote.it/releases/"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka"      %% "akka-actor"          % akkaVersion,
@@ -49,7 +48,6 @@ libraryDependencies ++= Seq(
 // Test
 libraryDependencies ++= Seq(
   "org.specs2"    %% "specs2-core"     % "4.6.0" % Test,
-  "it.justwrote"  % "scala-faker_2.11" % "0.3",
   "org.scalamock" %% "scalamock"       % "4.4.0" % Test
 )
 

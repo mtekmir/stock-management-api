@@ -15,16 +15,7 @@ trait SqsClient {
 
 object SqsClient {
   def apply(config: AwsConfig) = new SqsClient {
-    private val client = Sqs
-      .builder()
-      .region(Region.EU_CENTRAL_1)
-      .credentialsProvider(
-        ProfileCredentialsProvider
-          .builder()
-          .profileName(config.profile)
-          .build()
-      )
-      .build()
+    private val client = Sqs.create()
 
     def sendMessageTo(queueUrl: String, message: String): SendMessageResponse =
       client.sendMessage(

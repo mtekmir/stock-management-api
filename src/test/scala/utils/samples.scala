@@ -1,4 +1,5 @@
 package utils
+
 import scala.util.Random
 import com.merit.modules.products.ProductRow
 

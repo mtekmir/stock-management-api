@@ -25,6 +25,9 @@ phases:
       - docker push mtekmir/stock-management-service:latest
       - echo Finished deploying
 
+  artifacts:
+    files:
+      - Dockerrun.aws.json
 # cache:
 #   paths:
 #     - './.metals'

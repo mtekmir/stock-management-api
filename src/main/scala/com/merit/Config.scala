@@ -57,20 +57,7 @@ object Config {
     private val aWSConfig           = loadConfigOrThrow[AwsConfig](config, "aws")
     private val parameterUrlPrefix  = s"/stock-management-service/$environment/"
 
-    val sSM = environment match {
-      case "production" => SsmClient.create()
-      case _ =>
-        SsmClient
-          .builder()
-          .region(Region.EU_CENTRAL_1)
-          .credentialsProvider(
-            ProfileCredentialsProvider
-              .builder()
-              .profileName(aWSConfig.profile)
-              .build()
-          )
-          .build()
-    }
+    private val sSM = SsmClient.create()
 
     def getParameter(name: String) =
       Try(
