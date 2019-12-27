@@ -6,6 +6,6 @@ WORKDIR /opt/app
 
 COPY ./target/scala-2.13/app-assembly.jar ./
 
-EXPOSE 3111
+EXPOSE 80
 
 CMD java -jar app-assembly.jar
