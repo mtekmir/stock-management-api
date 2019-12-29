@@ -26,33 +26,33 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
     "convert sale summary to message - 1" in new TestScope {
       val res = crawlerClient.sendSale(summary1)
 
-      res.map(_._1.products.map(p => (p.barcode, p.qty, p.adjustmentType))) must beEqualTo(
-        products.map(p => (p.barcode, 1, AdjustmentType.Increase))
+      res.map(_._1.products.map(p => (p.barcode, p.qty))) must beEqualTo(
+        products.map(p => (p.barcode, 1))
       ).await
     }
 
     "convert sale summary to message - 2" in new TestScope {
       val res = crawlerClient.sendSale(summary2)
 
-      res.map(_._1.products.map(p => (p.barcode, p.qty, p.adjustmentType))) must beEqualTo(
-        products.map(p => (p.barcode, -1, AdjustmentType.Decrease))
+      res.map(_._1.products.map(p => (p.barcode, p.qty))) must beEqualTo(
+        products.map(p => (p.barcode, -1))
       ).await
     }
 
     "convert sale summary to message - 3" in new TestScope {
       val res = crawlerClient.sendSale(summary3)
 
-      res.map(_._1.products.map(p => (p.barcode, p.qty, p.adjustmentType))) must beEqualTo(
-        products.map(p => (p.barcode, 0, AdjustmentType.NoChange))
+      res.map(_._1.products.map(p => (p.barcode, p.qty))) must beEqualTo(
+        products.map(p => (p.barcode, 0))
       ).await
     }
 
     "convert sale summary to message - 4" in new TestScope {
       val res = crawlerClient.sendSale(summary4)
 
-      res.map(_._1.products.map(p => (p.barcode, p.qty, p.adjustmentType))) must beEqualTo(
+      res.map(_._1.products.map(p => (p.barcode, p.qty))) must beEqualTo(
         products.sortBy(_.barcode).take(8).zip(qtys).map {
-          case (p, (q, t)) => (p.barcode, q, t)
+          case (p, q) => (p.barcode, q)
         }
       ).await
     }
@@ -61,7 +61,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
   class TestScope extends MockContext {
     import AdjustmentType._
     val sqsClient = mock[SqsClient]
-    val queueUrl      = "test"
+    val queueUrl  = "test"
 
     val crawlerClient = CrawlerClient(CrawlerClientConfig(queueUrl, "u", "p"), sqsClient)
     val products      = (1 to 25).map(_ => createProduct)
@@ -82,19 +82,10 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       products.map(p => productRowToSaleSummaryProduct(p, 0))
     )
 
-    val qtys = Seq(
-      (0, NoChange),
-      (1, Increase),
-      (2, Increase),
-      (-1, Decrease),
-      (-3, Decrease),
-      (0, NoChange),
-      (-5, Decrease),
-      (4, Increase)
-    )
+    val qtys = Seq(0, 1, 2, -1, -3, 0, -5, 4)
 
     val summary4 = SaleSummary(SaleID(1L), products.sortBy(_.barcode).take(8).zip(qtys).map {
-      case (p, (q, _)) => productRowToSaleSummaryProduct(p, q)
+      case (p, q) => productRowToSaleSummaryProduct(p, q)
     })
   }
 }

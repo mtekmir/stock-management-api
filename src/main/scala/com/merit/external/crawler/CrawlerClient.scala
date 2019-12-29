@@ -13,7 +13,9 @@ import com.merit.CrawlerClientConfig
 
 trait CrawlerClient {
   def sendSale(sale: SaleSummary): Future[(SyncSaleMessage, SendMessageResponse)]
-  def sendStockOrder(stockOrder: StockOrderSummary): Future[(SyncStockOrderMessage, SendMessageResponse)]
+  def sendStockOrder(
+    stockOrder: StockOrderSummary
+  ): Future[(SyncStockOrderMessage, SendMessageResponse)]
 }
 
 object CrawlerClient {
@@ -28,14 +30,8 @@ object CrawlerClient {
           SyncSaleMessage(
             saleSummary.id,
             saleSummary.products.map {
-              case SaleSummaryProduct(id, barcode, _, _, prevQty, soldQty) => {
-                val adjustmentType = soldQty match {
-                  case n if n > 0 => AdjustmentType.Increase
-                  case n if n < 0 => AdjustmentType.Decrease
-                  case _          => AdjustmentType.NoChange
-                }
-                SyncMessageProduct(id, barcode, soldQty, adjustmentType)
-              }
+              case SaleSummaryProduct(id, barcode, _, _, prevQty, soldQty) =>
+                SyncMessageProduct(id, barcode, soldQty)
             }
           )
         Future {
@@ -49,13 +45,15 @@ object CrawlerClient {
         }
       }
 
-      def sendStockOrder(stockOrder: StockOrderSummary): Future[(SyncStockOrderMessage, SendMessageResponse)] = {
+      def sendStockOrder(
+        stockOrder: StockOrderSummary
+      ): Future[(SyncStockOrderMessage, SendMessageResponse)] = {
         val message =
           SyncStockOrderMessage(
             stockOrder.id,
             stockOrder.updated.map {
               case StockOrderSummaryProduct(id, barcode, _, _, prevQty, orderedQty) => {
-                SyncMessageProduct(id, barcode, orderedQty, AdjustmentType.Increase)
+                SyncMessageProduct(id, barcode, orderedQty)
               }
             }
           )
@@ -70,6 +68,6 @@ object CrawlerClient {
           )
         }
       }
-        
+
     }
 }

@@ -12,8 +12,7 @@ object AdjustmentType extends Enumeration {
 case class SyncMessageProduct(
   id: ProductID,
   barcode: String,
-  qty: Int, // adjustment type (increase) * quantity
-  adjustmentType: AdjustmentType.Value
+  qty: Int, // Will be n if sold, -(n) if returned
 )
 
 case class SyncSaleMessage(

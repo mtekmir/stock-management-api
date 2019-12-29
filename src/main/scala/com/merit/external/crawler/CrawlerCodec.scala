@@ -22,8 +22,8 @@ trait CrawlerCodec {
     Encoder.enumEncoder(AdjustmentType)
 
   implicit val encodeProduct: Encoder[SyncMessageProduct] =
-    Encoder.forProduct4("id", "barcode", "qty", "adjustmentType")(
-      p => (p.id, p.barcode, p.qty.toString, p.adjustmentType)
+    Encoder.forProduct3("id", "barcode", "qty")(
+      p => (p.id, p.barcode, p.qty)
     )
 
   def encodeSaleMessage: Encoder[SyncSaleMessage] =

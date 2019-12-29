@@ -20,8 +20,8 @@ class CrawlerClientStockOrderSpec(implicit ee: ExecutionEnv)
     "should send a message for stock order" in new TestScope {
       val res = crawlerClient.sendStockOrder(summary)
 
-      res.map(_._1.products.map(p => (p.barcode, p.qty, p.adjustmentType))) must beEqualTo(
-        products.map(p => (p.barcode, 2, AdjustmentType.Increase))
+      res.map(_._1.products.map(p => (p.barcode, p.qty))) must beEqualTo(
+        products.map(p => (p.barcode, 2))
       ).await
     }
   }
