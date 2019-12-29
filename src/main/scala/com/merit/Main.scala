@@ -57,19 +57,20 @@ object Main extends App {
   val categoryRepo   = CategoryRepo(schema)
   val stockOrderRepo = StockOrderRepo(schema)
 
+  val sqsClient     = SqsClient(awsConfig)
+  val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
+
   val productService  = ProductService(db, brandRepo, productRepo, categoryRepo)
   val brandService    = BrandService(db, brandRepo)
   val categoryService = CategoryService(db, categoryRepo)
   val excelService    = ExcelService()
-  val saleService     = SaleService(db, saleRepo, productRepo)
+  val saleService     = SaleService(db, saleRepo, productRepo, crawlerClient)
   val userService     = UserService(db, userRepo)
   val stockOrderService =
     StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo)
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
 
-  val sqsClient     = SqsClient(awsConfig)
-  val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
   // crawlerClient.sendSale(
   //   SaleSummary(SaleID(1L), Seq(SaleSummaryProduct(ProductID.zero, "000000000004", "test", None, 2, 2)))
   // )

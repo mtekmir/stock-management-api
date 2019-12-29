@@ -11,6 +11,7 @@ import org.joda.time.DateTime
 import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
 import com.merit.external.crawler.SyncSaleResponse
+import com.merit.external.crawler.CrawlerClient
 
 trait SaleService {
   def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary]
@@ -22,10 +23,11 @@ object SaleService {
   def apply(
     db: Database,
     saleRepo: SaleRepo[DBIO],
-    productRepo: ProductRepo[DBIO]
+    productRepo: ProductRepo[DBIO],
+    crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext) = new SaleService {
-    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary] =
-      db.run(
+    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary] = {
+      val insertSale = db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
           sale         <- saleRepo.add(SaleRow(date))
@@ -52,6 +54,12 @@ object SaleService {
             )
           )).transactionally
       )
+
+      for {
+        summary <- insertSale
+        _       <- crawlerClient.sendSale(summary)
+      } yield (summary)
+    }
 
     def getSale(id: SaleID): Future[Option[SaleDTO]] =
       db.run(saleRepo.get(id)).map {

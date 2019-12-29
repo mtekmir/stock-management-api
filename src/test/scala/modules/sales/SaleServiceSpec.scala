@@ -15,6 +15,12 @@ import org.joda.time.DateTime
 import scala.util.Random
 import cats.implicits._
 import com.merit.external.crawler.{SyncSaleResponse, SyncResponseProduct}
+import org.scalamock.specs2.MockContext
+import com.merit.external.crawler.CrawlerClient
+import scala.concurrent.Future
+import com.merit.external.crawler.SyncSaleMessage
+import com.merit.modules.sales.SaleID
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 
 class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with FutureMatchers {
   "Sale service" >> {
@@ -134,14 +140,19 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
     }
   }
 
-  class TestScope extends Scope {
-    val brandRepo    = BrandRepo(schema)
-    val categoryRepo = CategoryRepo(schema)
-    val productRepo  = ProductRepo(schema)
-    val saleRepo     = SaleRepo(schema)
+  class TestScope extends MockContext {
+    val brandRepo     = BrandRepo(schema)
+    val categoryRepo  = CategoryRepo(schema)
+    val productRepo   = ProductRepo(schema)
+    val saleRepo      = SaleRepo(schema)
+    val crawlerClient = mock[CrawlerClient]
+
+    (crawlerClient.sendSale _) expects (*) returning (Future(
+      (SyncSaleMessage(SaleID(0), Seq()), SendMessageResponse.builder().build())
+    ))
 
     val productService = ProductService(db, brandRepo, productRepo, categoryRepo)
-    val saleService    = SaleService(db, saleRepo, productRepo)
+    val saleService    = SaleService(db, saleRepo, productRepo, crawlerClient)
     val sampleProducts = getExcelProductRows(5).sortBy(_.barcode)
     val now            = DateTime.now()
   }
