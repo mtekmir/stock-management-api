@@ -96,7 +96,7 @@ object ExcelService {
         case (Seq(barcode, _, _, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
           ExcelValidationError(Seq(index), EmptyBarcodeError)
         case (Seq(barcode, _, _, _, _, _, _, _, _, _), index)
-            if Try(barcode.toLong).isFailure || barcode.length <= 6 || barcode.length >= 14 =>
+            if Try(barcode.toLong).isFailure || barcode.length <= 6 || barcode.length > 14 =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
         case (Seq(_, _, sku, _, _, _, _, _, _, _), index) if sku.isEmpty =>
           ExcelValidationError(Seq(index), EmptySkuError)
@@ -132,7 +132,21 @@ object ExcelService {
       errors ++ duplicates match {
         case Seq() =>
           rows.map {
-            case (Seq(barcode, variation, sku, name, price, discountPrice, qty, brand, category, taxRate), _) =>
+            case (
+                Seq(
+                  barcode,
+                  variation,
+                  sku,
+                  name,
+                  price,
+                  discountPrice,
+                  qty,
+                  brand,
+                  category,
+                  taxRate
+                ),
+                _
+                ) =>
               ExcelProductRow(
                 barcode,
                 Option(variation).filter(_.nonEmpty),
@@ -209,7 +223,21 @@ object ExcelService {
       errors match {
         case Seq() =>
           rows.map {
-            case (Seq(name, sku, variation, barcode, qty, price, discountPrice, category, brand, taxRate), _) =>
+            case (
+                Seq(
+                  name,
+                  sku,
+                  variation,
+                  barcode,
+                  qty,
+                  price,
+                  discountPrice,
+                  category,
+                  brand,
+                  taxRate
+                ),
+                _
+                ) =>
               ExcelStockOrderRow(
                 name,
                 sku,

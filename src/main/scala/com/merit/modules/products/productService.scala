@@ -51,10 +51,10 @@ object ProductService {
     ): Future[Seq[ProductRow]] =
       db.run(for {
         brands <- DBIO.sequence(
-          rows.map(_.brand).flatten.map(b => insertBrandIfNotExists(b))
+          rows.map(_.brand).flatten.distinct.map(b => insertBrandIfNotExists(b))
         )
         categories <- DBIO.sequence(
-          rows.map(_.category).flatten.map(c => insertCategoryIfNotExists(c))
+          rows.map(_.category).flatten.distinct.map(c => insertCategoryIfNotExists(c))
         )
         productRows <- DBIO.successful(
           rows.map(

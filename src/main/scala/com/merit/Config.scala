@@ -60,7 +60,7 @@ trait Config {
 
 object Config {
   def apply() = new Config {
-    private val environment        = sys.env.getOrElse("PROJECT_ENV", "development")
+    private val environment        = sys.env.getOrElse("PROJECT_ENV", "local")
     private val port               = sys.env.get("PORT")
     private val config             = ConfigFactory.load
     private val localDbConfig      = loadConfigOrThrow[DbConfig](config, "db")
@@ -88,21 +88,24 @@ object Config {
       getParam(name).getOrElse(default)
 
     val dbConfig = environment match {
-      case "production" =>
+      case "local" => localDbConfig
+      case _ =>
         localDbConfig.copy(
           url = getParameter("jdbc-url"),
           username = getParameter("db-username"),
           password = getParameter("db-password")
         )
-      case _ => localDbConfig
     }
 
-    val crawlerClientConfig = CrawlerClientConfig(
-      queueUrl = getParameter("crawler-queue-url"),
-      username = getParameter("crawler-username"),
-      password = getParameter("crawler-password")
-    )
-
+    val crawlerClientConfig = environment match {
+      case "local" => CrawlerClientConfig("", "", "")
+      case _ =>
+        CrawlerClientConfig(
+          queueUrl = getParameter("crawler-queue-url"),
+          username = getParameter("crawler-username"),
+          password = getParameter("crawler-password")
+        )
+    }
     val jwtConfig = JwtConfig(secret = getParameterOrElse("jwt-secret", "secret"))
 
     def load() = AppConfig(
