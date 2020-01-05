@@ -15,6 +15,7 @@ import com.merit.modules.excel.ValidationErrorTypes
 import org.joda.time.format.DateTimeFormat
 import com.merit.modules.products.Currency
 import cats.syntax.either._
+import com.merit.modules.stockOrders.StockOrderID
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -27,6 +28,10 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeSaleId: Encoder[SaleID] = (id: SaleID) => Encoder.encodeLong(id.value)
   implicit val decodeSaleId: Decoder[SaleID] = Decoder.decodeLong.emap { v =>
     SaleID(v).asRight
+  }
+  implicit val encodeStockOrderId: Encoder[StockOrderID] = (id: StockOrderID) => Encoder.encodeLong(id.value)
+  implicit val decodeStockOrderId: Decoder[StockOrderID] = Decoder.decodeLong.emap { v =>
+    StockOrderID(v).asRight
   }
 
   implicit val encodeProductId: Encoder[ProductID] = (id: ProductID) =>

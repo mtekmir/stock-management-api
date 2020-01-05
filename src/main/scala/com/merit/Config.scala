@@ -98,7 +98,7 @@ object Config {
     }
 
     val crawlerClientConfig = environment match {
-      case "local" => CrawlerClientConfig("", "", "")
+      case "local" => CrawlerClientConfig("", "u", "p")
       case _ =>
         CrawlerClientConfig(
           queueUrl = getParameter("crawler-queue-url"),

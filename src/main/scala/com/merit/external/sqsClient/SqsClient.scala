@@ -38,6 +38,7 @@ object SqsClient {
             Map(
               "message_type" -> MessageAttributeValue
                 .builder()
+                .dataType("String")
                 .stringValue(messageType.toString)
                 .build()
             ).asJava
