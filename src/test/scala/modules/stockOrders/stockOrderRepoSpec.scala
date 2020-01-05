@@ -16,6 +16,7 @@ import org.joda.time.DateTime
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.products.OrderedProductRow
 import com.merit.modules.products.ProductDTO
+import slick.dbio.DBIO
 
 class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
   "Stock order repo" >> {
@@ -59,6 +60,21 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMa
       )
       res.map(_.map(_._2.barcode)) must beEqualTo(sampleProducts.map(_.barcode)).await
       res.map(_.map(_._3)) must beEqualTo(qtys).await
+    }
+
+    "should update synced property on ordered products" in new TestScope {
+      val res = run(
+        for {
+          products <- insertTestData
+          so       <- stockOrderRepo.add(StockOrderRow(now))
+          _ <- stockOrderRepo.addProductsToStockOrder(
+            products.map(p => OrderedProductRow(p.id, so.id))
+          )
+          _ <- DBIO.sequence(products.map(p => stockOrderRepo.syncOrderedProduct(so.id, p.id, true)))
+          stockOrder <- stockOrderRepo.get(so.id)
+        } yield stockOrder
+      )
+      res.map(_.map(_._4).fold(true)(_ && _)) must beTrue.await
     }
   }
 

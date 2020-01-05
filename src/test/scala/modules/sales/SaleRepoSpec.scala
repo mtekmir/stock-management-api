@@ -16,25 +16,27 @@ import org.joda.time.DateTime
 import com.merit.modules.sales.SaleID
 import com.merit.modules.products.SoldProductRow
 import slick.dbio.DBIO
+import com.merit.modules.products.Currency
 
 class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
 
   "Sale Repo" >> {
+    val now = DateTime.now()
+    val total = Currency(1000)
     "should create a sale" in new TestScope {
-      val now = DateTime.now()
       val res = run(
         for {
-          saleRow <- saleRepo.add(SaleRow(now))
+          saleRow <- saleRepo.add(SaleRow(now, total))
         } yield saleRow
       )
-      res.map{ case SaleRow(now, _) => now } must beEqualTo(now).await
+      res.map{ case SaleRow(now, _, _) => now } must beEqualTo(now).await
     }
 
     "should add products to sale with default qty(1)" in new TestScope {
       val res = run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow())
+          saleRow <- saleRepo.add(SaleRow(now, total))
           _ <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
           sale <- saleRepo.get(saleRow.id)
         } yield sale
@@ -49,7 +51,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers
       val res = run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow())
+          saleRow <- saleRepo.add(SaleRow(now, total))
           _ <- saleRepo.addProductsToSale(products.zipWithIndex.map(p => SoldProductRow(p._1.id, saleRow.id, p._2 + 1)))
           sale <- saleRepo.get(saleRow.id)
         } yield sale
@@ -65,7 +67,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers
       val sale = run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow())
+          saleRow <- saleRepo.add(SaleRow(now, total))
           _ <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
           _ <- DBIO.sequence(products.map(p => saleRepo.syncSoldProduct(saleRow.id, p.id, true)))
           sale <- saleRepo.get(saleRow.id)

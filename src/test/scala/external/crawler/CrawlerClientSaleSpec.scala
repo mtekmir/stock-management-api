@@ -19,6 +19,8 @@ import io.circe.parser._
 import com.merit.external.crawler.SyncSaleMessage
 import com.merit.external.crawler.AdjustmentType
 import com.merit.modules.products.ProductRow
+import org.joda.time.DateTime
+import com.merit.modules.products.Currency
 
 class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with FutureMatchers {
 
@@ -62,30 +64,39 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
     import AdjustmentType._
     val sqsClient = mock[SqsClient]
     val queueUrl  = "test"
+    val now       = DateTime.now()
+    val total     = Currency(1000)
 
     val crawlerClient = CrawlerClient(CrawlerClientConfig(queueUrl, "u", "p"), sqsClient)
     val products      = (1 to 25).map(_ => createProduct)
 
-    (sqsClient.sendMessageTo _) expects (*, *)
+    (sqsClient.sendMessageTo _) expects (*, *, *)
     val summary1 = SaleSummary(
       SaleID(1L),
+      now,
+      total,
       products.map(p => productRowToSaleSummaryProduct(p, 1))
     )
 
     val summary2 = SaleSummary(
       SaleID(0L),
+      now,
+      total,
       products.map(p => productRowToSaleSummaryProduct(p, -1))
     )
 
     val summary3 = SaleSummary(
       SaleID(0L),
+      now,
+      total,
       products.map(p => productRowToSaleSummaryProduct(p, 0))
     )
 
     val qtys = Seq(0, 1, 2, -1, -3, 0, -5, 4)
 
-    val summary4 = SaleSummary(SaleID(1L), products.sortBy(_.barcode).take(8).zip(qtys).map {
-      case (p, q) => productRowToSaleSummaryProduct(p, q)
-    })
+    val summary4 =
+      SaleSummary(SaleID(1L), now, total, products.sortBy(_.barcode).take(8).zip(qtys).map {
+        case (p, q) => productRowToSaleSummaryProduct(p, q)
+      })
   }
 }

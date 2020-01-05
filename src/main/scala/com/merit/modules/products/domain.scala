@@ -55,6 +55,7 @@ final case class OrderedProductRow(
   productId: ProductID,
   stockOrderId: StockOrderID,
   qty: Int = 1,
+  synced: Boolean = false,
   id: Long = 0L
 )
 

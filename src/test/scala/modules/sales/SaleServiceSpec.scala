@@ -29,7 +29,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(sampleProducts)
         sale <- saleService.insertFromExcel(
           sampleProducts.map(p => ExcelSaleRow(p.barcode, 1)),
-          now
+          now,
+          1000
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -43,7 +44,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(sampleProducts)
         sale <- saleService.insertFromExcel(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
-          now
+          now,
+          1000
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -60,7 +62,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(sampleProducts)
         sale <- saleService.insertFromExcel(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
-          now
+          now,
+          1000
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -76,7 +79,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
       val sale = for {
         sale <- saleService.insertFromExcel(
           nonExistingProducts.map(p => ExcelSaleRow(p.barcode, 1)),
-          now
+          now,
+          1000
         )
       } yield sale
       sale.map(_.products.length) must beEqualTo(0).await
@@ -88,7 +92,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(products)
         s <- saleService.insertFromExcel(
           products.map(p => ExcelSaleRow(p.barcode, 1)),
-          now
+          now,
+          1000
         )
         sale <- saleService.getSale(s.id)
       } yield sale
@@ -107,7 +112,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(products)
         s <- saleService.insertFromExcel(
           products.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
-          now
+          now,
+          1000
         )
         sale <- saleService.getSale(s.id)
       } yield sale
@@ -126,7 +132,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
         products <- productService.batchInsertExcelRows(products)
         s <- saleService.insertFromExcel(
           products.map(p => ExcelSaleRow(p.barcode)),
-          now
+          now,
+          1000
         )
         _ <- saleService.saveSyncResult(
           SyncSaleResponse(

@@ -5,6 +5,7 @@ import com.merit.modules.products.OrderedProductRow
 import com.merit.modules.products.ProductRow
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
+import com.merit.modules.products.ProductID
 
 trait StockOrderRepo[DbTask[_]] {
   def add(row: StockOrderRow): DbTask[StockOrderRow]
@@ -13,7 +14,12 @@ trait StockOrderRepo[DbTask[_]] {
   ): DbTask[Seq[OrderedProductRow]]
   def get(
     id: StockOrderID
-  ): DbTask[Seq[(StockOrderRow, ProductRow, Int, Option[BrandRow], Option[CategoryRow])]]
+  ): DbTask[Seq[(StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]]
+  def syncOrderedProduct(
+    stockOrderId: StockOrderID,
+    productId: ProductID,
+    synced: Boolean
+  ): DbTask[Int]
 }
 
 object StockOrderRepo {
@@ -31,7 +37,7 @@ object StockOrderRepo {
         orderedProducts returning orderedProducts ++= products
 
       def get(id: StockOrderID): slick.dbio.DBIO[Seq[
-        (StockOrderRow, ProductRow, Int, Option[BrandRow], Option[CategoryRow])
+        (StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])
       ]] =
         stockOrders
           .filter(_.id === id)
@@ -50,8 +56,18 @@ object StockOrderRepo {
             case ((((so, op), p), b), c) => p.categoryId === c.id
           }
           .map {
-            case ((((so, op), p), b), c) => (so, p, op.qty, b, c)
+            case ((((so, op), p), b), c) => (so, p, op.qty, op.synced, b, c)
           }
           .result
+
+      def syncOrderedProduct(
+        stockOrderId: StockOrderID,
+        productId: ProductID,
+        synced: Boolean
+      ): DBIO[Int] =
+        orderedProducts
+          .filter(p => p.stockOrderId === stockOrderId && p.productId === productId)
+          .map(_.synced)
+          .update(synced)
     }
 }

@@ -18,7 +18,7 @@ class Db(
   }
 
   lazy val executor =
-    AsyncExecutor("test1", numThreads = settings.numThreads, queueSize = 1000)
+    AsyncExecutor("db", numThreads = settings.numThreads, queueSize = 1000)
 
   lazy val connect = Database.forDataSource(
     dataSource,

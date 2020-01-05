@@ -16,6 +16,7 @@ import com.merit.modules.categories.CategoryID
 import com.merit.modules.products.ProductRow
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
+import com.merit.external.crawler.{CrawlerClient, SyncStockOrderResponse}
 
 trait StockOrderService {
   def get(id: StockOrderID): Future[Option[StockOrderDTO]]
@@ -23,6 +24,7 @@ trait StockOrderService {
     createdAt: DateTime,
     products: Seq[ExcelStockOrderRow]
   ): Future[StockOrderSummary]
+  def saveSyncResult(result: SyncStockOrderResponse): Future[Seq[Int]]
 }
 
 object StockOrderService {
@@ -31,7 +33,8 @@ object StockOrderService {
     stockOrderRepo: StockOrderRepo[DBIO],
     productRepo: ProductRepo[DBIO],
     brandRepo: BrandRepo[DBIO],
-    categoryRepo: CategoryRepo[DBIO]
+    categoryRepo: CategoryRepo[DBIO],
+    crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext): StockOrderService = new StockOrderService {
     private def insertBrandIfNotExists(name: String) =
       brandRepo.getByName(name).flatMap {
@@ -50,8 +53,9 @@ object StockOrderService {
         case rows if rows.length < 1 => None
         case rows =>
           val products = rows
-            .foldLeft(Seq[ProductDTO]())(
-              (s, p) => s :+ ProductDTO.fromRow(p._2, p._4, p._5)
+            .foldLeft(Seq[StockOrderDTOProduct]())(
+              (s, p) =>
+                s :+ StockOrderDTOProduct.fromRow(p._2, p._5, p._6, p._4).copy(qty = p._3)
             )
           Some(StockOrderDTO(rows(0)._1.id, rows(0)._1.date, products))
       }
@@ -64,7 +68,8 @@ object StockOrderService {
       val barcodeToQty =
         products.foldLeft(Map[String, Int]())((m, p) => m + (p.barcode -> p.qty))
 
-      val existingProducts = DBIO.sequence(products.map(p => productRepo.get(p.barcode))).map(_.flatten)
+      val existingProducts =
+        DBIO.sequence(products.map(p => productRepo.get(p.barcode))).map(_.flatten)
 
       // * Create nonexisting products
 
@@ -107,7 +112,8 @@ object StockOrderService {
         )
       } yield
         orderedProducts.map(
-          p => StockOrderSummaryProduct.fromProductDTO(p._1, prevQty = p._1.qty, ordered = p._2)
+          p =>
+            StockOrderSummaryProduct.fromProductDTO(p._1, prevQty = p._1.qty, ordered = p._2)
         )).transactionally
 
       // * Create stock order
@@ -133,7 +139,18 @@ object StockOrderService {
           updated = updatedProducts
         )).transactionally
 
-      db.run(createStockOrderDbio.transactionally)
+      for {
+        summary <- db.run(createStockOrderDbio.transactionally)
+        _       <- crawlerClient.sendStockOrder(summary)
+      } yield summary
     }
+
+    def saveSyncResult(result: SyncStockOrderResponse): Future[Seq[Int]] =
+      db.run(
+        DBIO.sequence(
+          result.products
+            .map(p => stockOrderRepo.syncOrderedProduct(result.stockOrderId, p.id, p.synced))
+        )
+      )
   }
 }

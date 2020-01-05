@@ -3,6 +3,8 @@ package com.merit.modules.stockOrders
 import org.joda.time.DateTime
 import slick.lifted.MappedTo
 import com.merit.modules.products._
+import com.merit.modules.brands.BrandRow
+import com.merit.modules.categories.CategoryRow
 
 case class StockOrderID(value: Long) extends AnyVal with MappedTo[Long]
 
@@ -11,10 +13,50 @@ case class StockOrderRow(
   id: StockOrderID = StockOrderID(0L)
 )
 
+case class StockOrderDTOProduct(
+  id: ProductID,
+  barcode: String,
+  sku: String,
+  name: String,
+  price: Option[Currency],
+  discountPrice: Option[Currency],
+  qty: Int,
+  variation: Option[String],
+  taxRate: Option[Int],
+  brand: Option[String],
+  category: Option[String],
+  synced: Boolean = false
+)
+
+object StockOrderDTOProduct {
+  def fromRow(
+    productRow: ProductRow,
+    brand: Option[BrandRow] = None,
+    category: Option[CategoryRow] = None,
+    synced: Boolean
+  ): StockOrderDTOProduct = {
+    import productRow._
+    StockOrderDTOProduct(
+      id,
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brand.map(_.name),
+      category.map(_.name),
+      synced
+    )
+  }
+}
+
 case class StockOrderDTO(
   id: StockOrderID,
   createdAt: DateTime,
-  products: Seq[ProductDTO]
+  products: Seq[StockOrderDTOProduct]
 )
 
 case class StockOrderSummaryProduct(

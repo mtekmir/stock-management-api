@@ -17,6 +17,12 @@ import com.merit.modules.products.ProductID
 import scala.concurrent.duration._
 import org.specs2.specification.BeforeEach
 import scala.concurrent.Await
+import org.scalamock.specs2.MockContext
+import com.merit.modules.stockOrders.StockOrderID
+import scala.concurrent.Future
+import software.amazon.awssdk.services.sqs.model.SendMessageResponse
+import com.merit.external.crawler.{CrawlerClient, SyncStockOrderMessage, SyncStockOrderResponse, SyncMessageProduct, SyncResponseProduct}
+import com.merit.modules.excel.ExcelStockOrderRow
 
 class StockOrderServiceSpec(implicit ee: ExecutionEnv)
     extends ServiceSpec
@@ -144,21 +150,68 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
       res.map(_.created.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered))) must beEqualTo(
         pToCreate.map(p => (p.barcode, 0, p.qty))
       ).await(1, timeout)
-      res.map(_.updated.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered + p.prevQty))) must beEqualTo(
+      res.map(
+        _.updated.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered + p.prevQty))
+      ) must beEqualTo(
         pToUpdate.map(p => (p.barcode, p.qty, p.qty * 2))
       ).await(1, timeout)
     }
+
+    "sync stock order" in new TestScope {
+      val res = for {
+        products <- productService.batchInsertExcelRows(sampleProducts)
+        s <- stockOrderService.insertFromExcel(
+          now,
+          products.map(
+            p =>
+              ExcelStockOrderRow(
+                p.name,
+                p.sku,
+                p.variation,
+                p.barcode,
+                p.qty,
+                p.price,
+                p.discountPrice,
+                None,
+                None,
+                None
+              )
+          )
+        )
+        _ <- stockOrderService.saveSyncResult(
+          SyncStockOrderResponse(
+            s.id,
+            products.map(p => SyncResponseProduct(p.id, p.barcode, p.qty, true))
+          )
+        )
+        stockOrder <- stockOrderService.get(s.id)
+      } yield stockOrder
+
+      res.map(_.map(_.products.map(_.synced).fold(true)(_ && _))) must beEqualTo(Some(true)).await
+    }
   }
 
-  class TestScope extends Scope {
+  class TestScope extends MockContext {
     val brandRepo      = BrandRepo(schema)
     val categoryRepo   = CategoryRepo(schema)
     val productRepo    = ProductRepo(schema)
     val stockOrderRepo = StockOrderRepo(schema)
+    val crawlerClient  = mock[CrawlerClient]
+
+    (crawlerClient.sendStockOrder _) expects (*) returning (Future(
+      (SyncStockOrderMessage(StockOrderID(0), Seq()), SendMessageResponse.builder().build())
+    ))
 
     val productService = ProductService(db, brandRepo, productRepo, categoryRepo)
     val stockOrderService =
-      StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo)
+      StockOrderService(
+        db,
+        stockOrderRepo,
+        productRepo,
+        brandRepo,
+        categoryRepo,
+        crawlerClient
+      )
 
     def sampleProducts = getExcelProductRows(10).sortBy(_.barcode)
     val now            = DateTime.now()

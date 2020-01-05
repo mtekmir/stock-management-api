@@ -12,9 +12,10 @@ import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
 import com.merit.external.crawler.SyncSaleResponse
 import com.merit.external.crawler.CrawlerClient
+import com.merit.modules.products.Currency
 
 trait SaleService {
-  def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary]
+  def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: BigDecimal): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
   def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]]
 }
@@ -26,11 +27,11 @@ object SaleService {
     productRepo: ProductRepo[DBIO],
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext) = new SaleService {
-    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime): Future[SaleSummary] = {
+    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: BigDecimal): Future[SaleSummary] = {
       val insertSale = db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
-          sale         <- saleRepo.add(SaleRow(date))
+          sale         <- saleRepo.add(SaleRow(date, Currency(total)))
           addedProducts <- saleRepo.addProductsToSale(
             soldProducts.map(
               p =>
@@ -45,6 +46,8 @@ object SaleService {
         } yield
           SaleSummary(
             sale.id,
+            sale.createdAt,
+            sale.total,
             soldProducts.map(
               p =>
                 SaleSummaryProduct.fromProductDTO(
@@ -64,11 +67,13 @@ object SaleService {
     def getSale(id: SaleID): Future[Option[SaleDTO]] =
       db.run(saleRepo.get(id)).map {
         case rows if rows.length < 1 => None
-        case rows =>
+        case rows => {
           val products = rows.foldLeft(Seq[SaleDTOProduct]())(
             (s, p) => s :+ SaleDTOProduct.fromRow(p._2, p._5, p._6, p._4).copy(qty = p._3)
           )
-          Some(SaleDTO(rows(0)._1.id, rows(0)._1.createdAt, products))
+          val sale = rows(0)._1
+          Some(SaleDTO(sale.id, sale.createdAt, sale.total, products))
+        }
       }
 
     def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]] =

@@ -67,7 +67,7 @@ object Main extends App {
   val saleService     = SaleService(db, saleRepo, productRepo, crawlerClient)
   val userService     = UserService(db, userRepo)
   val stockOrderService =
-    StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo)
+    StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
 

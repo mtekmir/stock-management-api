@@ -33,7 +33,7 @@ class CrawlerClientStockOrderSpec(implicit ee: ExecutionEnv)
     val crawlerClient = CrawlerClient(CrawlerClientConfig(queueUrl, "u", "p"), sqsClient)
     val products      = (1 to 25).map(_ => createProduct)
 
-    (sqsClient.sendMessageTo _) expects (*, *)
+    (sqsClient.sendMessageTo _) expects (*, *, *)
 
     val summary = StockOrderSummary(
       StockOrderID(1L),

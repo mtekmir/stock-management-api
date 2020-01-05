@@ -9,6 +9,11 @@ object AdjustmentType extends Enumeration {
   val Decrease, Increase, NoChange = Value
 }
 
+object MessageType extends Enumeration {
+  type MessageType = Value
+  val Sale, StockOrder = Value
+}
+
 case class SyncMessageProduct(
   id: ProductID,
   barcode: String,
@@ -23,6 +28,11 @@ case class SyncSaleMessage(
 case class SyncStockOrderMessage(
   stockOrderId: StockOrderID,
   products: Seq[SyncMessageProduct]
+)
+
+case class SyncStockOrderResponse(
+  stockOrderId: StockOrderID,
+  products: Seq[SyncResponseProduct]
 )
 
 case class SyncResponseProduct(

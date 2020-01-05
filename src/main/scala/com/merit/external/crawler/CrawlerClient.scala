@@ -39,6 +39,7 @@ object CrawlerClient {
             message,
             client.sendMessageTo(
               config.queueUrl,
+              MessageType.Sale,
               encodeSaleMessage(message).toString()
             )
           )
@@ -63,6 +64,7 @@ object CrawlerClient {
             message,
             client.sendMessageTo(
               config.queueUrl,
+              MessageType.StockOrder,
               encodeStockOrderMessage(message).toString()
             )
           )

@@ -95,8 +95,9 @@ class Schema(val profile: JdbcProfile) {
     import CustomColumnTypes._
     def id        = column[SaleID]("id", O.PrimaryKey, O.AutoInc)
     def createdAt = column[DateTime]("created")
+    def total     = column[Currency]("total")
 
-    def * = (createdAt, id).mapTo[SaleRow]
+    def * = (createdAt, total, id).mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]
@@ -142,11 +143,12 @@ class Schema(val profile: JdbcProfile) {
     def productId    = column[ProductID]("productId")
     def stockOrderId = column[StockOrderID]("stockOrderId")
     def qty          = column[Int]("qty")
+    def synced       = column[Boolean]("synced")
 
     def productFk    = foreignKey("product_fk", productId, products)(_.id)
     def stockOrderFk = foreignKey("stock_order_fk", stockOrderId, stockOrders)(_.id)
 
-    def * = (productId, stockOrderId, qty, id).mapTo[OrderedProductRow]
+    def * = (productId, stockOrderId, qty, synced, id).mapTo[OrderedProductRow]
   }
 
   lazy val orderedProducts = TableQuery[OrderedProductsTable]

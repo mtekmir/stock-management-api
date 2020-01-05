@@ -11,12 +11,14 @@ case class SaleID(value: Long) extends AnyVal with MappedTo[Long]
 
 case class SaleRow(
   createdAt: DateTime = DateTime.now(),
+  total: Currency,
   id: SaleID = SaleID(0L)
 )
 
 case class SaleDTO(
   id: SaleID,
   createdAt: DateTime,
+  total: Currency,
   products: Seq[SaleDTOProduct]
 )
 
@@ -73,10 +75,12 @@ object SaleSummaryProduct {
   def fromProductDTO(p: ProductDTO, soldQty: Int): SaleSummaryProduct = {
     import p._
     SaleSummaryProduct(id, barcode, name, variation, qty, soldQty)
-  } 
+  }
 }
 
 case class SaleSummary(
   id: SaleID,
+  createdAt: DateTime,
+  total: Currency,
   products: Seq[SaleSummaryProduct]
 )
