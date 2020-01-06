@@ -9,8 +9,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.AwsConfig
-import com.merit.external.crawler.MessageType
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
+import com.merit.external.crawler.MessageType
 
 trait SqsClient {
   def sendMessageTo(
@@ -36,11 +36,14 @@ object SqsClient {
           .messageBody(message)
           .messageAttributes(
             Map(
-              "message_type" -> MessageAttributeValue
-                .builder()
-                .dataType("String")
-                .stringValue(messageType.toString)
-                .build()
+              (
+                "message_type",
+                MessageAttributeValue
+                  .builder()
+                  .dataType("String")
+                  .stringValue(messageType.toString)
+                  .build()
+              )
             ).asJava
           )
           .build()

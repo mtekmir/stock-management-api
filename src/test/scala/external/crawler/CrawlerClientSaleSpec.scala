@@ -17,7 +17,6 @@ import scala.concurrent.duration.Duration
 import com.merit.external.crawler.CrawlerCodec
 import io.circe.parser._
 import com.merit.external.crawler.SyncSaleMessage
-import com.merit.external.crawler.AdjustmentType
 import com.merit.modules.products.ProductRow
 import org.joda.time.DateTime
 import com.merit.modules.products.Currency
@@ -61,7 +60,6 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
   }
 
   class TestScope extends MockContext {
-    import AdjustmentType._
     val sqsClient = mock[SqsClient]
     val queueUrl  = "test"
     val now       = DateTime.now()

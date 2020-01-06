@@ -71,7 +71,7 @@ object Config {
 
     private val sSM = SsmClient.create()
 
-    def getParam(name: String): Try[String] =
+    private def getParam(name: String): Try[String] =
       Try(
         sSM
           .getParameter(
@@ -98,7 +98,12 @@ object Config {
     }
 
     val crawlerClientConfig = environment match {
-      case "local" => CrawlerClientConfig("", "u", "p")
+      case "local" =>
+        CrawlerClientConfig(
+          "",
+          "u",
+          "p"
+        )
       case _ =>
         CrawlerClientConfig(
           queueUrl = getParameter("crawler-queue-url"),

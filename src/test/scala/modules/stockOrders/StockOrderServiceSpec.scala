@@ -23,6 +23,7 @@ import scala.concurrent.Future
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.external.crawler.{CrawlerClient, SyncStockOrderMessage, SyncStockOrderResponse, SyncMessageProduct, SyncResponseProduct}
 import com.merit.modules.excel.ExcelStockOrderRow
+import com.merit.external.crawler.MessageType
 
 class StockOrderServiceSpec(implicit ee: ExecutionEnv)
     extends ServiceSpec

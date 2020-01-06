@@ -4,11 +4,6 @@ import com.merit.modules.sales.SaleID
 import com.merit.modules.products.ProductID
 import com.merit.modules.stockOrders.StockOrderID
 
-object AdjustmentType extends Enumeration {
-  type AdjustmentType = Value
-  val Decrease, Increase, NoChange = Value
-}
-
 object MessageType extends Enumeration {
   type MessageType = Value
   val Sale, StockOrder = Value
@@ -17,7 +12,14 @@ object MessageType extends Enumeration {
 case class SyncMessageProduct(
   id: ProductID,
   barcode: String,
-  qty: Int, // Will be n if sold, -(n) if returned
+  qty: Int  // Will be n if sold, -(n) if returned
+)
+
+case class SyncResponseProduct(
+  id: ProductID,
+  barcode: String,
+  qty: Int,
+  synced: Boolean
 )
 
 case class SyncSaleMessage(
@@ -30,19 +32,13 @@ case class SyncStockOrderMessage(
   products: Seq[SyncMessageProduct]
 )
 
+case class SyncSaleResponse(
+  saleId: SaleID,
+  products: Seq[SyncResponseProduct]
+)
+
 case class SyncStockOrderResponse(
   stockOrderId: StockOrderID,
   products: Seq[SyncResponseProduct]
 )
 
-case class SyncResponseProduct(
-  id: ProductID,
-  barcode: String,
-  qty: Int,
-  synced: Boolean
-)
-
-case class SyncSaleResponse(
-  saleId: SaleID,
-  products: Seq[SyncResponseProduct]
-)

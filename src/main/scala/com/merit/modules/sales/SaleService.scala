@@ -15,7 +15,7 @@ import com.merit.external.crawler.CrawlerClient
 import com.merit.modules.products.Currency
 
 trait SaleService {
-  def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: BigDecimal): Future[SaleSummary]
+  def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: Currency): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
   def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]]
 }
@@ -27,11 +27,11 @@ object SaleService {
     productRepo: ProductRepo[DBIO],
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext) = new SaleService {
-    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: BigDecimal): Future[SaleSummary] = {
+    def insertFromExcel(rows: Seq[ExcelSaleRow], date: DateTime, total: Currency): Future[SaleSummary] = {
       val insertSale = db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
-          sale         <- saleRepo.add(SaleRow(date, Currency(total)))
+          sale         <- saleRepo.add(SaleRow(date, total))
           addedProducts <- saleRepo.addProductsToSale(
             soldProducts.map(
               p =>

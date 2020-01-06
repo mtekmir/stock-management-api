@@ -18,9 +18,6 @@ trait CrawlerCodec {
     ProductID(v).asRight
   }
   
-  implicit val encodeErrorType: Encoder[AdjustmentType.Value] =
-    Encoder.enumEncoder(AdjustmentType)
-
   implicit val encodeProduct: Encoder[SyncMessageProduct] =
     Encoder.forProduct3("id", "barcode", "qty")(
       p => (p.id, p.barcode, p.qty)

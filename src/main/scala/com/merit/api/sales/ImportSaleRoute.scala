@@ -10,6 +10,7 @@ import api.ImportSaleRequest
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import akka.http.scaladsl.model.StatusCodes.BadRequest
+import com.merit.modules.products.Currency
 
 object ImportSaleRoute extends Directives with JsonSupport {
   def apply(
@@ -17,7 +18,7 @@ object ImportSaleRoute extends Directives with JsonSupport {
     productService: ProductService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext) =
-    (path("import") & formFields('date.as[String], 'total.as[BigDecimal]) & uploadedFile("file")) {
+    (path("import") & formFields('date.as[String], 'total.as[String]) & uploadedFile("file")) {
       case (date, total, (metadata, file)) =>
         val rows          = excelService.parseSaleImportFile(file)
         val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
@@ -26,7 +27,11 @@ object ImportSaleRoute extends Directives with JsonSupport {
           case Left(error) => complete(BadRequest -> error)
           case Right(rows) =>
             complete(
-              saleService.insertFromExcel(rows, DateTime.parse(date, dateFormatter), total)
+              saleService.insertFromExcel(
+                rows,
+                DateTime.parse(date, dateFormatter),
+                Currency.from(total).getOrElse(Currency(0))
+              )
             )
         }
 

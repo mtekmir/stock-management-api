@@ -10,7 +10,6 @@ import utils.ProductUtils._
 import com.merit.modules.stockOrders.StockOrderSummary
 import com.merit.modules.stockOrders.StockOrderID
 import org.joda.time.DateTime
-import com.merit.external.crawler.AdjustmentType
 
 class CrawlerClientStockOrderSpec(implicit ee: ExecutionEnv)
     extends Specification
