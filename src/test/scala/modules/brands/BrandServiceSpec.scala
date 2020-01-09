@@ -1,6 +1,6 @@
 package modules.brands
 
-import db.ServiceSpec
+import db.DbSpecification
 import org.specs2.matcher.FutureMatchers
 import org.specs2.specification.Scope
 import com.merit.modules.brands.BrandRepo
@@ -11,7 +11,7 @@ import utils.ExcelTestUtils._
 import org.specs2.specification.AfterEach
 
 class BrandServiceSpec(implicit ee: ExecutionEnv)
-    extends ServiceSpec
+    extends DbSpecification
     with FutureMatchers with AfterEach {
     override def after = {
       import schema._

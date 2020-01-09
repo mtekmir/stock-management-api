@@ -1,7 +1,6 @@
 package modules.sales
 
 import org.specs2.concurrent.ExecutionEnv
-import db.DbSpec
 import org.specs2.matcher.FutureMatchers
 import org.specs2.specification.Scope
 import com.merit.modules.products.ProductRepo
@@ -17,28 +16,51 @@ import com.merit.modules.sales.SaleID
 import com.merit.modules.products.SoldProductRow
 import slick.dbio.DBIO
 import com.merit.modules.products.Currency
+import db.DbSpecification
+import org.specs2.specification.AfterEach
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
+class SaleRepoSpec(implicit ee: ExecutionEnv)
+    extends DbSpecification
+    with FutureMatchers
+    with AfterEach {
+  override def after = {
+    import schema._
+    import schema.profile.api._
+
+    val del = db.run(
+      for {
+        _ <- soldProducts.delete
+        _ <- sales.delete
+        _ <- products.delete
+        _ <- categories.delete
+        _ <- brands.delete
+      } yield ()
+    )
+
+    Await.result(del, Duration.Inf)
+  }
 
   "Sale Repo" >> {
-    val now = DateTime.now()
+    val now   = DateTime.now()
     val total = Currency(1000)
     "should create a sale" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           saleRow <- saleRepo.add(SaleRow(now, total))
         } yield saleRow
       )
-      res.map{ case SaleRow(now, _, _) => now } must beEqualTo(now).await
+      res.map { case SaleRow(now, _, _) => now } must beEqualTo(now).await
     }
 
     "should add products to sale with default qty(1)" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow(now, total))
-          _ <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
-          sale <- saleRepo.get(saleRow.id)
+          saleRow  <- saleRepo.add(SaleRow(now, total))
+          _        <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
+          sale     <- saleRepo.get(saleRow.id)
         } yield sale
       )
       // products
@@ -48,11 +70,13 @@ class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers
     }
 
     "should add products to sale with specified qty" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow(now, total))
-          _ <- saleRepo.addProductsToSale(products.zipWithIndex.map(p => SoldProductRow(p._1.id, saleRow.id, p._2 + 1)))
+          saleRow  <- saleRepo.add(SaleRow(now, total))
+          _ <- saleRepo.addProductsToSale(
+            products.zipWithIndex.map(p => SoldProductRow(p._1.id, saleRow.id, p._2 + 1))
+          )
           sale <- saleRepo.get(saleRow.id)
         } yield sale
       )
@@ -64,12 +88,14 @@ class SaleRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers
     }
 
     "should update synced property on sold product" in new TestScope {
-      val sale = run(
+      val sale = db.run(
         for {
           products <- insertTestData
-          saleRow <- saleRepo.add(SaleRow(now, total))
-          _ <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
-          _ <- DBIO.sequence(products.map(p => saleRepo.syncSoldProduct(saleRow.id, p.id, true)))
+          saleRow  <- saleRepo.add(SaleRow(now, total))
+          _        <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
+          _ <- DBIO.sequence(
+            products.map(p => saleRepo.syncSoldProduct(saleRow.id, p.id, true))
+          )
           sale <- saleRepo.get(saleRow.id)
         } yield (sale)
       )

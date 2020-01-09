@@ -1,6 +1,5 @@
 package modules.stockOrders
 
-import db.DbSpec
 import org.specs2.matcher.FutureMatchers
 import org.specs2.specification.Scope
 import com.merit.modules.products.ProductRepo
@@ -17,11 +16,32 @@ import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.products.OrderedProductRow
 import com.merit.modules.products.ProductDTO
 import slick.dbio.DBIO
+import org.specs2.specification.AfterEach
+import db.DbSpecification
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
+class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpecification with FutureMatchers with AfterEach {
+  override def after = {
+    import schema._
+    import schema.profile.api._
+
+    val del = db.run(
+      for {
+        _ <- orderedProducts.delete
+        _ <- stockOrders.delete
+        _ <- products.delete
+        _ <- categories.delete
+        _ <- brands.delete
+      } yield ()
+    )
+
+    Await.result(del, Duration.Inf)
+  }
+
   "Stock order repo" >> {
     "should add a stock order" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           so <- stockOrderRepo.add(StockOrderRow(now))
         } yield so
@@ -31,7 +51,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMa
     }
 
     "should add products to stock order with default quantities (1)" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           products <- insertTestData
           so       <- stockOrderRepo.add(StockOrderRow(now))
@@ -48,7 +68,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMa
 
     "should add products to stock order with specified quantities" in new TestScope {
       val qtys = (1 to 10).map(_ => randomBetween(5))
-      val res = run(
+      val res = db.run(
         for {
           products <- insertTestData
           so <- stockOrderRepo.add(StockOrderRow(now))
@@ -63,7 +83,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMa
     }
 
     "should update synced property on ordered products" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           products <- insertTestData
           so       <- stockOrderRepo.add(StockOrderRow(now))

@@ -15,7 +15,7 @@ import pureconfig.generic.auto._
 import com.merit.db.Db
 import com.merit.DbConfig
 
-trait ServiceSpec extends Specification with BeforeAll with AfterAll {
+trait DbSpecification extends Specification with BeforeAll with AfterAll {
   private val dbname =
     getClass.getSimpleName.toLowerCase
   private val driver =
@@ -32,7 +32,7 @@ trait ServiceSpec extends Specification with BeforeAll with AfterAll {
   override def beforeAll() = {
     exec(db)(sqlu"""drop database if exists #$dbname""")
     exec(db)(sqlu"""create database #$dbname""")
-    db = Db(dbSettings.copy(url = s"jdbc:postgresql://localhost:5434/$dbname"))
+    db = Db(dbSettings.copy(url = s"jdbc:postgresql://test-db/$dbname"))
     schema.createTables(db)(scala.concurrent.ExecutionContext.global)
   }
 

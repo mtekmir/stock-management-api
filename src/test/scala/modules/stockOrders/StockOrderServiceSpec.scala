@@ -1,6 +1,6 @@
 package modules.stockOrders
 
-import db.ServiceSpec
+import db.DbSpecification
 import org.specs2.matcher.FutureMatchers
 import org.specs2.specification.Scope
 import com.merit.modules.brands.BrandRepo
@@ -26,7 +26,7 @@ import com.merit.modules.excel.ExcelStockOrderRow
 import com.merit.external.crawler.MessageType
 
 class StockOrderServiceSpec(implicit ee: ExecutionEnv)
-    extends ServiceSpec
+    extends DbSpecification
     with FutureMatchers
     with BeforeEach {
   val timeout = 2.seconds

@@ -1,5 +1,5 @@
 package modules.products
-import db.DbSpec
+
 import org.specs2.matcher.FutureMatchers
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.Scope
@@ -9,13 +9,33 @@ import com.merit.modules.categories.CategoryRow
 import utils.ProductUtils._
 import com.merit.modules.products.ProductDTO
 import com.merit.modules.products.ProductID
+import db.DbSpecification
+import org.specs2.specification.AfterEach
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
+class ProductRepoSpec(implicit ee: ExecutionEnv)
+    extends DbSpecification
+    with FutureMatchers
+    with AfterEach {
+  override def after: Any = {
+    import schema._
+    import schema.profile.api._
 
+    val del = db.run(
+      for {
+        _ <- products.delete
+        _ <- categories.delete
+        _ <- brands.delete
+      } yield ()
+    )
+    Await.result(del, Duration.Inf)
+  }
+  
   "Product Repo" >> {
     "should insert a product" in new TestScope {
       val p = createProduct
-      val res = run(
+      val res = db.run(
         for {
           (brandId, categoryId, _) <- insertTestData
           productId <- productRepo.insert(
@@ -29,7 +49,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
 
     "should get a product by barcode" in new TestScope {
       val p = createProduct
-      val res = run(
+      val res = db.run(
         for {
           _       <- productRepo.insert(p)
           product <- productRepo.get(p.barcode)
@@ -40,7 +60,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
 
     "should get multiple products by barcode" in new TestScope {
       val ps = Seq(createProduct, createProduct).sortBy(_.barcode)
-      val res = run(
+      val res = db.run(
         for {
           _        <- productRepo.batchInsert(ps)
           products <- productRepo.findAll(ps.map(_.barcode))
@@ -50,7 +70,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
     }
 
     "should get multiple products with Category and Brand by barcode" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           (_, _, p) <- insertTestData
           products  <- productRepo.findAll(p.map(_.barcode))
@@ -61,10 +81,10 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
 
     "should deduct quantity - 1" in new TestScope {
       val p = createProduct
-      val res = run(
+      val res = db.run(
         for {
-          _ <- productRepo.insert(p.copy(qty = 10))
-          _ <- productRepo.deductQuantity(p.barcode, 5)
+          _       <- productRepo.insert(p.copy(qty = 10))
+          _       <- productRepo.deductQuantity(p.barcode, 5)
           product <- productRepo.get(p.barcode)
         } yield product.map(_.qty)
       )
@@ -73,22 +93,22 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
 
     "should deduct quantity - 2" in new TestScope {
       val p = createProduct
-      val res = run(
+      val res = db.run(
         for {
-          _ <- productRepo.insert(p.copy(qty = 5))
-          _ <- productRepo.deductQuantity(p.barcode, 5)
+          _       <- productRepo.insert(p.copy(qty = 5))
+          _       <- productRepo.deductQuantity(p.barcode, 5)
           product <- productRepo.get(p.barcode)
         } yield product.map(_.qty)
       )
-      res must beEqualTo(Some(0)).await 
+      res must beEqualTo(Some(0)).await
     }
 
     "should add quantity" in new TestScope {
       val p = createProduct
-      val res = run(
+      val res = db.run(
         for {
-          _ <- productRepo.insert(p.copy(qty = 10))
-          _ <- productRepo.addQuantity(p.barcode, 5)
+          _       <- productRepo.insert(p.copy(qty = 10))
+          _       <- productRepo.addQuantity(p.barcode, 5)
           product <- productRepo.get(p.barcode)
         } yield product.map(_.qty)
       )
@@ -97,9 +117,9 @@ class ProductRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatch
 
     "should batch insert" in new TestScope {
       val ps = (1 to 5).map(i => createProduct)
-      val res = run (
+      val res = db.run(
         for {
-          _ <- productRepo.batchInsert(ps)
+          _        <- productRepo.batchInsert(ps)
           products <- productRepo.findAll(ps.map(_.barcode))
         } yield products.length
       )

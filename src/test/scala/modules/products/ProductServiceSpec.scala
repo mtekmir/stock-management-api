@@ -1,6 +1,6 @@
 package modules.products
 
-import db.ServiceSpec
+import db.DbSpecification
 import org.specs2.matcher.FutureMatchers
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.Scope
@@ -13,9 +13,8 @@ import utils.ExcelTestUtils.getExcelProductRows
 import com.merit.modules.products.ProductID
 
 class ProductServiceSpec(implicit ee: ExecutionEnv)
-    extends ServiceSpec
+    extends DbSpecification
     with FutureMatchers {
-
   "Product Service" >> {
     "should get a product by barcode" in new TestScope {
       val p = createProduct

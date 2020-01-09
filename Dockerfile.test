@@ -6,4 +6,4 @@ COPY . .
 
 EXPOSE 3111
 
-CMD ["sbt", "test"]
+CMD ["sbt"]

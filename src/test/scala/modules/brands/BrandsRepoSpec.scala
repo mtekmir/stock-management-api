@@ -1,17 +1,26 @@
 package modules.brands
 
 import org.specs2.concurrent.ExecutionEnv
-import db.DbSpec
 import org.specs2.specification.Scope
 import org.specs2.matcher.FutureMatchers
 import com.merit.modules.brands.BrandRepo
 import com.merit.modules.brands.BrandRow
+import db.DbSpecification
+import org.specs2.specification.AfterEach
 
-class BrandsRepSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
-
+class BrandsRepSpec(implicit ee: ExecutionEnv)
+    extends DbSpecification
+    with FutureMatchers
+    with AfterEach {
+  override def after = {
+    import schema._
+    import schema.profile.api._
+    db.run(brands.delete)
+  }
+  
   "BrandRepo" >> {
     "should get all brands" in new TestScope {
-      val brands = run(for {
+      val brands = db.run(for {
         _      <- insertTestData
         brands <- brandRepo.getAll
       } yield brands.map(_.name))
@@ -19,7 +28,7 @@ class BrandsRepSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatcher
     }
 
     "should add a new brand" in new TestScope {
-      val brands = run(
+      val brands = db.run(
         for {
           _      <- brandRepo.insert(BrandRow("newBrand"))
           brands <- brandRepo.getAll
@@ -29,7 +38,7 @@ class BrandsRepSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatcher
     }
 
     "Should get a brand by name" in new TestScope {
-      val brand = run(
+      val brand = db.run(
         for {
           _     <- insertTestData
           brand <- brandRepo.getByName("brand1")
@@ -39,7 +48,7 @@ class BrandsRepSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatcher
     }
 
     "Should batch insert brands" in new TestScope {
-      val brands = run(
+      val brands = db.run(
         for {
           _ <- brandRepo.batchInsert(
             Seq(BrandRow("brand11"), BrandRow("brand22"), BrandRow("brand33"))

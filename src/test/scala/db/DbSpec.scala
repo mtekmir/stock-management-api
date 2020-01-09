@@ -16,6 +16,7 @@ import com.merit.db.Db
 import org.specs2.specification.BeforeAll
 import com.merit.DbConfig
 
+// Not used anymore
 trait DbSpec extends Specification with BeforeAll with AfterAll {
   private val dbSettings = loadConfigOrThrow[DbConfig](ConfigFactory.load, "db")
 

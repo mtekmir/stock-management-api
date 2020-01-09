@@ -1,7 +1,7 @@
 package modules.sales
 
 import org.specs2.concurrent.ExecutionEnv
-import db.ServiceSpec
+import db.DbSpecification
 import org.specs2.matcher.FutureMatchers
 import org.specs2.specification.Scope
 import com.merit.modules.brands.{BrandRepo, BrandRow}
@@ -23,8 +23,30 @@ import com.merit.modules.sales.SaleID
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.external.crawler.MessageType
 import com.merit.modules.products.Currency
+import org.specs2.specification.AfterEach
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
-class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with FutureMatchers {
+class SaleServiceSpec(implicit ee: ExecutionEnv)
+    extends DbSpecification
+    with FutureMatchers
+    with AfterEach {
+  override def after = {
+    import schema._
+    import schema.profile.api._
+
+    val del = db.run(
+      for {
+        _ <- soldProducts.delete
+        _ <- sales.delete
+        _ <- products.delete
+        _ <- categories.delete
+        _ <- brands.delete
+      } yield ()
+    )
+
+    Await.result(del, Duration.Inf)
+  }
   "Sale service" >> {
     "should insert excel rows with default qty" in new TestScope {
       val sale = for {
@@ -155,7 +177,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv) extends ServiceSpec with Future
     val productRepo   = ProductRepo(schema)
     val saleRepo      = SaleRepo(schema)
     val crawlerClient = mock[CrawlerClient]
-    val total = Currency(1000)
+    val total         = Currency(1000)
 
     (crawlerClient.sendSale _) expects (*) returning (Future(
       (SyncSaleMessage(SaleID(0), Seq()), SendMessageResponse.builder().build())

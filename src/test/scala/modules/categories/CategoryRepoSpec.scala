@@ -6,11 +6,22 @@ import org.specs2.specification.Scope
 import com.merit.modules.categories.CategoryRepo
 import com.merit.modules.categories.CategoryRow
 import utils.TestUtils._
+import db.DbSpecification
+import org.specs2.specification.AfterEach
 
-class CategoryRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatchers {
+class CategoryRepoSpec(implicit ee: ExecutionEnv)
+    extends DbSpecification
+    with FutureMatchers
+    with AfterEach {
+  override def after: Any = {
+    import schema._
+    import schema.profile.api._
+    db.run(categories.delete)
+  }
+
   "Category Repo" >> {
     "should insert a category" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           _          <- categoryRepo.insert(CategoryRow("c1"))
           categories <- categoryRepo.getAll
@@ -20,7 +31,7 @@ class CategoryRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatc
     }
 
     "should get a category by name" in new TestScope {
-      val res = run(
+      val res = db.run(
         for {
           _        <- categoryRepo.insert(CategoryRow("c2"))
           category <- categoryRepo.getByName("c2")
@@ -31,7 +42,7 @@ class CategoryRepoSpec(implicit ee: ExecutionEnv) extends DbSpec with FutureMatc
 
     "should batch insert categories" in new TestScope {
       val names = Seq("category1", "category2", "category3")
-      val res = run(
+      val res = db.run(
         for {
           _          <- categoryRepo.batchInsert(names.map(CategoryRow(_)))
           categories <- categoryRepo.getAll

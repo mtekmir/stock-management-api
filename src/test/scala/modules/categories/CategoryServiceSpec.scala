@@ -1,5 +1,5 @@
 package modules.categories
-import db.ServiceSpec
+import db.DbSpecification
 import org.specs2.matcher.FutureMatchers
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.specification.AfterEach
@@ -12,7 +12,7 @@ import utils.TestUtils._
 import utils.ExcelTestUtils
 
 class CategoryServiceSpec(implicit ee: ExecutionEnv)
-    extends ServiceSpec
+    extends DbSpecification
     with FutureMatchers
     with AfterEach {
   override def after: Any = {
