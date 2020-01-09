@@ -12,7 +12,7 @@ phases:
     commands:
       - echo Running Tests
       - docker-compose -f docker-compose.test.yml up --build -d
-      - docker exec -t stock-management_api_1 sh
+      - docker exec -i stock-management_api_1 sh
       - sbt test
       - echo Finished testing
   build:
