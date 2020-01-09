@@ -25,12 +25,13 @@ import com.merit.external.crawler.MessageType
 import com.merit.modules.products.Currency
 import org.specs2.specification.AfterEach
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration._
 
 class SaleServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
     with FutureMatchers
     with AfterEach {
+      val timeout = 2.seconds
   override def after = {
     import schema._
     import schema.profile.api._
@@ -59,7 +60,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
         sampleProducts.map(p => (p.barcode, p.qty, 1)).sortBy(_._1)
-      ).await
+      ).await(1, timeout)
     }
 
     "should insert excel rows with specified quantities" in new TestScope {
@@ -77,7 +78,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           .zip(qtys)
           .map(p => (p._1.barcode, p._1.qty, p._2))
           .sortBy(_._1)
-      ).await
+      ).await(1, timeout)
     }
 
     "should insert excel rows with specified quantities - 2" in new TestScope {
@@ -95,7 +96,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           .zip(qtys)
           .map(p => (p._1.barcode, p._1.qty, p._2))
           .sortBy(_._1)
-      ).await
+      ).await(1, timeout)
     }
 
     "should do nothing when barcodes are not found" in new TestScope {
@@ -126,7 +127,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         Some(
           products.map(excelRowToSaleDTOProduct(_).copy(qty = 1))
         )
-      ).await
+      ).await(1, timeout)
     }
 
     "should get a sale with id - 2" in new TestScope {
@@ -147,7 +148,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
             products.zip(qtys).map(p => excelRowToSaleDTOProduct(p._1).copy(qty = p._2))
           )
         )
-      )
+      ).await(1, timeout)
     }
 
     "should sync sale" in new TestScope {
