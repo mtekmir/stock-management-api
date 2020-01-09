@@ -32,7 +32,7 @@ trait DbSpecification extends Specification with BeforeAll with AfterAll {
   override def beforeAll() = {
     exec(db)(sqlu"""drop database if exists #$dbname""")
     exec(db)(sqlu"""create database #$dbname""")
-    db = Db(dbSettings.copy(url = s"jdbc:postgresql://test-db/$dbname"))
+    db = Db(dbSettings.copy(url = s"jdbc:postgresql://localhost:5434/$dbname"))
     schema.createTables(db)(scala.concurrent.ExecutionContext.global)
   }
 
