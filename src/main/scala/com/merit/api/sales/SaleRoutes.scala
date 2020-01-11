@@ -14,13 +14,12 @@ import com.merit.api.sales.GetSales
 object SaleRoutes extends Directives with JsonSupport {
   def apply(
     saleService: SaleService,
-    productService: ProductService,
     excelService: ExcelService
   )(
     implicit ec: ExecutionContext
   ): Route =
     pathPrefix("sales") {
-      ImportSaleRoute(saleService, productService, excelService) ~
+      ImportSaleRoute(saleService, excelService) ~
       GetSale(saleService) ~
       GetSales(saleService) ~
       GetSaleTemplateRoute() 

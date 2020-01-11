@@ -20,6 +20,8 @@ import com.merit.api.sales.SyncSaleRoute
 import akka.http.scaladsl.server.directives.Credentials
 import com.merit.AppConfig
 import com.merit.api.stockOrders.SyncStockOrderRoute
+import com.merit.api.brands.BrandRoutes
+import com.merit.api.categories.CategoryRoutes
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -45,9 +47,11 @@ object Router extends Directives with AuthDirectives with JsonSupport {
       SyncSaleRoute(saleService, crawlerAuthenticator) ~
       SyncStockOrderRoute(stockOrderService, crawlerAuthenticator) ~
       authenticated(config.jwtConfig) { userId =>
-        ProductRoutes(brandService, productService, excelService, categoryService) ~
-        SaleRoutes(saleService, productService, excelService) ~
+        ProductRoutes(productService, excelService) ~
+        SaleRoutes(saleService, excelService) ~
         StockOrderRoutes(stockOrderService, excelService) ~
+        BrandRoutes(brandService) ~
+        CategoryRoutes(categoryService) ~
         UserRoutes(userId, userService)
       }
     }

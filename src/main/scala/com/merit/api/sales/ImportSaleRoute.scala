@@ -15,7 +15,6 @@ import com.merit.modules.products.Currency
 object ImportSaleRoute extends Directives with JsonSupport {
   def apply(
     saleService: SaleService,
-    productService: ProductService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext) =
     (path("import") & formFields('date.as[String], 'total.as[String]) & uploadedFile("file")) {

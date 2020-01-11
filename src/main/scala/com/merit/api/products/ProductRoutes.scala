@@ -11,10 +11,8 @@ import com.merit.api.products.GetProducts
 
 object ProductRoutes extends Directives {
   def apply(
-    brandService: BrandService,
     productService: ProductService,
     excelService: ExcelService,
-    categoryService: CategoryService
   )(implicit ec: ExecutionContext): Route =
     pathPrefix("products") {
       ImportRoute(productService, excelService) ~
