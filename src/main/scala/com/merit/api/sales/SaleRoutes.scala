@@ -9,6 +9,7 @@ import com.merit.modules.excel.ExcelService
 import akka.http.scaladsl.server.Route
 import com.merit.api.sales.GetSaleTemplateRoute
 import com.merit.api.sales.SyncSaleRoute
+import com.merit.api.sales.GetSales
 
 object SaleRoutes extends Directives with JsonSupport {
   def apply(
@@ -21,6 +22,7 @@ object SaleRoutes extends Directives with JsonSupport {
     pathPrefix("sales") {
       ImportSaleRoute(saleService, productService, excelService) ~
       GetSale(saleService) ~
-      GetSaleTemplateRoute()
+      GetSales(saleService) ~
+      GetSaleTemplateRoute() 
     }
 }

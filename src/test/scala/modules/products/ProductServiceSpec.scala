@@ -11,10 +11,28 @@ import com.merit.modules.products.ProductService
 import utils.ProductUtils._
 import utils.ExcelTestUtils.getExcelProductRows
 import com.merit.modules.products.ProductID
+import scala.concurrent.duration.Duration
+import scala.concurrent.Await
+import org.specs2.specification.AfterEach
 
 class ProductServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
-    with FutureMatchers {
+    with FutureMatchers
+    with AfterEach {
+  override def after: Any = {
+    import schema._
+    import schema.profile.api._
+
+    val del = db.run(
+      for {
+        _ <- products.delete
+        _ <- categories.delete
+        _ <- brands.delete
+      } yield ()
+    )
+    Await.result(del, Duration.Inf)
+  }
+
   "Product Service" >> {
     "should get a product by barcode" in new TestScope {
       val p = createProduct
@@ -48,7 +66,7 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
       val res = for {
         _        <- productService.batchInsertExcelRows(rows)
         products <- productService.findAll(rows.map(_.barcode))
-      } yield (products.sortBy(_.barcode).map(_.copy(id = ProductID.zero)))
+      } yield (sortedWithZeroIdProductDTO(products))
       res must beEqualTo(rows.map(r => excelRowToDTO(r))).await
     }
 
@@ -59,10 +77,8 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         _        <- productService.batchInsertExcelRows(rows)
         _        <- productService.batchAddQuantity(rows.map(r => (r.barcode, 5)))
         products <- productService.findAll(rows.map(_.barcode))
-      } yield
-        (products
-          .sortBy(_.barcode)
-          .map(p => p.copy(id = ProductID.zero, qty = p.qty + 5)))
+      } yield (sortedWithZeroIdProductDTO(products))
+      res must beEqualTo(rows.map(p => excelRowToDTO(p.copy(qty = p.qty + 5)))).await
     }
 
     "should add quantities to a batch - 2" in new TestScope {
@@ -74,10 +90,28 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         _        <- productService.batchInsertExcelRows(rows)
         _        <- productService.batchAddQuantity(qtys)
         products <- productService.findAll(rows.map(_.barcode))
-      } yield
-        (products
-          .sortBy(_.barcode)
-          .map(p => p.copy(id = ProductID.zero, qty = p.qty + qtyMap(p.barcode))))
+      } yield (sortedWithZeroIdProductDTO(products))
+      res must beEqualTo(rows.map(p => excelRowToDTO(p.copy(qty = p.qty + qtyMap(p.barcode))))).await
+    }
+
+    "should get all products with pagination" in new TestScope {
+      val rows = getExcelProductRows(15).sortBy(_.barcode)
+      val dtos = rows.map(excelRowToDTO(_))
+      val res = for {
+        _         <- productService.batchInsertExcelRows(rows)
+        products1 <- productService.getProducts(1, 5)
+        products2 <- productService.getProducts(2, 5)
+        products3 <- productService.getProducts(3, 5)
+      } yield (products1, products2, products3)
+      res.map(_._1.count) must beEqualTo(15).await
+      res.map(r => sortedWithZeroIdProductDTO(r._1.products)) must beEqualTo(dtos.take(5)).await
+      res.map(r => sortedWithZeroIdProductDTO(r._2.products)) must beEqualTo(
+        dtos.drop(5).take(5)
+      ).await
+      res.map(r => sortedWithZeroIdProductDTO(r._3.products)) must beEqualTo(
+        dtos.drop(10).take(5)
+      ).await
+
     }
   }
 

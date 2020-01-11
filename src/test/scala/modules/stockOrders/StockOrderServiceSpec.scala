@@ -106,10 +106,10 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
           now,
           ps.map(excelProductRowToStockOrderRow(_))
         )
-        products <- productService.getAll
+        products <- productService.getProducts(1,20)
       } yield products
       // existing products should have twice the qty
-      res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.products.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
         (firstHalf.map(_.copy(qty = 2)) ++ secondHalf)
           .map(excelRowToDTO(_))
           .sortBy(_.barcode)

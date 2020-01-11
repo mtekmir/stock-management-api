@@ -42,7 +42,8 @@ object SaleDTOProduct {
     productRow: ProductRow,
     brand: Option[BrandRow] = None,
     category: Option[CategoryRow] = None,
-    synced: Boolean
+    synced: Boolean,
+    soldQty: Int
   ): SaleDTOProduct = {
     import productRow._
     SaleDTOProduct(
@@ -52,7 +53,7 @@ object SaleDTOProduct {
       name,
       price,
       discountPrice,
-      qty,
+      soldQty,
       variation,
       taxRate,
       brand.map(_.name),
@@ -83,4 +84,9 @@ case class SaleSummary(
   createdAt: DateTime,
   total: Currency,
   products: Seq[SaleSummaryProduct]
+)
+
+case class PaginatedSalesResponse(
+  count: Int,
+  sales: Seq[SaleDTO]
 )

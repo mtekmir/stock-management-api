@@ -7,9 +7,10 @@ import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
 
 trait ProductRepo[DbTask[_]] {
+  def count: DbTask[Int]
   def get(barcode: String): DbTask[Option[ProductDTO]]
   def getRow(barcode: String): DbTask[Option[ProductRow]]
-  def getAll: DbTask[Seq[ProductDTO]]
+  def getAll(page: Int, rowsPerPage: Int): DbTask[Seq[ProductDTO]]
   def findAll(barcodes: Seq[String]): DbTask[Seq[ProductDTO]]
   def insert(product: ProductRow): DbTask[ProductRow]
   def batchInsert(products: Seq[ProductRow]): DbTask[Seq[ProductRow]]
@@ -31,22 +32,27 @@ object ProductRepo {
             case ((products, brands), category) => products.categoryId === category.id
           }
 
+      def count: DBIO[Int] = products.length.result
+
       def get(barcode: String): DBIO[Option[ProductDTO]] =
         withBrandAndCategory(products.filter(_.barcode === barcode)).result.headOption.map {
           _.map {
             case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
           }
         }
-      
-      def getRow(barcode: String): DBIO[Option[ProductRow]] = 
+
+      def getRow(barcode: String): DBIO[Option[ProductRow]] =
         products.filter(_.barcode === barcode).result.headOption
 
-      def getAll: DBIO[Seq[ProductDTO]] = 
-        withBrandAndCategory(products).result.map {
-          _.map {
-            case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
+      def getAll(page: Int, rowsPerPage: Int): DBIO[Seq[ProductDTO]] =
+        withBrandAndCategory(products.drop((page - 1) * rowsPerPage).take(rowsPerPage))
+          .sortBy(_._1._1.id.desc)
+          .result
+          .map {
+            _.map {
+              case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
+            }
           }
-        }
 
       def findAll(barcodes: Seq[String]): DBIO[Seq[ProductDTO]] =
         withBrandAndCategory(products.filter(_.barcode inSet barcodes)).result.map {

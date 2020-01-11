@@ -116,3 +116,8 @@ object ProductDTO {
     )
   }
 }
+
+case class PaginatedProductsResponse(
+  count: Int,
+  products: Seq[ProductDTO]
+)

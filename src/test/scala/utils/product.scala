@@ -115,4 +115,7 @@ object ProductUtils {
     import p._
     StockOrderSummaryProduct(p.id, p.barcode, p.name, p.variation, p.qty, ordered)
   }
+
+  def sortedWithZeroIdProductDTO(products: Seq[ProductDTO]): Seq[ProductDTO] =
+    products.sortBy(_.barcode).map(_.copy(id = ProductID.zero))
 }

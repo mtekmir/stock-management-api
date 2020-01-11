@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Route
 import com.merit.api.products.GetProduct
 import com.merit.modules.categories.CategoryService
+import com.merit.api.products.GetProducts
 
 object ProductRoutes extends Directives {
   def apply(
@@ -17,6 +18,7 @@ object ProductRoutes extends Directives {
   )(implicit ec: ExecutionContext): Route =
     pathPrefix("products") {
       ImportRoute(productService, excelService) ~
-      GetProduct(productService)
+      GetProduct(productService) ~
+      GetProducts(productService)
     }
 }
