@@ -7,13 +7,13 @@ scalaVersion := "2.13.1"
 test in assembly := {}
 assemblyJarName in assembly := s"app-assembly.jar"
 assemblyMergeStrategy in assembly := {
-  case PathList("reference.conf") => MergeStrategy.concat
+  case PathList("reference.conf")          => MergeStrategy.concat
   case PathList("META-INF", "MANIFEST.MF") => MergeStrategy.discard
-  case _ => MergeStrategy.first
+  case _                                   => MergeStrategy.first
 }
 
-val akkaVersion     = "2.5.25"
-val akkaHttpVersion = "10.1.9"
+val akkaVersion     = "2.6.1"
+val akkaHttpVersion = "10.1.11"
 val circeVersion    = "0.12.3"
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
@@ -24,7 +24,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka"      %% "akka-stream"         % akkaVersion,
   "com.typesafe.akka"      %% "akka-stream-testkit" % akkaVersion % Test,
   "com.typesafe.akka"      %% "akka-http"           % akkaHttpVersion,
-  "com.typesafe.akka"      %% "akka-http-testkit"   % akkaHttpVersion,
+  "com.typesafe.akka"      %% "akka-http-testkit"   % akkaHttpVersion % Test,
   "io.circe"               %% "circe-core"          % circeVersion,
   "io.circe"               %% "circe-generic"       % circeVersion,
   "io.circe"               %% "circe-parser"        % circeVersion,
@@ -47,8 +47,8 @@ libraryDependencies ++= Seq(
 
 // Test
 libraryDependencies ++= Seq(
-  "org.specs2"    %% "specs2-core"     % "4.6.0" % Test,
-  "org.scalamock" %% "scalamock"       % "4.4.0" % Test
+  "org.specs2"    %% "specs2-core" % "4.6.0" % Test,
+  "org.scalamock" %% "scalamock"   % "4.4.0" % Test
 )
 
 // cats

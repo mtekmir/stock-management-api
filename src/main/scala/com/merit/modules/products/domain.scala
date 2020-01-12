@@ -5,10 +5,8 @@ import java.util.UUID
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.brands.{BrandID, BrandRow}
 import com.merit.modules.sales.SaleID
-import com.merit.modules.categories.CategoryID
-import com.merit.modules.categories.CategoryRow
-import com.merit.modules.excel.ExcelStockOrderRow
-import com.merit.modules.excel.ExcelProductRow
+import com.merit.modules.categories.{CategoryID,CategoryRow}
+import com.merit.modules.excel.{ExcelStockOrderRow,ExcelProductRow}
 import scala.util.Try
 import scala.math.BigDecimal.RoundingMode
 

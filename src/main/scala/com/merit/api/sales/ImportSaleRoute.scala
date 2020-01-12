@@ -6,7 +6,6 @@ import com.merit.modules.sales.SaleService
 import com.merit.modules.products.ProductService
 import scala.concurrent.ExecutionContext
 import com.merit.modules.excel.ExcelService
-import api.ImportSaleRequest
 import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import akka.http.scaladsl.model.StatusCodes.BadRequest

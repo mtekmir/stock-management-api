@@ -174,7 +174,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val sales =
         (0 to 10).map(i => (now, Currency(100.00), products.drop(i * 3).take(3).toList)).toList
       val res = for {
-        products <- productService.batchInsertExcelRows(products)
+        _ <- productService.batchInsertExcelRows(products)
         _ <- Future.successful(
           sales.map(
             s =>
@@ -200,6 +200,22 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         sales.drop(6).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
       ).await
     }
+
+    "should create a sale" in new TestScope {
+      val products = getExcelProductRows(5).sortBy(_.barcode)
+
+      val res = for {
+        ps              <- productService.batchInsertExcelRows(products)
+        summary         <- saleService.createSale(total, discount, ps.map(rowToDTO(_, None, None)))
+        updatedProducts <- productService.findAll(products.map(_.barcode))
+      } yield (summary, updatedProducts)
+      res.map(_._1.total) must beEqualTo(total).await
+      res.map(_._1.discount) must beEqualTo(discount).await
+      res.map(_._1.products.sortBy(_.barcode).map(p => (p.barcode, p.soldQty))) must beEqualTo(
+        products.map(p => (p.barcode, p.qty))
+      ).await
+      res.map(_._2.map(_.qty).sum) must beEqualTo(0).await
+    }
   }
 
   class TestScope extends MockContext {
@@ -209,6 +225,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
     val saleRepo      = SaleRepo(schema)
     val crawlerClient = mock[CrawlerClient]
     val total         = Currency(1000)
+    val discount      = Currency(10)
 
     (crawlerClient.sendSale _) expects (*) returning (Future(
       (SyncSaleMessage(SaleID(0), Seq()), SendMessageResponse.builder().build())

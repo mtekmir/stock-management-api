@@ -53,6 +53,10 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeCurrency: Encoder[Currency] = (currency: Currency) =>
     Encoder.encodeBigDecimal(currency.value)
 
+  implicit val decodeCurrency: Decoder[Currency] = Decoder.decodeBigDecimal.emap{ v => 
+    Currency(v).asRight
+  }
+
   implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] =
     Encoder.enumEncoder(ValidationErrorTypes)
 }

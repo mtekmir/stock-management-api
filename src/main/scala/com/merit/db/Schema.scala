@@ -96,8 +96,9 @@ class Schema(val profile: JdbcProfile) {
     def id        = column[SaleID]("id", O.PrimaryKey, O.AutoInc)
     def createdAt = column[DateTime]("created")
     def total     = column[Currency]("total")
+    def discount  = column[Currency]("discount")
 
-    def * = (createdAt, total, id).mapTo[SaleRow]
+    def * = (createdAt, total, discount, id).mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]

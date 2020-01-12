@@ -2,7 +2,7 @@ package com.merit.modules.sales
 
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext
-import com.merit.modules.products.{ProductRepo, SoldProductRow, ProductDTO}
+import com.merit.modules.products.{ProductRepo, SoldProductRow, ProductDTO, Currency}
 import com.merit.modules.excel.ExcelSaleRow
 import slick.jdbc.PostgresProfile
 import scala.concurrent.Future
@@ -10,9 +10,7 @@ import PostgresProfile.api._
 import org.joda.time.DateTime
 import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
-import com.merit.external.crawler.SyncSaleResponse
-import com.merit.external.crawler.CrawlerClient
-import com.merit.modules.products.Currency
+import com.merit.external.crawler.{SyncSaleResponse,CrawlerClient}
 import collection.immutable.ListMap
 
 trait SaleService {
@@ -20,6 +18,11 @@ trait SaleService {
     rows: Seq[ExcelSaleRow],
     date: DateTime,
     total: Currency
+  ): Future[SaleSummary]
+  def createSale(
+    total: Currency,
+    discount: Currency,
+    products: Seq[ProductDTO]
   ): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
   def getSales(page: Int, rowsPerPage: Int): Future[PaginatedSalesResponse]
@@ -58,6 +61,7 @@ object SaleService {
             sale.id,
             sale.createdAt,
             sale.total,
+            Currency(0),
             soldProducts.map(
               p =>
                 SaleSummaryProduct.fromProductDTO(
@@ -74,6 +78,34 @@ object SaleService {
       } yield (summary)
     }
 
+    def createSale(
+      total: Currency,
+      discount: Currency,
+      products: Seq[ProductDTO]
+    ): Future[SaleSummary] = {
+      val insertSale = db.run(
+        (for {
+          sale <- saleRepo.add(SaleRow(DateTime.now(), total, discount))
+          _ <- saleRepo.addProductsToSale(
+            products.map(p => SoldProductRow(p.id, sale.id, p.qty))
+          )
+          _ <- DBIO.sequence(products.map(p => productRepo.deductQuantity(p.barcode, p.qty)))
+        } yield
+          SaleSummary(
+            sale.id,
+            sale.createdAt,
+            sale.total,
+            sale.discount,
+            products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
+          )).transactionally
+      )
+
+      for {
+        summary <- insertSale
+        _       <- crawlerClient.sendSale(summary)
+      } yield summary
+    }
+
     def getSale(id: SaleID): Future[Option[SaleDTO]] =
       db.run(saleRepo.get(id)).map {
         case rows if rows.length < 1 => None
@@ -82,7 +114,7 @@ object SaleService {
             (s, p) => s :+ SaleDTOProduct.fromRow(p._2, p._5, p._6, p._4, p._3)
           )
           val sale = rows(0)._1
-          Some(SaleDTO(sale.id, sale.createdAt, sale.total, products))
+          Some(SaleDTO(sale.id, sale.createdAt, sale.total, sale.discount, products))
         }
       }
 
@@ -107,6 +139,7 @@ object SaleService {
                     saleRow.id,
                     saleRow.createdAt,
                     saleRow.total,
+                    saleRow.discount,
                     Seq(SaleDTOProduct.fromRow(productRow, brand, category, synced, soldQty))
                   )
                 )

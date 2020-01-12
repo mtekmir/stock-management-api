@@ -12,6 +12,7 @@ case class SaleID(value: Long) extends AnyVal with MappedTo[Long]
 case class SaleRow(
   createdAt: DateTime = DateTime.now(),
   total: Currency,
+  discount: Currency = Currency(0),
   id: SaleID = SaleID(0L)
 )
 
@@ -19,6 +20,7 @@ case class SaleDTO(
   id: SaleID,
   createdAt: DateTime,
   total: Currency,
+  discount: Currency,
   products: Seq[SaleDTOProduct]
 )
 
@@ -83,6 +85,7 @@ case class SaleSummary(
   id: SaleID,
   createdAt: DateTime,
   total: Currency,
+  discount: Currency,
   products: Seq[SaleSummaryProduct]
 )
 

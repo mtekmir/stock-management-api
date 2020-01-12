@@ -55,7 +55,7 @@ object ProductUtils {
   ): ProductDTO = {
     import row._
     ProductDTO(
-      ProductID.zero,
+      id,
       barcode,
       sku,
       name,

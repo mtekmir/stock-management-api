@@ -64,6 +64,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
     val queueUrl  = "test"
     val now       = DateTime.now()
     val total     = Currency(1000)
+    val discount  = Currency(10)
 
     val crawlerClient = CrawlerClient(CrawlerClientConfig(queueUrl, "u", "p"), sqsClient)
     val products      = (1 to 25).map(_ => createProduct)
@@ -73,6 +74,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       SaleID(1L),
       now,
       total,
+      discount,
       products.map(p => productRowToSaleSummaryProduct(p, 1))
     )
 
@@ -80,6 +82,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       SaleID(0L),
       now,
       total,
+      discount,
       products.map(p => productRowToSaleSummaryProduct(p, -1))
     )
 
@@ -87,14 +90,21 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       SaleID(0L),
       now,
       total,
+      discount,
       products.map(p => productRowToSaleSummaryProduct(p, 0))
     )
 
     val qtys = Seq(0, 1, 2, -1, -3, 0, -5, 4)
 
     val summary4 =
-      SaleSummary(SaleID(1L), now, total, products.sortBy(_.barcode).take(8).zip(qtys).map {
-        case (p, q) => productRowToSaleSummaryProduct(p, q)
-      })
+      SaleSummary(
+        SaleID(1L),
+        now,
+        total,
+        discount,
+        products.sortBy(_.barcode).take(8).zip(qtys).map {
+          case (p, q) => productRowToSaleSummaryProduct(p, q)
+        }
+      )
   }
 }
