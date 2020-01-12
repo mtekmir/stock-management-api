@@ -46,6 +46,7 @@ case class HttpConfig(
 )
 
 case class AppConfig(
+  environment: String,
   aWSConfig: AwsConfig,
   dbConfig: DbConfig,
   emailConfig: EmailConfig,
@@ -97,15 +98,20 @@ object Config {
         )
     }
 
-    val crawlerClientConfig = CrawlerClientConfig(
-      queueUrl = getParameter("crawler-queue-url"),
-      username = getParameterOrElse("crawler-username", "u"),
-      password = getParameterOrElse("crawler-password", "p")
-    )
-    
+    val crawlerClientConfig = environment match {
+      case "local" => CrawlerClientConfig("", "", "")
+      case _ =>
+        CrawlerClientConfig(
+          queueUrl = getParameter("crawler-queue-url"),
+          username = getParameterOrElse("crawler-username", "u"),
+          password = getParameterOrElse("crawler-password", "p")
+        )
+    }
+
     val jwtConfig = JwtConfig(secret = getParameterOrElse("jwt-secret", "secret"))
 
     def load() = AppConfig(
+      environment,
       aWSConfig,
       dbConfig,
       emailConfig,

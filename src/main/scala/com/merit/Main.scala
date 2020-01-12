@@ -37,7 +37,8 @@ object Main extends App {
   implicit val materializer = ActorMaterializer()
 
   val appConfig @ AppConfig(
-    awsConfig,
+    _,
+    _,
     dbConfig,
     emailConfig,
     crawlerClientConfig,
@@ -57,7 +58,7 @@ object Main extends App {
   val categoryRepo   = CategoryRepo(schema)
   val stockOrderRepo = StockOrderRepo(schema)
 
-  val sqsClient     = SqsClient(awsConfig)
+  val sqsClient     = SqsClient(appConfig)
   val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
 
   val productService  = ProductService(db, brandRepo, productRepo, categoryRepo)

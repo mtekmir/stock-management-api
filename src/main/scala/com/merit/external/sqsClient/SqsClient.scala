@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.AwsConfig
 import software.amazon.awssdk.services.sqs.model.MessageAttributeValue
 import com.merit.external.crawler.MessageType
+import com.merit.AppConfig
 
 trait SqsClient {
   def sendMessageTo(
@@ -21,7 +22,7 @@ trait SqsClient {
 }
 
 object SqsClient {
-  def apply(config: AwsConfig) = new SqsClient {
+  def apply(config: AppConfig) = new SqsClient {
     private val client = Sqs.create()
 
     def sendMessageTo(
@@ -29,24 +30,28 @@ object SqsClient {
       messageType: MessageType.Value,
       message: String
     ): SendMessageResponse =
-      client.sendMessage(
-        SendMessageRequest
-          .builder()
-          .queueUrl(queueUrl)
-          .messageBody(message)
-          .messageAttributes(
-            Map(
-              (
-                "message_type",
-                MessageAttributeValue
-                  .builder()
-                  .dataType("String")
-                  .stringValue(messageType.toString)
-                  .build()
+      config.environment match {
+        case "local" => SendMessageResponse.builder().build()
+        case _ =>
+          client.sendMessage(
+            SendMessageRequest
+              .builder()
+              .queueUrl(queueUrl)
+              .messageBody(message)
+              .messageAttributes(
+                Map(
+                  (
+                    "message_type",
+                    MessageAttributeValue
+                      .builder()
+                      .dataType("String")
+                      .stringValue(messageType.toString)
+                      .build()
+                  )
+                ).asJava
               )
-            ).asJava
+              .build()
           )
-          .build()
-      )
+      }
   }
 }
