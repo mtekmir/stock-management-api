@@ -19,6 +19,7 @@ trait ProductRepo[DbTask[_]] {
   def deductQuantity(barcode: String, qty: Int): DbTask[Int]
   def addQuantity(barcode: String, qty: Int): DbTask[Int]
   def search(query: String): DbTask[Seq[ProductDTO]]
+  def create(product: ProductRow): DbTask[ProductDTO]
 }
 
 object ProductRepo {
@@ -99,7 +100,13 @@ object ProductRepo {
           .result
           .map(_.toList)
           .toProductDTO
-      }
+      } 
 
+      def create(product: ProductRow): DBIO[ProductDTO] =
+        for {
+          row         <- products returning products += product
+          brandRow    <- brands.filter(_.id === row.brandId).result.headOption
+          categoryRow <- categories.filter(_.id === row.categoryId).result.headOption
+        } yield ProductDTO.fromRow(row, brandRow, categoryRow)
     }
 }

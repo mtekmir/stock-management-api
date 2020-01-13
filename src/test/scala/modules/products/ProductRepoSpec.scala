@@ -31,7 +31,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
     )
     Await.result(del, Duration.Inf)
   }
-  
+
   "Product Repo" >> {
     "should insert a product" in new TestScope {
       val p = createProduct
@@ -124,6 +124,33 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
         } yield products.length
       )
       res must beEqualTo(5).await
+    }
+
+    "should search for products" in new TestScope {
+      val ps = (1 to 5).map(i => createProduct)
+      val res = db.run(
+        for {
+          _  <- productRepo.batchInsert(ps)
+          p1 <- productRepo.search(ps(0).barcode)
+          p3 <- productRepo.search(ps(1).sku)
+        } yield (p1, p3)
+      )
+      res.map(_._1.map(_.copy(id = ProductID.zero)).head) must beEqualTo(rowToDTO(ps(0))).await
+      res.map(_._2.map(_.copy(id = ProductID.zero)).head) must beEqualTo(rowToDTO(ps(1))).await
+    }
+
+    "should create a product" in new TestScope {
+      val product = createProduct
+
+      val res = db.run(
+        for {
+          (b, c, _) <- insertTestData
+          _         <- productRepo.create(product.copy(brandId = Some(b), categoryId = Some(c)))
+          p         <- productRepo.get(product.barcode)
+        } yield p
+      )
+
+      res.map(_.isDefined) must beTrue.await
     }
   }
 

@@ -5,8 +5,8 @@ import java.util.UUID
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.brands.{BrandID, BrandRow}
 import com.merit.modules.sales.SaleID
-import com.merit.modules.categories.{CategoryID,CategoryRow}
-import com.merit.modules.excel.{ExcelStockOrderRow,ExcelProductRow}
+import com.merit.modules.categories.{CategoryID, CategoryRow}
+import com.merit.modules.excel.{ExcelStockOrderRow, ExcelProductRow}
 import scala.util.Try
 import scala.math.BigDecimal.RoundingMode
 
@@ -118,4 +118,17 @@ object ProductDTO {
 case class PaginatedProductsResponse(
   count: Int,
   products: Seq[ProductDTO]
+)
+
+case class CreateProductRequest(
+  barcode: String,
+  sku: String,
+  name: String,
+  price: Option[Currency],
+  discountPrice: Option[Currency],
+  qty: Int,
+  variation: Option[String],
+  taxRate: Option[Int],
+  brandId: Option[BrandID],
+  categoryId: Option[CategoryID]
 )

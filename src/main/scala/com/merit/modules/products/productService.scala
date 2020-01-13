@@ -20,6 +20,7 @@ trait ProductService {
   def findAll(barcodes: Seq[String]): Future[Seq[ProductDTO]]
   def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]]
   def searchProducts(query: String): Future[Seq[ProductDTO]]
+  def create(p: CreateProductRequest): Future[ProductDTO]
 }
 
 object ProductService {
@@ -87,5 +88,8 @@ object ProductService {
     
     def searchProducts(query: String): Future[Seq[ProductDTO]] = 
       db.run(productRepo.search(query))
+
+    def create(p: CreateProductRequest): Future[ProductDTO] = 
+      db.run(productRepo.create(p.toRow))
   }
 }
