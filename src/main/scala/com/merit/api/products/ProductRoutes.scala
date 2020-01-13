@@ -8,15 +8,17 @@ import akka.http.scaladsl.server.Route
 import com.merit.api.products.GetProduct
 import com.merit.modules.categories.CategoryService
 import com.merit.api.products.GetProducts
+import com.merit.api.products.SearchProducts
 
 object ProductRoutes extends Directives {
   def apply(
     productService: ProductService,
-    excelService: ExcelService,
+    excelService: ExcelService
   )(implicit ec: ExecutionContext): Route =
     pathPrefix("products") {
       ImportRoute(productService, excelService) ~
       GetProduct(productService) ~
-      GetProducts(productService)
+      GetProducts(productService) ~
+      SearchProducts(productService)
     }
 }

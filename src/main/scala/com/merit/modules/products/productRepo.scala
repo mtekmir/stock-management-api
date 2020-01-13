@@ -5,6 +5,8 @@ import scala.concurrent.ExecutionContext
 import slick.sql.SqlAction
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
+import cats.implicits._
+import cats.Functor
 
 trait ProductRepo[DbTask[_]] {
   def count: DbTask[Int]
@@ -16,6 +18,7 @@ trait ProductRepo[DbTask[_]] {
   def batchInsert(products: Seq[ProductRow]): DbTask[Seq[ProductRow]]
   def deductQuantity(barcode: String, qty: Int): DbTask[Int]
   def addQuantity(barcode: String, qty: Int): DbTask[Int]
+  def search(query: String): DbTask[Seq[ProductDTO]]
 }
 
 object ProductRepo {
@@ -24,42 +27,56 @@ object ProductRepo {
       import schema._
       import profile.api._
 
-      private def withBrandAndCategory(q: Query[schema.ProductTable, ProductRow, Seq]) =
-        q.joinLeft(brands)
-          .on(_.brandId === _.id)
-          .joinLeft(categories)
-          .on {
-            case ((products, brands), category) => products.categoryId === category.id
-          }
-
-      def count: DBIO[Int] = products.length.result
-
-      def get(barcode: String): DBIO[Option[ProductDTO]] =
-        withBrandAndCategory(products.filter(_.barcode === barcode)).result.headOption.map {
+      implicit private class ProductQ1[M[_]: Functor](
+        val q: DBIO[M[((ProductRow, Option[BrandRow]), Option[CategoryRow])]]
+      ) {
+        def toProductDTO = q.map {
           _.map {
             case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
           }
         }
+      }
+
+      implicit private class ProductQ2(val q: Query[ProductTable, ProductRow, Seq]) {
+        def withBrandAndCategory =
+          q.joinLeft(brands)
+            .on(_.brandId === _.id)
+            .joinLeft(categories)
+            .on {
+              case ((products, brands), category) => products.categoryId === category.id
+            }
+      }
+
+      def count: DBIO[Int] = products.length.result
+
+      def get(barcode: String): DBIO[Option[ProductDTO]] =
+        products
+          .filter(_.barcode === barcode)
+          .withBrandAndCategory
+          .result
+          .headOption
+          .toProductDTO
 
       def getRow(barcode: String): DBIO[Option[ProductRow]] =
         products.filter(_.barcode === barcode).result.headOption
 
       def getAll(page: Int, rowsPerPage: Int): DBIO[Seq[ProductDTO]] =
-        withBrandAndCategory(products.drop((page - 1) * rowsPerPage).take(rowsPerPage))
+        products
+          .drop((page - 1) * rowsPerPage)
+          .take(rowsPerPage)
+          .withBrandAndCategory
           .sortBy(_._1._1.id.desc)
           .result
-          .map {
-            _.map {
-              case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
-            }
-          }
+          .map(_.toList)
+          .toProductDTO
 
       def findAll(barcodes: Seq[String]): DBIO[Seq[ProductDTO]] =
-        withBrandAndCategory(products.filter(_.barcode inSet barcodes)).result.map {
-          _.map {
-            case ((pRow, bRow), cRow) => ProductDTO.fromRow(pRow, bRow, cRow)
-          }
-        }
+        products
+          .filter(_.barcode inSet barcodes)
+          .withBrandAndCategory
+          .result
+          .map(_.toList)
+          .toProductDTO
 
       def insert(product: ProductRow): DBIO[ProductRow] =
         products returning products += product
@@ -72,6 +89,17 @@ object ProductRepo {
 
       def addQuantity(barcode: String, qty: Int): DBIO[Int] =
         sqlu"update products set qty = qty + $qty where barcode=$barcode"
+
+      def search(q: String): DBIO[Seq[ProductDTO]] = {
+        val query = s"$q%"
+        products
+          .filter(p => (p.name like query) || (p.barcode like query) || (p.sku like query))
+          .withBrandAndCategory
+          .take(20)
+          .result
+          .map(_.toList)
+          .toProductDTO
+      }
 
     }
 }

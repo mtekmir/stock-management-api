@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 
 object GetProducts extends Directives with JsonSupport {
   def apply(productService: ProductService): Route =
-    (get & pathEndOrSingleSlash & parameter('page ? 1, 'rowsPerPage ? 10)) {
+    (get & pathEndOrSingleSlash & parameter('page.as[Int], 'rowsPerPage.as[Int])) {
       (page, rowsPerPage) =>
         complete(productService.getProducts(page, rowsPerPage))
     }

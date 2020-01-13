@@ -19,6 +19,7 @@ trait ProductService {
   def getProducts(page: Int, rowsPerPage: Int): Future[PaginatedProductsResponse]
   def findAll(barcodes: Seq[String]): Future[Seq[ProductDTO]]
   def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]]
+  def searchProducts(query: String): Future[Seq[ProductDTO]]
 }
 
 object ProductService {
@@ -83,5 +84,8 @@ object ProductService {
 
     def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]] =
       db.run(DBIO.sequence(products.map(p => productRepo.addQuantity(p._1, p._2))))
+    
+    def searchProducts(query: String): Future[Seq[ProductDTO]] = 
+      db.run(productRepo.search(query))
   }
 }
