@@ -15,6 +15,9 @@ import ValidationErrorTypes._
 import ExcelErrorMessages._
 import com.merit.modules.products.Currency
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.FileOutputStream
+import com.merit.modules.products.ProductRow
+import com.merit.modules.products.ProductDTO
 
 object FileFor extends Enumeration {
   type FileFor = Value
@@ -25,11 +28,16 @@ trait ExcelService {
   def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]]
   def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]]
   def parseStockOrderImportFile(file: File): Either[ExcelError, Seq[ExcelStockOrderRow]]
+  def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): Unit
+  def writeProductRows(name: String, rows: Seq[ProductDTO]): Unit
 }
 
 object ExcelService {
   val inputLocation = "src/main/resources"
   val numberFormat  = NumberFormat.getInstance()
+  private val Validator     = ExcelServiceValidation()
+  private val Parser        = ExcelParser()
+  private val Writer        = ExcelWriter()
 
   def apply() = new ExcelService {
     private def processFile(
@@ -75,122 +83,29 @@ object ExcelService {
       )
     }
 
-    private def combineValidationErrors(
-      errors: Seq[ExcelValidationError]
-    ): Seq[ExcelValidationError] =
-      errors
-        .foldLeft(Map[ValidationErrorTypes.Value, ExcelValidationError]()) {
-          case (m, e @ ExcelValidationError(rows, t)) =>
-            m + m
-              .get(t)
-              .map(err => (t -> err.copy(rows = (err.rows ++ rows).distinct)))
-              .getOrElse((t, e))
-        }
-        .map(_._2)
-        .toSeq
-
     def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]] = {
       val (_, rows) = processFile(file, FileFor.Product)
 
-      val errors = rows.collect {
-        case (Seq(barcode, _, _, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(barcode, _, _, _, _, _, _, _, _, _), index)
-            if Try(barcode.toLong).isFailure || barcode.length <= 6 || barcode.length > 14 =>
-          ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, sku, _, _, _, _, _, _, _), index) if sku.isEmpty =>
-          ExcelValidationError(Seq(index), EmptySkuError)
-        case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if qty.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if !qty.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, price, _, _, _, _, _), index)
-            if !price.isEmpty && !Currency.isValid(price) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, discountPrice, _, _, _, _), index)
-            if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidTaxRateError)
-      }
+      val errors = Validator.validateProductRows(rows)
 
-      val barcodes       = rows.map(_._1.head)
-      val barcodeIndexes =
-        // zip rows with row numbers for better error reporting
-        barcodes.zipWithIndex.map(r => (r._1, r._2 + 2))
-      val duplicates = barcodes
-        .diff(barcodes.distinct)
-        .filterNot(_.isEmpty)
-        .map(
-          b =>
-            ExcelValidationError(
-              barcodeIndexes.filter(_._1 == b).map(_._2),
-              DuplicateBarcodeError
-            )
-        )
-
-      errors ++ duplicates match {
-        case Seq() =>
-          rows.map {
-            case (
-                Seq(
-                  barcode,
-                  variation,
-                  sku,
-                  name,
-                  price,
-                  discountPrice,
-                  qty,
-                  brand,
-                  category,
-                  taxRate
-                ),
-                _
-                ) =>
-              ExcelProductRow(
-                barcode,
-                Option(variation).filter(_.nonEmpty),
-                sku,
-                name,
-                Currency.from(price),
-                Currency.from(discountPrice),
-                qty.toInt,
-                Option(brand).filter(_.nonEmpty),
-                Option(category).filter(_.nonEmpty),
-                Option(taxRate).filter(_.nonEmpty).map(_.toInt)
-              )
-          }.asRight
+      errors match {
+        case Seq() => Parser.parseProductRows(rows).asRight
         case _ =>
           ExcelError(
             invalidProductImportMessage,
-            combineValidationErrors(errors ++ duplicates)
+            Validator.combineValidationErrors(errors)
           ).asLeft
       }
     }
 
     def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]] = {
       val (_, rows) = processFile(file, FileFor.Sale)
-      val errors = rows.collect {
-        case (Seq(barcode, _), index) if barcode.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(_, qty), index) if !qty.isEmpty && Try(qty.toInt).isFailure =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
-      }
+      val errors    = Validator.validateSaleRows(rows)
 
       errors match {
-        case Seq() =>
-          rows.map {
-            case (Seq(barcode, qty), _) => (barcode, Try(qty.toInt).getOrElse(1))
-          }.groupBy(_._1)
-            .map {
-              case (b, r) => (b, r.foldLeft(0)((sum, r) => sum + r._2))
-            }
-            .map {
-              case (b, q) => ExcelSaleRow(b, q)
-            }
-            .toSeq
-            .asRight
-        case _ => ExcelError(invalidSaleImportMessage, errors).asLeft
+        case Seq() => Parser.parseSaleRows(rows).asRight
+        case _ =>
+          ExcelError(invalidSaleImportMessage, Validator.combineValidationErrors(errors)).asLeft
       }
     }
 
@@ -199,61 +114,19 @@ object ExcelService {
     ): Either[ExcelError, Seq[ExcelStockOrderRow]] = {
       val (_, rows) = processFile(file, FileFor.StockOrder)
 
-      val errors = rows.collect {
-        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index) if barcode.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index)
-            if !barcode
-              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14 =>
-          ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if qty.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if !qty.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, _, price, _, _, _, _), index)
-            if !price.isEmpty && !Currency.isValid(price) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, discountPrice, _, _, _), index)
-            if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidTaxRateError)
-      }
+      val errors = Validator.validateStockOrderRows(rows)
 
       errors match {
-        case Seq() =>
-          rows.map {
-            case (
-                Seq(
-                  name,
-                  sku,
-                  variation,
-                  barcode,
-                  qty,
-                  price,
-                  discountPrice,
-                  category,
-                  brand,
-                  taxRate
-                ),
-                _
-                ) =>
-              ExcelStockOrderRow(
-                name,
-                sku,
-                Option(variation).filter(_.nonEmpty),
-                barcode,
-                qty.toInt,
-                Currency.from(price),
-                Currency.from(discountPrice),
-                Option(category).filter(_.nonEmpty),
-                Option(brand).filter(_.nonEmpty),
-                Option(taxRate).filter(_.nonEmpty).map(_.toInt)
-              )
-          }.asRight
+        case Seq() => Parser.parseStockOrderRows(rows).asRight
         case es =>
-          ExcelError(invalidStockOrderImportMessage, combineValidationErrors(es)).asLeft
+          ExcelError(invalidStockOrderImportMessage, Validator.combineValidationErrors(es)).asLeft
       }
     }
+
+    def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): Unit = 
+      Writer.writeStockOrderRows(name, rows)
+      
+    def writeProductRows(name: String, rows: Seq[ProductDTO]): Unit =
+      Writer.writeProductRows(name, rows)
   }
 }

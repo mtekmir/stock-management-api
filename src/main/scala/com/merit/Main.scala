@@ -72,12 +72,7 @@ object Main extends App {
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
 
-  // crawlerClient.sendSale(
-  //   SaleSummary(SaleID(1L), Seq(SaleSummaryProduct(ProductID.zero, "000000000004", "test", None, 2, 2)))
-  // )
-
   def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
-
   exec(userService.populateUsers)
 
   val routes =
