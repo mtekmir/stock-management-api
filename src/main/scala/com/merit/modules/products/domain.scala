@@ -132,3 +132,8 @@ case class CreateProductRequest(
   brandId: Option[BrandID],
   categoryId: Option[CategoryID]
 )
+
+case class ProductFilters(
+  categoryId: Option[CategoryID] = None,
+  brandId: Option[BrandID] = None
+)

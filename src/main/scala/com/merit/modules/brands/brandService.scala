@@ -18,7 +18,7 @@ object BrandService {
     implicit ec: ExecutionContext
   ) = new BrandService {
     private def insertIfNotExists(brand: BrandRow): DBIO[BrandRow] =
-      brandRepo.getByName(brand.name).flatMap {
+      brandRepo.get(brand.name).flatMap {
         case Some(b) => DBIO.successful(b)
         case None    => brandRepo.insert(brand)
       }.transactionally

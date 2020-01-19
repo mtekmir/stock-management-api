@@ -41,7 +41,7 @@ class BrandsRepSpec(implicit ee: ExecutionEnv)
       val brand = db.run(
         for {
           _     <- insertTestData
-          brand <- brandRepo.getByName("brand1")
+          brand <- brandRepo.get("brand1")
         } yield brand.map(_.name)
       )
       brand must beEqualTo(Some("brand1")).await

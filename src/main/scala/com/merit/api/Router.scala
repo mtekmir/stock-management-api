@@ -22,6 +22,8 @@ import com.merit.AppConfig
 import com.merit.api.stockOrders.SyncStockOrderRoute
 import com.merit.api.brands.BrandRoutes
 import com.merit.api.categories.CategoryRoutes
+import com.merit.api.inventoryCount.InventoryCountRoutes
+import com.merit.modules.inventoryCount.InventoryCountService
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -32,6 +34,7 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     userService: UserService,
     categoryService: CategoryService,
     stockOrderService: StockOrderService,
+    inventoryCountService: InventoryCountService,
     config: AppConfig
   )(implicit ec: ExecutionContext): Route = {
     def crawlerAuthenticator(credentials: Credentials): Option[Boolean] =
@@ -52,6 +55,7 @@ object Router extends Directives with AuthDirectives with JsonSupport {
         StockOrderRoutes(stockOrderService, excelService) ~
         BrandRoutes(brandService) ~
         CategoryRoutes(categoryService) ~
+        InventoryCountRoutes(inventoryCountService, excelService) ~
         UserRoutes(userId, userService)
       }
     }

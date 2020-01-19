@@ -13,6 +13,7 @@ import db.DbSpecification
 import org.specs2.specification.AfterEach
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import com.merit.modules.products.ProductFilters
 
 class ProductRepoSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -152,6 +153,32 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
 
       res.map(_.isDefined) must beTrue.await
     }
+
+    "should filter products by brand" in new TestScope {
+      val products = (1 to 20).map(_ => createProduct)
+
+      val res = db.run(
+        for {
+          (b, c, p) <- insertTestData
+          _ <- productRepo.batchInsert(products)
+          ps <-productRepo.getAll(ProductFilters(brandId = Some(b)))
+        } yield (ps, p)
+      )
+      res.map{ case (p1, p2) => p1.map(_.barcode) === p2.map(_.barcode)}.await
+    }
+
+    "should filter products by category" in new TestScope {
+      val products = (1 to 20).map(_ => createProduct)
+
+      val res = db.run(
+        for {
+          (b, c, p) <- insertTestData
+          _ <- productRepo.batchInsert(products)
+          ps <-productRepo.getAll(ProductFilters(categoryId = Some(c)))
+        } yield (ps, p)
+      )
+      res.map{ case (p1, p2) => p1.map(_.barcode) === p2.map(_.barcode)}.await
+    }
   }
 
   class TestScope extends Scope {
@@ -160,7 +187,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
     def insertTestData = {
       import schema._
       import schema.profile.api._
-      val sampleProducts = (1 to 2).map(i => createProduct)
+      val sampleProducts = (1 to 2).map(i => createProduct).sortBy(_.barcode)
       for {
         brandId    <- brands returning brands.map(_.id) += BrandRow("b1")
         categoryId <- categories returning categories.map(_.id) += CategoryRow("c1")

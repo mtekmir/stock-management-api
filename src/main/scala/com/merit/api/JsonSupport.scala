@@ -16,6 +16,7 @@ import org.joda.time.format.DateTimeFormat
 import com.merit.modules.products.Currency
 import cats.syntax.either._
 import com.merit.modules.stockOrders.StockOrderID
+import com.merit.modules.inventoryCount.{InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -29,7 +30,8 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val decodeSaleId: Decoder[SaleID] = Decoder.decodeLong.emap { v =>
     SaleID(v).asRight
   }
-  implicit val encodeStockOrderId: Encoder[StockOrderID] = (id: StockOrderID) => Encoder.encodeLong(id.value)
+  implicit val encodeStockOrderId: Encoder[StockOrderID] = (id: StockOrderID) =>
+    Encoder.encodeLong(id.value)
   implicit val decodeStockOrderId: Decoder[StockOrderID] = Decoder.decodeLong.emap { v =>
     StockOrderID(v).asRight
   }
@@ -50,13 +52,30 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
     UserID(v).asRight
   }
 
+  implicit val encodeInventoryCountBatchId: Encoder[InventoryCountBatchID] =
+    (id: InventoryCountBatchID) => Encoder.encodeLong(id.value)
+  implicit val decodeInventoryCountBatchId: Decoder[InventoryCountBatchID] =
+    Decoder.decodeLong.emap { v =>
+      InventoryCountBatchID(v).asRight
+    }
+
+  implicit val encodeInventoryCountProductId: Encoder[InventoryCountProductID] =
+    (id: InventoryCountProductID) => Encoder.encodeLong(id.value)
+  implicit val decodeInventoryCountProductId: Decoder[InventoryCountProductID] =
+    Decoder.decodeLong.emap { v =>
+      InventoryCountProductID(v).asRight
+    }
+
   implicit val encodeCurrency: Encoder[Currency] = (currency: Currency) =>
     Encoder.encodeBigDecimal(currency.value)
 
-  implicit val decodeCurrency: Decoder[Currency] = Decoder.decodeBigDecimal.emap{ v => 
+  implicit val decodeCurrency: Decoder[Currency] = Decoder.decodeBigDecimal.emap { v =>
     Currency(v).asRight
   }
 
   implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] =
     Encoder.enumEncoder(ValidationErrorTypes)
+
+  implicit val encodeInventoryCountStatus: Encoder[InventoryCountStatus.Value] =
+    Encoder.enumEncoder(InventoryCountStatus)
 }

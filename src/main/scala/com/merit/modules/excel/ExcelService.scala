@@ -18,6 +18,12 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.FileOutputStream
 import com.merit.modules.products.ProductRow
 import com.merit.modules.products.ProductDTO
+import com.merit.modules.inventoryCount.InventoryCountDTO
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import java.io.OutputStream
+import scala.concurrent.Future
+import akka.stream.IOResult
 
 object FileFor extends Enumeration {
   type FileFor = Value
@@ -28,8 +34,9 @@ trait ExcelService {
   def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]]
   def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]]
   def parseStockOrderImportFile(file: File): Either[ExcelError, Seq[ExcelStockOrderRow]]
-  def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): Unit
-  def writeProductRows(name: String, rows: Seq[ProductDTO]): Unit
+  // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): File
+  // def writeProductRows(name: String, rows: Seq[ProductDTO]): File
+  // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]]
 }
 
 object ExcelService {
@@ -123,10 +130,13 @@ object ExcelService {
       }
     }
 
-    def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): Unit = 
-      Writer.writeStockOrderRows(name, rows)
+    // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]) = 
+    //   Writer.writeStockOrderRows(name, rows)
       
-    def writeProductRows(name: String, rows: Seq[ProductDTO]): Unit =
-      Writer.writeProductRows(name, rows)
+    // def writeProductRows(name: String, rows: Seq[ProductDTO]) =
+    //   Writer.writeProductRows(name, rows)
+
+    // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]] = 
+    //   Writer.writeInventoryCountBatch(data)
   }
 }

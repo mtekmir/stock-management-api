@@ -22,14 +22,13 @@ import pureconfig._
 import pureconfig.generic.auto._
 import com.merit.modules.emails.{EmailServiceActor, EmailMessage}
 import akka.actor.Props
-import com.merit.modules.stockOrders.StockOrderRepo
-import com.merit.modules.stockOrders.StockOrderService
+import com.merit.modules.stockOrders.{StockOrderRepo, StockOrderService}
 import com.merit.external.crawler.CrawlerClient
 import com.merit.modules.sales.{SaleSummary, SaleID, SaleSummaryProduct}
 import com.merit.AwsConfig
 import com.merit.external.sqsClient.SqsClient
-import com.merit.modules.products.ProductID
 import com.merit.{Config, AppConfig}
+import com.merit.modules.inventoryCount.{InventoryCountRepo, InventoryCountService}
 
 object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,12 +50,13 @@ object Main extends App {
 
   val schema = Schema(DbProfile)
   schema.createTables(db)
-  val productRepo    = ProductRepo(schema)
-  val brandRepo      = BrandRepo(schema)
-  val saleRepo       = SaleRepo(schema)
-  val userRepo       = UserRepo(schema)
-  val categoryRepo   = CategoryRepo(schema)
-  val stockOrderRepo = StockOrderRepo(schema)
+  val productRepo        = ProductRepo(schema)
+  val brandRepo          = BrandRepo(schema)
+  val saleRepo           = SaleRepo(schema)
+  val userRepo           = UserRepo(schema)
+  val categoryRepo       = CategoryRepo(schema)
+  val stockOrderRepo     = StockOrderRepo(schema)
+  val inventoryCountRepo = InventoryCountRepo(schema)
 
   val sqsClient     = SqsClient(appConfig)
   val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
@@ -71,6 +71,8 @@ object Main extends App {
     StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
+  val inventoryCountService =
+    InventoryCountService(db, inventoryCountRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
 
   def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
   exec(userService.populateUsers)
@@ -84,6 +86,7 @@ object Main extends App {
       userService,
       categoryService,
       stockOrderService,
+      inventoryCountService,
       appConfig
     )
 

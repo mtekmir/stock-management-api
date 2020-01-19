@@ -32,7 +32,7 @@ object ProductService {
   )(implicit ec: ExecutionContext) = new ProductService {
     private def insertBrandIfNotExists(brandName: String): DBIO[BrandRow] =
       brandRepo
-        .getByName(brandName)
+        .get(brandName)
         .flatMap {
           case Some(b) => DBIO.successful(b)
           case None    => brandRepo.insert(BrandRow(brandName))
@@ -76,7 +76,7 @@ object ProductService {
 
     def getProducts(page: Int, rowsPerPage: Int): Future[PaginatedProductsResponse] =
       for {
-        products <- db.run(productRepo.getAll(page, rowsPerPage))
+        products <- db.run(productRepo.getAll(page, rowsPerPage, ProductFilters()))
         count    <- db.run(productRepo.count)
       } yield PaginatedProductsResponse(count, products)
 

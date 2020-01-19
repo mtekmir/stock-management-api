@@ -12,7 +12,8 @@ trait ProductRepo[DbTask[_]] {
   def count: DbTask[Int]
   def get(barcode: String): DbTask[Option[ProductDTO]]
   def getRow(barcode: String): DbTask[Option[ProductRow]]
-  def getAll(page: Int, rowsPerPage: Int): DbTask[Seq[ProductDTO]]
+  def getAll(page: Int, rowsPerPage: Int, filters: ProductFilters): DbTask[Seq[ProductDTO]]
+  def getAll(filters: ProductFilters): DbTask[Seq[ProductDTO]]
   def findAll(barcodes: Seq[String]): DbTask[Seq[ProductDTO]]
   def insert(product: ProductRow): DbTask[ProductRow]
   def batchInsert(products: Seq[ProductRow]): DbTask[Seq[ProductRow]]
@@ -48,6 +49,20 @@ object ProductRepo {
             }
       }
 
+      private type ProductQuery = Query[ProductTable, ProductRow, Seq]
+
+      implicit class FilterQ1(
+        query: ProductQuery
+      ) {
+        def filterOption[A: BaseColumnType](
+          filter: Option[A],
+          tableToColumn: ProductTable => Rep[Option[A]]
+        ): ProductQuery =
+          filter.foldLeft(query) {
+            case (q, f) => q.filter(t => tableToColumn(t) === f)
+          }
+      }
+
       def count: DBIO[Int] = products.length.result
 
       def get(barcode: String): DBIO[Option[ProductDTO]] =
@@ -61,8 +76,24 @@ object ProductRepo {
       def getRow(barcode: String): DBIO[Option[ProductRow]] =
         products.filter(_.barcode === barcode).result.headOption
 
-      def getAll(page: Int, rowsPerPage: Int): DBIO[Seq[ProductDTO]] =
+      private def getAllBase(filters: ProductFilters): ProductQuery =
         products
+          .filterOption(filters.brandId, _.brandId)
+          .filterOption(filters.categoryId, _.categoryId)
+
+      def getAll(filters: ProductFilters): DBIO[Seq[ProductDTO]] =
+        getAllBase(filters)
+          .withBrandAndCategory
+          .result
+          .map(_.toList)
+          .toProductDTO
+
+      def getAll(
+        page: Int,
+        rowsPerPage: Int,
+        filters: ProductFilters = ProductFilters()
+      ): DBIO[Seq[ProductDTO]] =
+        getAllBase(filters)
           .drop((page - 1) * rowsPerPage)
           .take(rowsPerPage)
           .withBrandAndCategory
@@ -100,7 +131,7 @@ object ProductRepo {
           .result
           .map(_.toList)
           .toProductDTO
-      } 
+      }
 
       def create(product: ProductRow): DBIO[ProductDTO] =
         for {

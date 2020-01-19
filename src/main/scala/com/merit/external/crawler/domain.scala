@@ -3,10 +3,11 @@ package com.merit.external.crawler
 import com.merit.modules.sales.SaleID
 import com.merit.modules.products.ProductID
 import com.merit.modules.stockOrders.StockOrderID
+import com.merit.modules.inventoryCount.InventoryCountBatchID
 
 object MessageType extends Enumeration {
   type MessageType = Value
-  val Sale, StockOrder = Value
+  val Sale, StockOrder, InventoryCount = Value
 }
 
 case class SyncMessageProduct(
@@ -32,6 +33,11 @@ case class SyncStockOrderMessage(
   products: Seq[SyncMessageProduct]
 )
 
+case class SyncInventoryCountMessage(
+  inventoryCountBatchId: InventoryCountBatchID,
+  products: Seq[SyncMessageProduct]
+)
+
 case class SyncSaleResponse(
   saleId: SaleID,
   products: Seq[SyncResponseProduct]
@@ -42,3 +48,7 @@ case class SyncStockOrderResponse(
   products: Seq[SyncResponseProduct]
 )
 
+case class SyncInventoryCountResponse(
+  inventoryCountBatchId: InventoryCountBatchID,
+  products: Seq[SyncResponseProduct]
+)

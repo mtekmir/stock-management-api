@@ -16,6 +16,7 @@ import org.joda.time.DateTime
 import com.merit.modules.sales.{SaleID, SaleRow}
 import com.merit.modules.users.{UserID, UserRow}
 import com.merit.modules.categories.{CategoryRow, CategoryID}
+import com.merit.modules.inventoryCount.{InventoryCountBatchRow,InventoryCountProductRow,InventoryCountBatchID,InventoryCountProductID,InventoryCountStatus}
 
 class Schema(val profile: JdbcProfile) {
   import profile.api._
@@ -30,6 +31,11 @@ class Schema(val profile: JdbcProfile) {
     implicit val currencyType = MappedColumnType.base[Currency, BigDecimal](
       c => c.value,
       bd => Currency.fromDb(bd)
+    )
+
+    implicit val myEnumMapper = MappedColumnType.base[InventoryCountStatus.Value, String](
+      e => e.toString,
+      s => InventoryCountStatus.withName(s)
     )
   }
 
@@ -63,9 +69,9 @@ class Schema(val profile: JdbcProfile) {
       ).mapTo[ProductRow]
 
     def brand =
-      foreignKey("brand_pk", brandId, brands)(_.id, onDelete = ForeignKeyAction.SetNull)
+      foreignKey("product_brand_pk", brandId, brands)(_.id, onDelete = ForeignKeyAction.SetNull)
     def category =
-      foreignKey("category_pk", categoryId, categories)(
+      foreignKey("product_category_pk", categoryId, categories)(
         _.id,
         onDelete = ForeignKeyAction.SetNull
       )
@@ -110,7 +116,7 @@ class Schema(val profile: JdbcProfile) {
     def qty       = column[Int]("qty")
     def synced    = column[Boolean]("synced")
 
-    def productFk = foreignKey("product_fk", productId, products)(_.id)
+    def productFk = foreignKey("sold_product_fk", productId, products)(_.id)
     def saleFk    = foreignKey("sale_fk", saleId, sales)(_.id)
 
     def * = (productId, saleId, qty, synced, id).mapTo[SoldProductRow]
@@ -146,13 +152,50 @@ class Schema(val profile: JdbcProfile) {
     def qty          = column[Int]("qty")
     def synced       = column[Boolean]("synced")
 
-    def productFk    = foreignKey("product_fk", productId, products)(_.id)
+    def productFk    = foreignKey("ordered_product_fk", productId, products)(_.id)
     def stockOrderFk = foreignKey("stock_order_fk", stockOrderId, stockOrders)(_.id)
 
     def * = (productId, stockOrderId, qty, synced, id).mapTo[OrderedProductRow]
   }
 
   lazy val orderedProducts = TableQuery[OrderedProductsTable]
+
+  class InventoryCountBatchTable(t: Tag)
+      extends Table[InventoryCountBatchRow](t, "inventory_count_batches") {
+    import CustomColumnTypes._
+
+    def id         = column[InventoryCountBatchID]("id", O.PrimaryKey, O.AutoInc)
+    def status     = column[InventoryCountStatus.Value]("status")
+    def started    = column[DateTime]("started")
+    def finished   = column[Option[DateTime]]("finished")
+    def name       = column[Option[String]]("name")
+    def categoryId = column[Option[CategoryID]]("categoryId")
+    def brandId    = column[Option[BrandID]]("brandId")
+
+    def categoryFk = foreignKey("inventory_count_category_fk", categoryId, categories)(_.id)
+    def brandFk    = foreignKey("inventory_count_brand_fk", brandId, brands)(_.id)
+
+    def * = (started, finished, name, categoryId, brandId, status, id).mapTo[InventoryCountBatchRow]
+  }
+
+  lazy val inventoryCountBatches = TableQuery[InventoryCountBatchTable]
+
+  class InventoryCountProductsTable(t: Tag)
+      extends Table[InventoryCountProductRow](t, "inventory_count_products") {
+    def id        = column[InventoryCountProductID]("id", O.PrimaryKey, O.AutoInc)
+    def batchId   = column[InventoryCountBatchID]("batchId")
+    def productId = column[ProductID]("productId")
+    def expected  = column[Int]("expected")
+    def counted   = column[Option[Int]]("counted")
+    def synced    = column[Boolean]("synced")
+
+    def batchFk   = foreignKey("inventory_count_batch_fk", batchId, inventoryCountBatches)(_.id)
+    def productFk = foreignKey("inventory_count_product_fk", productId, products)(_.id)
+
+    def * = (batchId, productId, expected, counted, synced, id).mapTo[InventoryCountProductRow]
+  }
+
+  lazy val inventoryCountProducts = TableQuery[InventoryCountProductsTable]
 
   def createTables(db: Database)(implicit ec: ExecutionContext): Seq[Unit] = {
     val tables =
@@ -164,7 +207,9 @@ class Schema(val profile: JdbcProfile) {
         soldProducts,
         users,
         stockOrders,
-        orderedProducts
+        orderedProducts,
+        inventoryCountBatches,
+        inventoryCountProducts
       )
     val existing = db.run(MTable.getTables)
 

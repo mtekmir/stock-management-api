@@ -1,21 +1,22 @@
 package com.merit.external.crawler
 
 import software.amazon.awssdk.services.sqs.model.SendMessageRequest
-import com.merit.modules.sales.SaleSummary
-import com.merit.modules.sales.SaleSummaryProduct
+import com.merit.modules.sales.{SaleSummary, SaleSummaryProduct}
 import com.merit.external.sqsClient.SqsClient
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
-import com.merit.modules.stockOrders.StockOrderSummary
-import com.merit.modules.stockOrders.StockOrderSummaryProduct
+import com.merit.modules.stockOrders.{StockOrderSummary, StockOrderSummaryProduct}
 import com.merit.CrawlerClientConfig
+import com.merit.modules.inventoryCount.{InventoryCountDTO,InventoryCountDTOProduct}
 
 trait CrawlerClient {
   def sendSale(sale: SaleSummary): Future[(SyncSaleMessage, SendMessageResponse)]
   def sendStockOrder(
     stockOrder: StockOrderSummary
   ): Future[(SyncStockOrderMessage, SendMessageResponse)]
+  def sendInventoryCount(
+    inventoryCount: InventoryCountDTO
+  ): Future[(SyncInventoryCountMessage, SendMessageResponse)]
 }
 
 object CrawlerClient {
@@ -40,7 +41,7 @@ object CrawlerClient {
             client.sendMessageTo(
               config.queueUrl,
               MessageType.Sale,
-              encodeSaleMessage(message).toString()
+              encodeSaleMessage(message).toString
             )
           )
         }
@@ -65,7 +66,30 @@ object CrawlerClient {
             client.sendMessageTo(
               config.queueUrl,
               MessageType.StockOrder,
-              encodeStockOrderMessage(message).toString()
+              encodeStockOrderMessage(message).toString
+            )
+          )
+        }
+      }
+
+      def sendInventoryCount(
+        inventoryCount: InventoryCountDTO
+      ): Future[(SyncInventoryCountMessage, SendMessageResponse)] = {
+        val message = SyncInventoryCountMessage(
+          inventoryCount.id,
+          inventoryCount.products.filter(_.counted.isDefined).map {
+            case InventoryCountDTOProduct(id, _, barcode, _, _, expected, counted, _) =>
+              SyncMessageProduct(id, barcode, counted.get)
+          }
+        )
+
+        Future {
+          (
+            message,
+            client.sendMessageTo(
+              config.queueUrl,
+              MessageType.InventoryCount,
+              encodeInventoryCountMessage(message).toString
             )
           )
         }

@@ -37,7 +37,7 @@ object StockOrderService {
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext): StockOrderService = new StockOrderService {
     private def insertBrandIfNotExists(name: String) =
-      brandRepo.getByName(name).flatMap {
+      brandRepo.get(name).flatMap {
         case None        => brandRepo.insert(BrandRow(name))
         case Some(brand) => DBIO.successful(brand)
       }

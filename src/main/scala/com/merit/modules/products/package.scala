@@ -1,7 +1,6 @@
 package com.merit.modules
 
 package object products {
-  
   implicit class C1(
     val r: CreateProductRequest
   ) {

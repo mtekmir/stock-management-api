@@ -22,7 +22,7 @@ object GetSaleTemplateRoute extends Directives {
           status = StatusCodes.OK,
           entity = HttpEntity(
             contentType =
-              MediaTypes.`application/vnd.openxmlformats-officedocument.spreadsheetml.template`,
+              MediaTypes.`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
             source
           )
         )
