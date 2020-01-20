@@ -8,6 +8,7 @@ import com.merit.modules.sales.SaleID
 import com.merit.modules.products.Currency
 import com.merit.modules.sales.SaleDTOProduct
 import com.merit.modules.products.ProductID
+import com.merit.modules.sales.SaleOutlet
 
 object SaleUtils {
   def createSales(count: Int): Seq[SaleDTO] =
@@ -17,6 +18,7 @@ object SaleUtils {
           SaleDTO(
             SaleID(i),
             DateTime.now(),
+            SaleOutlet.Store,
             Currency(randomBetween(10000)),
             Currency(randomBetween(1000)),
             getExcelProductRows(5).map(excelRowToSaleDTOProduct(_))

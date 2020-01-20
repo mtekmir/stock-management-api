@@ -13,10 +13,10 @@ import java.sql.Timestamp
 
 import com.merit.modules.stockOrders.{StockOrderID, StockOrderRow}
 import org.joda.time.DateTime
-import com.merit.modules.sales.{SaleID, SaleRow}
+import com.merit.modules.sales.{SaleID, SaleRow, SaleOutlet}
 import com.merit.modules.users.{UserID, UserRow}
 import com.merit.modules.categories.{CategoryRow, CategoryID}
-import com.merit.modules.inventoryCount.{InventoryCountBatchRow,InventoryCountProductRow,InventoryCountBatchID,InventoryCountProductID,InventoryCountStatus}
+import com.merit.modules.inventoryCount.{InventoryCountBatchRow, InventoryCountProductRow, InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
 
 class Schema(val profile: JdbcProfile) {
   import profile.api._
@@ -36,6 +36,11 @@ class Schema(val profile: JdbcProfile) {
     implicit val myEnumMapper = MappedColumnType.base[InventoryCountStatus.Value, String](
       e => e.toString,
       s => InventoryCountStatus.withName(s)
+    )
+
+    implicit val saleOutletMapper = MappedColumnType.base[SaleOutlet.Value, String](
+      e => e.toString,
+      s => SaleOutlet.withName(s)
     )
   }
 
@@ -69,7 +74,10 @@ class Schema(val profile: JdbcProfile) {
       ).mapTo[ProductRow]
 
     def brand =
-      foreignKey("product_brand_pk", brandId, brands)(_.id, onDelete = ForeignKeyAction.SetNull)
+      foreignKey("product_brand_pk", brandId, brands)(
+        _.id,
+        onDelete = ForeignKeyAction.SetNull
+      )
     def category =
       foreignKey("product_category_pk", categoryId, categories)(
         _.id,
@@ -103,8 +111,9 @@ class Schema(val profile: JdbcProfile) {
     def createdAt = column[DateTime]("created")
     def total     = column[Currency]("total")
     def discount  = column[Currency]("discount")
+    def outlet    = column[SaleOutlet.Value]("outlet")
 
-    def * = (createdAt, total, discount, id).mapTo[SaleRow]
+    def * = (createdAt, total, discount, outlet, id).mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]
@@ -175,7 +184,8 @@ class Schema(val profile: JdbcProfile) {
     def categoryFk = foreignKey("inventory_count_category_fk", categoryId, categories)(_.id)
     def brandFk    = foreignKey("inventory_count_brand_fk", brandId, brands)(_.id)
 
-    def * = (started, finished, name, categoryId, brandId, status, id).mapTo[InventoryCountBatchRow]
+    def * =
+      (started, finished, name, categoryId, brandId, status, id).mapTo[InventoryCountBatchRow]
   }
 
   lazy val inventoryCountBatches = TableQuery[InventoryCountBatchTable]

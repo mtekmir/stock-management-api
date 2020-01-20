@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 import io.circe.Json
 import io.circe.Encoder
 import io.circe.Decoder
-import com.merit.modules.sales.SaleID
+import com.merit.modules.sales.{SaleID, SaleOutlet}
 import com.merit.modules.products.ProductID
 import com.merit.modules.brands.BrandID
 import com.merit.modules.users.UserID
@@ -78,4 +78,10 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val encodeInventoryCountStatus: Encoder[InventoryCountStatus.Value] =
     Encoder.enumEncoder(InventoryCountStatus)
+
+  implicit val encodeSaleOutlet: Encoder[SaleOutlet.Value] =
+    Encoder.enumEncoder(SaleOutlet)
+
+  implicit val decodeSaleOutlet: Decoder[SaleOutlet.Value] =
+    Decoder.enumDecoder(SaleOutlet)
 }

@@ -48,7 +48,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
     "should insert excel rows with default qty" in new TestScope {
       val sale = for {
         products <- productService.batchInsertExcelRows(sampleProducts)
-        sale <- saleService.insertFromExcel(
+        sale <- saleService.importSale(
           sampleProducts.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
           total
@@ -63,7 +63,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val qtys = (1 to 5).toSeq
       val sale = for {
         products <- productService.batchInsertExcelRows(sampleProducts)
-        sale <- saleService.insertFromExcel(
+        sale <- saleService.importSale(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
           total
@@ -81,7 +81,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val qtys = (1 to 5).map(_ => Random.nextInt(20))
       val sale = for {
         products <- productService.batchInsertExcelRows(sampleProducts)
-        sale <- saleService.insertFromExcel(
+        sale <- saleService.importSale(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
           total
@@ -98,7 +98,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
     "should do nothing when barcodes are not found" in new TestScope {
       val nonExistingProducts = getExcelProductRows(5)
       val sale = for {
-        sale <- saleService.insertFromExcel(
+        sale <- saleService.importSale(
           nonExistingProducts.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
           total
@@ -111,7 +111,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val products = getExcelProductRows(5).sortBy(_.barcode)
       val sale = for {
         products <- productService.batchInsertExcelRows(products)
-        s <- saleService.insertFromExcel(
+        s <- saleService.importSale(
           products.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
           total
@@ -131,7 +131,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val qtys     = (1 to 5).map(_ => randomBetween(5))
       val sale = for {
         products <- productService.batchInsertExcelRows(products)
-        s <- saleService.insertFromExcel(
+        s <- saleService.importSale(
           products.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
           total
@@ -153,7 +153,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val products = getExcelProductRows(5).sortBy(_.barcode)
       val sale = for {
         products <- productService.batchInsertExcelRows(products)
-        s <- saleService.insertFromExcel(
+        s <- saleService.importSale(
           products.map(p => ExcelSaleRow(p.barcode)),
           now,
           total
@@ -179,7 +179,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           sales.map(
             s =>
               saleService
-                .insertFromExcel(s._3.map(p => ExcelSaleRow(p.barcode, p.qty)), s._1, s._2)
+                .importSale(s._3.map(p => ExcelSaleRow(p.barcode, p.qty)), s._1, s._2)
           )
         )
         res1 <- saleService.getSales(1, 3)

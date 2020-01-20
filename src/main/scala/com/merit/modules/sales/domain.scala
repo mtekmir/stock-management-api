@@ -9,16 +9,24 @@ import com.merit.modules.categories.CategoryRow
 
 case class SaleID(value: Long) extends AnyVal with MappedTo[Long]
 
+object SaleOutlet extends Enumeration {
+  type SaleOutlet = Value
+  val Store = Value("Store")
+  val Web   = Value("Web")
+}
+
 case class SaleRow(
   createdAt: DateTime = DateTime.now(),
   total: Currency,
   discount: Currency = Currency(0),
+  outlet: SaleOutlet.Value = SaleOutlet.Store,
   id: SaleID = SaleID(0L)
 )
 
 case class SaleDTO(
   id: SaleID,
   createdAt: DateTime,
+  outlet: SaleOutlet.Value,
   total: Currency,
   discount: Currency,
   products: Seq[SaleDTOProduct]
@@ -86,6 +94,7 @@ case class SaleSummary(
   createdAt: DateTime,
   total: Currency,
   discount: Currency,
+  outlet: SaleOutlet.Value,
   products: Seq[SaleSummaryProduct]
 )
 

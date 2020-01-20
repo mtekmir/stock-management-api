@@ -10,14 +10,17 @@ import PostgresProfile.api._
 import org.joda.time.DateTime
 import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
-import com.merit.external.crawler.{SyncSaleResponse,CrawlerClient}
+import com.merit.external.crawler.{SyncSaleResponse, CrawlerClient}
 import collection.immutable.ListMap
 
 trait SaleService {
-  def insertFromExcel(
+  def importSale(
     rows: Seq[ExcelSaleRow],
     date: DateTime,
     total: Currency
+  ): Future[SaleSummary]
+  def importSoldProductsFromWeb(
+    rows: Seq[ExcelSaleRow]
   ): Future[SaleSummary]
   def createSale(
     total: Currency,
@@ -36,15 +39,16 @@ object SaleService {
     productRepo: ProductRepo[DBIO],
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext) = new SaleService {
-    def insertFromExcel(
+    private def insertFromExcel(
       rows: Seq[ExcelSaleRow],
       date: DateTime,
-      total: Currency
-    ): Future[SaleSummary] = {
-      val insertSale = db.run(
+      total: Currency,
+      outlet: SaleOutlet.Value = SaleOutlet.Store
+    ): Future[SaleSummary] =
+      db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
-          sale         <- saleRepo.add(SaleRow(date, total))
+          sale         <- saleRepo.add(SaleRow(date, total, Currency(0), outlet))
           addedProducts <- saleRepo.addProductsToSale(
             soldProducts.map(
               p =>
@@ -62,6 +66,7 @@ object SaleService {
             sale.createdAt,
             sale.total,
             Currency(0),
+            sale.outlet,
             soldProducts.map(
               p =>
                 SaleSummaryProduct.fromProductDTO(
@@ -72,11 +77,20 @@ object SaleService {
           )).transactionally
       )
 
+    def importSale(
+      rows: Seq[ExcelSaleRow],
+      date: DateTime,
+      total: Currency
+    ): Future[SaleSummary] =
       for {
-        summary <- insertSale
+        summary <- insertFromExcel(rows, date, total)
         _       <- crawlerClient.sendSale(summary)
       } yield (summary)
-    }
+
+    def importSoldProductsFromWeb(
+      rows: Seq[ExcelSaleRow]
+    ): Future[SaleSummary] =
+      insertFromExcel(rows, DateTime.now(), Currency(0), SaleOutlet.Web)
 
     def createSale(
       total: Currency,
@@ -96,6 +110,7 @@ object SaleService {
             sale.createdAt,
             sale.total,
             sale.discount,
+            sale.outlet,
             products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
           )).transactionally
       )
@@ -114,7 +129,9 @@ object SaleService {
             (s, p) => s :+ SaleDTOProduct.fromRow(p._2, p._5, p._6, p._4, p._3)
           )
           val sale = rows(0)._1
-          Some(SaleDTO(sale.id, sale.createdAt, sale.total, sale.discount, products))
+          Some(
+            SaleDTO(sale.id, sale.createdAt, sale.outlet, sale.total, sale.discount, products)
+          )
         }
       }
 
@@ -138,6 +155,7 @@ object SaleService {
                   saleRow.id -> SaleDTO(
                     saleRow.id,
                     saleRow.createdAt,
+                    saleRow.outlet,
                     saleRow.total,
                     saleRow.discount,
                     Seq(SaleDTOProduct.fromRow(productRow, brand, category, synced, soldQty))

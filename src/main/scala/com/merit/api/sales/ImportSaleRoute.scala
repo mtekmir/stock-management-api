@@ -25,7 +25,7 @@ object ImportSaleRoute extends Directives with JsonSupport {
           case Left(error) => complete(BadRequest -> error)
           case Right(rows) =>
             complete(
-              saleService.insertFromExcel(
+              saleService.importSale(
                 rows,
                 DateTime.parse(date, dateFormatter),
                 Currency.from(total).getOrElse(Currency(0))
