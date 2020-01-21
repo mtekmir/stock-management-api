@@ -13,17 +13,17 @@ import scala.concurrent.Future
 import utils.ProductUtils._
 import utils.ExcelTestUtils._
 
-class SearchProducts extends Specification with Specs2RouteTest with JsonSupport {
+class SearchProductsSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Products search route" >> {
     "should return empty list when query is empty" in new TestScope {
-      Get("/products?q=") ~> productRoutes ~> check {
+      Get("/products/search/?q=") ~> productRoutes ~> check {
         status === StatusCodes.OK
         responseAs[List[ProductDTO]] === List()
       }
     }
 
     "should return the products for the query" in new TestScope {
-      Get("/products?q=N") ~> productRoutes ~> check {
+      Get("/products/search/?q=N") ~> productRoutes ~> check {
         status === StatusCodes.OK
         responseAs[Seq[ProductDTO]] === products
       }

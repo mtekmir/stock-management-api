@@ -17,14 +17,18 @@ import com.merit.modules.products.Currency
 import cats.syntax.either._
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.inventoryCount.{InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
+import org.joda.time.format.ISODateTimeFormat
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
-    Encoder.encodeString(d.toString("yyyy-MM-d"))
+    Encoder.encodeString(d.toString())
 
-  val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-  implicit val decodeDateTime: Decoder[DateTime] =
-    Decoder.instance(d => d.as[String].map(s => DateTime.parse(s, dateFormatter)))
+  // val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
+  // implicit val decodeDateTime: Decoder[DateTime] =
+  //   Decoder.instance(d => d.as[String].map(s => DateTime.parse(s, dateFormatter)))
+    
+  implicit val decodeIso: Decoder[DateTime] =
+    Decoder.instance(d => d.as[String].map(s => DateTime.parse(s)))
 
   implicit val encodeSaleId: Encoder[SaleID] = (id: SaleID) => Encoder.encodeLong(id.value)
   implicit val decodeSaleId: Decoder[SaleID] = Decoder.decodeLong.emap { v =>

@@ -18,7 +18,7 @@ object ProductRoutes extends Directives {
     pathPrefix("products") {
       ImportRoute(productService, excelService) ~
       GetProduct(productService) ~
-      GetProducts(productService) ~
-      SearchProducts(productService)
+      SearchProducts(productService) ~
+      GetProducts(productService) 
     }
 }

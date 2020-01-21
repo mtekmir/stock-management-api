@@ -98,6 +98,11 @@ case class SaleSummary(
   products: Seq[SaleSummaryProduct]
 )
 
+case class SaleFilters(
+  startDate: Option[DateTime] = None,
+  endDate: Option[DateTime] = None
+)
+
 case class PaginatedSalesResponse(
   count: Int,
   sales: Seq[SaleDTO]

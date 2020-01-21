@@ -12,9 +12,10 @@ assemblyMergeStrategy in assembly := {
   case _                                   => MergeStrategy.first
 }
 
-val akkaVersion     = "2.6.1"
-val akkaHttpVersion = "10.1.11"
-val circeVersion    = "0.12.3"
+val akkaVersion            = "2.6.1"
+val akkaHttpVersion        = "10.1.11"
+val circeVersion           = "0.12.3"
+val slickVersion           = "3.3.2"
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
 
@@ -32,9 +33,6 @@ libraryDependencies ++= Seq(
   "ch.megard"              %% "akka-http-cors"      % "0.4.1",
   "org.apache.poi"         % "poi"                  % "4.1.0",
   "org.apache.poi"         % "poi-ooxml"            % "4.1.0",
-  "org.postgresql"         % "postgresql"           % "42.2.6",
-  "com.typesafe.slick"     %% "slick"               % "3.3.2",
-  "com.typesafe.slick"     %% "slick-hikaricp"      % "3.3.2",
   "ch.qos.logback"         % "logback-classic"      % "1.1.2",
   "joda-time"              % "joda-time"            % "2.10.2",
   "org.joda"               % "joda-convert"         % "2.2.1",
@@ -59,4 +57,11 @@ libraryDependencies ++= Seq(
 // Email
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-email" % "1.5"
+)
+
+// Slick
+libraryDependencies ++= Seq(
+  "com.typesafe.slick"   %% "slick"             % slickVersion,
+  "com.typesafe.slick"   %% "slick-hikaricp"    % slickVersion,
+  "org.postgresql"       % "postgresql"         % "42.2.6"
 )

@@ -9,7 +9,7 @@ import cats.implicits._
 import cats.Functor
 
 trait ProductRepo[DbTask[_]] {
-  def count: DbTask[Int]
+  def count(filters: ProductFilters): DbTask[Int]
   def get(barcode: String): DbTask[Option[ProductDTO]]
   def getRow(barcode: String): DbTask[Option[ProductRow]]
   def getAll(page: Int, rowsPerPage: Int, filters: ProductFilters): DbTask[Seq[ProductDTO]]
@@ -63,7 +63,6 @@ object ProductRepo {
           }
       }
 
-      def count: DBIO[Int] = products.length.result
 
       def get(barcode: String): DBIO[Option[ProductDTO]] =
         products
@@ -80,6 +79,8 @@ object ProductRepo {
         products
           .filterOption(filters.brandId, _.brandId)
           .filterOption(filters.categoryId, _.categoryId)
+
+      def count(filters: ProductFilters): DBIO[Int] = getAllBase(filters).length.result
 
       def getAll(filters: ProductFilters): DBIO[Seq[ProductDTO]] =
         getAllBase(filters)

@@ -28,7 +28,11 @@ trait SaleService {
     products: Seq[ProductDTO]
   ): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
-  def getSales(page: Int, rowsPerPage: Int): Future[PaginatedSalesResponse]
+  def getSales(
+    page: Int,
+    rowsPerPage: Int,
+    filters: SaleFilters = SaleFilters()
+  ): Future[PaginatedSalesResponse]
   def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]]
 }
 
@@ -135,9 +139,13 @@ object SaleService {
         }
       }
 
-    def getSales(page: Int, rowsPerPage: Int): Future[PaginatedSalesResponse] =
+    def getSales(
+      page: Int,
+      rowsPerPage: Int,
+      filters: SaleFilters
+    ): Future[PaginatedSalesResponse] = 
       for {
-        sales <- db.run(saleRepo.getAll(page, rowsPerPage)).map {
+        sales <- db.run(saleRepo.getAll(page, rowsPerPage, filters)).map {
           _.foldLeft(ListMap[SaleID, SaleDTO]()) {
             case (m, (saleRow, productRow, soldQty, synced, brand, category)) =>
               m + m
@@ -163,8 +171,9 @@ object SaleService {
                 )
           }.values.toSeq
         }
-        count <- db.run(saleRepo.count)
+        count <- db.run(saleRepo.count(filters))
       } yield PaginatedSalesResponse(count, sales)
+    
 
     def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]] =
       db.run(
