@@ -9,7 +9,7 @@ object CreateSale extends Directives with JsonSupport {
   def apply(saleService: SaleService): Route =
     (post & pathEndOrSingleSlash & entity(as[CreateSaleRequest])) {
       case CreateSaleRequest(total, discount, products) if products.length > 0 =>
-        complete(saleService.createSale(total, discount, products))
+        complete(saleService.create(total, discount, products))
       case _ => complete(BadRequest -> "Products must not be empty")
     }
 }

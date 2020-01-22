@@ -206,7 +206,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
 
       val res = for {
         ps              <- productService.batchInsertExcelRows(products)
-        summary         <- saleService.createSale(total, discount, ps.map(rowToDTO(_, None, None)))
+        summary         <- saleService.create(total, discount, ps.map(rowToDTO(_, None, None)))
         updatedProducts <- productService.findAll(products.map(_.barcode))
       } yield (summary, updatedProducts)
       res.map(_._1.total) must beEqualTo(total).await

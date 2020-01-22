@@ -25,24 +25,24 @@ class CategoryServiceSpec(implicit ee: ExecutionEnv)
     "should get all categories" in new TestScope {
       val res = for {
         _ <- insertTestData
-        categories <- categoryService.getAll
+        categories <- categoryService.getCategories
       } yield categories.map(_.name)
       res must beEqualTo(Seq("test1", "test2")).await
     }
 
     "should insert a category" in new TestScope {
       val res = for {
-        _ <- categoryService.insert("New")
-        categories <- categoryService.getAll
+        _ <- categoryService.create("New")
+        categories <- categoryService.getCategories
       } yield categories.map(_.name)
       res must beEqualTo(Seq("New")).await
     }
 
     "should not insert the same category twice" in new TestScope {
       val res = for {
-        _ <- categoryService.insert("New")
-        _ <- categoryService.insert("New")
-        categories <- categoryService.getAll
+        _ <- categoryService.create("New")
+        _ <- categoryService.create("New")
+        categories <- categoryService.getCategories
       } yield categories.map(_.name)
       res must beEqualTo(Seq("New")).await
     }
@@ -51,7 +51,7 @@ class CategoryServiceSpec(implicit ee: ExecutionEnv)
       val categoryNames = Seq("c0", "c01", "c03")
       val res = for {
         _ <- categoryService.batchInsert(categoryNames)
-        categories <- categoryService.getAll
+        categories <- categoryService.getCategories
       } yield categories.map(_.name)
       res must beEqualTo(categoryNames).await
     }

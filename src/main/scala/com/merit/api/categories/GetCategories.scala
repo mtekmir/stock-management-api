@@ -7,6 +7,6 @@ import akka.http.scaladsl.server.Route
 object GetCategories extends Directives with JsonSupport {
   def apply(categoryService: CategoryService): Route = 
     get {
-      complete(categoryService.getAll)
+      complete(categoryService.getCategories)
     }
 }

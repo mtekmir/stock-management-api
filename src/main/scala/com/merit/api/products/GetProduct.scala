@@ -12,7 +12,7 @@ object GetProduct extends Directives with JsonSupport {
   val barcodeMatcher: PathMatcher1[String] = Segment
   def apply(productService: ProductService): Route = {
     (path(barcodeMatcher)) { barcode =>
-      onComplete(productService.get(barcode)) {
+      onComplete(productService.getProduct(barcode)) {
         case Success(Some(product)) => complete(product)
         case Success(None) => complete(StatusCodes.NotFound)
         case Failure(e) => 

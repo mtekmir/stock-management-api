@@ -23,15 +23,15 @@ class BrandServiceSpec(implicit ee: ExecutionEnv)
     "should get all brands" in new TestScope {
       val brands = for {
         _      <- insertTestData
-        brands <- brandService.getAll
+        brands <- brandService.getBrands
       } yield brands.map(_.name)
       brands must beEqualTo(Seq("brand1", "brand2")).await
     }
 
     "should insert a brand" in new TestScope {
       val brands = for {
-        _      <- brandService.insert(BrandRow("testBrand"))
-        brands <- brandService.getAll
+        _      <- brandService.create(BrandRow("testBrand"))
+        brands <- brandService.getBrands
       } yield brands.map(_.name)
       brands must beEqualTo(Seq("testBrand")).await
     }
@@ -41,7 +41,7 @@ class BrandServiceSpec(implicit ee: ExecutionEnv)
       val brandNames = Seq("test1", "test2")
       val res = for {
         _ <- brandService.batchInsert(brandNames.map(BrandRow(_)))
-        brands <- brandService.getAll
+        brands <- brandService.getBrands
       } yield brands.map(_.name)
       res must beEqualTo(brandNames).await
     }
@@ -49,9 +49,9 @@ class BrandServiceSpec(implicit ee: ExecutionEnv)
     "should not insert the same brand twice" in new TestScope {
       val brandName = "test"
       val res = for {
-        _ <- brandService.insert(BrandRow(brandName))
-        _ <- brandService.insert(BrandRow(brandName))
-        brands <- brandService.getAll
+        _ <- brandService.create(BrandRow(brandName))
+        _ <- brandService.create(BrandRow(brandName))
+        brands <- brandService.getBrands
       } yield brands.map(_.name)
       res must beEqualTo(Seq(brandName)).await
     }

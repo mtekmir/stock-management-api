@@ -22,7 +22,7 @@ trait SaleService {
   def importSoldProductsFromWeb(
     rows: Seq[ExcelSaleRow]
   ): Future[SaleSummary]
-  def createSale(
+  def create(
     total: Currency,
     discount: Currency,
     products: Seq[ProductDTO]
@@ -96,7 +96,7 @@ object SaleService {
     ): Future[SaleSummary] =
       insertFromExcel(rows, DateTime.now(), Currency(0), SaleOutlet.Web)
 
-    def createSale(
+    def create(
       total: Currency,
       discount: Currency,
       products: Seq[ProductDTO]

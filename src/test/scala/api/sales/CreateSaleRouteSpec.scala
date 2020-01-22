@@ -55,7 +55,7 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
     val total         = Currency(100.00)
     val discount      = Currency(10.37)
     val products      = Seq(productRowToSaleSummaryProduct(createProduct, 5))
-    (saleService.createSale _) expects (*, *, *) returning (Future(
+    (saleService.create _) expects (*, *, *) returning (Future(
       SaleSummary(SaleID(1), DateTime.now(), total, discount, SaleOutlet.Store, products)
     ))
 

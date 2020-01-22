@@ -38,7 +38,7 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
       val p = createProduct
       val res = for {
         _       <- db.run(productRepo.insert(p))
-        product <- productService.get(p.barcode)
+        product <- productService.getProduct(p.barcode)
       } yield product.map(_.copy(id = ProductID.zero))
       res must beEqualTo(Some(rowToDTO(p))).await
     }

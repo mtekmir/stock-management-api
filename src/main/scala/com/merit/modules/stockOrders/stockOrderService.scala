@@ -19,7 +19,7 @@ import com.merit.modules.categories.CategoryRow
 import com.merit.external.crawler.{CrawlerClient, SyncStockOrderResponse}
 
 trait StockOrderService {
-  def get(id: StockOrderID): Future[Option[StockOrderDTO]]
+  def getStockOrder(id: StockOrderID): Future[Option[StockOrderDTO]]
   def insertFromExcel(
     createdAt: DateTime,
     products: Seq[ExcelStockOrderRow]
@@ -48,7 +48,7 @@ object StockOrderService {
         case Some(category) => DBIO.successful(category)
       }
 
-    def get(id: StockOrderID): Future[Option[StockOrderDTO]] =
+    def getStockOrder(id: StockOrderID): Future[Option[StockOrderDTO]] =
       db.run(stockOrderRepo.get(id)).map {
         case rows if rows.length < 1 => None
         case rows =>

@@ -15,7 +15,7 @@ import slick.jdbc.JdbcBackend.Database
 
 trait ProductService {
   def batchInsertExcelRows(rows: Seq[ExcelProductRow]): Future[Seq[ProductRow]]
-  def get(barcode: String): Future[Option[ProductDTO]]
+  def getProduct(barcode: String): Future[Option[ProductDTO]]
   def getProducts(page: Int, rowsPerPage: Int, filters: ProductFilters = ProductFilters()): Future[PaginatedProductsResponse]
   def findAll(barcodes: Seq[String]): Future[Seq[ProductDTO]]
   def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]]
@@ -71,7 +71,7 @@ object ProductService {
         products <- productRepo.batchInsert(productRows)
       } yield products)
 
-    def get(barcode: String): Future[Option[ProductDTO]] =
+    def getProduct(barcode: String): Future[Option[ProductDTO]] =
       db.run(productRepo.get(barcode))
 
     def getProducts(page: Int, rowsPerPage: Int, filters: ProductFilters): Future[PaginatedProductsResponse] =

@@ -185,7 +185,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
             products.map(p => SyncResponseProduct(p.id, p.barcode, p.qty, true))
           )
         )
-        stockOrder <- stockOrderService.get(s.id)
+        stockOrder <- stockOrderService.getStockOrder(s.id)
       } yield stockOrder
 
       res.map(_.map(_.products.map(_.synced).fold(true)(_ && _))) must beEqualTo(Some(true)).await

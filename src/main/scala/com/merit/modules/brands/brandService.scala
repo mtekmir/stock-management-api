@@ -9,8 +9,8 @@ import slick.jdbc.PostgresProfile.api._
 
 trait BrandService {
   def batchInsert(bs: Seq[BrandRow]): Future[Seq[BrandRow]]
-  def insert(brand: BrandRow): Future[BrandRow]
-  def getAll: Future[Seq[BrandRow]]
+  def create(brand: BrandRow): Future[BrandRow]
+  def getBrands: Future[Seq[BrandRow]]
 }
 
 object BrandService {
@@ -29,10 +29,10 @@ object BrandService {
       db.run(DBIO.sequence(action))
     }
 
-    def insert(brand: BrandRow): Future[BrandRow] =
+    def create(brand: BrandRow): Future[BrandRow] =
       db.run(insertIfNotExists(brand))
 
-    def getAll: Future[Seq[BrandRow]] = 
+    def getBrands: Future[Seq[BrandRow]] = 
       db.run(brandRepo.getAll)
   }
 }

@@ -7,9 +7,9 @@ import scala.concurrent.Future
 import com.merit.modules.excel.ExcelProductRow
 
 trait CategoryService {
-  def getAll: Future[Seq[CategoryRow]]
+  def getCategories: Future[Seq[CategoryRow]]
   def batchInsert(names: Seq[String]): Future[Seq[CategoryRow]]
-  def insert(name: String): Future[CategoryRow]
+  def create(name: String): Future[CategoryRow]
 }
 
 object CategoryService {
@@ -29,10 +29,10 @@ object CategoryService {
       def batchInsert(names: Seq[String]): Future[Seq[CategoryRow]] =
         db.run(DBIO.sequence(names.map(n => insertIfNotExists(CategoryRow(n)))))
 
-      def insert(name: String): Future[CategoryRow] =
+      def create(name: String): Future[CategoryRow] =
         db.run(insertIfNotExists(CategoryRow(name)))
       
-      def getAll: Future[Seq[CategoryRow]] = 
+      def getCategories: Future[Seq[CategoryRow]] = 
         db.run(categoryRepo.getAll)
     }
 }
