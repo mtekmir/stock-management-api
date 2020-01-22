@@ -52,7 +52,7 @@ object SaleService {
       db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
-          sale         <- saleRepo.add(SaleRow(date, total, Currency(0), outlet))
+          sale         <- saleRepo.insert(SaleRow(date, total, Currency(0), outlet))
           addedProducts <- saleRepo.addProductsToSale(
             soldProducts.map(
               p =>
@@ -103,7 +103,7 @@ object SaleService {
     ): Future[SaleSummary] = {
       val insertSale = db.run(
         (for {
-          sale <- saleRepo.add(SaleRow(DateTime.now(), total, discount))
+          sale <- saleRepo.insert(SaleRow(DateTime.now(), total, discount))
           _ <- saleRepo.addProductsToSale(
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )

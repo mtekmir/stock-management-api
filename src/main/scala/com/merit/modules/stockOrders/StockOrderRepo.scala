@@ -8,7 +8,7 @@ import com.merit.modules.categories.CategoryRow
 import com.merit.modules.products.ProductID
 
 trait StockOrderRepo[DbTask[_]] {
-  def add(row: StockOrderRow): DbTask[StockOrderRow]
+  def insert(row: StockOrderRow): DbTask[StockOrderRow]
   def addProductsToStockOrder(
     products: Seq[OrderedProductRow]
   ): DbTask[Seq[OrderedProductRow]]
@@ -28,7 +28,7 @@ object StockOrderRepo {
       import schema._
       import schema.profile.api._
 
-      def add(row: StockOrderRow): DBIO[StockOrderRow] =
+      def insert(row: StockOrderRow): DBIO[StockOrderRow] =
         stockOrders returning stockOrders += row
 
       def addProductsToStockOrder(

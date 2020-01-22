@@ -8,7 +8,7 @@ import com.merit.modules.products.ProductID
 import org.joda.time.DateTime
 
 trait SaleRepo[DbTask[_]] {
-  def add(sale: SaleRow): DbTask[SaleRow]
+  def insert(sale: SaleRow): DbTask[SaleRow]
   def addProductsToSale(
     products: Seq[SoldProductRow]
   ): DbTask[Seq[SoldProductRow]]
@@ -83,7 +83,7 @@ object SaleRepo {
           }
     }
 
-    def add(sale: SaleRow): DBIO[SaleRow] =
+    def insert(sale: SaleRow): DBIO[SaleRow] =
       sales returning sales += sale
 
     def addProductsToSale(

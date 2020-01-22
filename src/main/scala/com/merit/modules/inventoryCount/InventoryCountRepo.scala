@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 
 trait InventoryCountRepo[DbTask[_]] {
   def count: DbTask[Int]
-  def createBatch(batch: InventoryCountBatchRow): DbTask[InventoryCountBatchRow]
+  def insertBatch(batch: InventoryCountBatchRow): DbTask[InventoryCountBatchRow]
   def addProductsToBatch(
     products: Seq[InventoryCountProductRow]
   ): DbTask[Seq[InventoryCountProductRow]]
@@ -57,7 +57,7 @@ object InventoryCountRepo {
       def count: DBIO[Int] =
         inventoryCountBatches.length.result
 
-      def createBatch(batch: InventoryCountBatchRow): DBIO[InventoryCountBatchRow] =
+      def insertBatch(batch: InventoryCountBatchRow): DBIO[InventoryCountBatchRow] =
         inventoryCountBatches returning inventoryCountBatches += batch
 
       def addProductsToBatch(

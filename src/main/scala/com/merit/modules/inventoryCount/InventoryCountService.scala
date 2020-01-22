@@ -51,7 +51,7 @@ object InventoryCountService {
       ): Future[InventoryCountDTO] =
         db.run(
           for {
-            batch <- inventoryCountRepo.createBatch(
+            batch <- inventoryCountRepo.insertBatch(
               InventoryCountBatchRow(DateTime.now(), None, name, categoryId, brandId)
             )
             products <- productRepo.getAll(ProductFilters(categoryId, brandId))

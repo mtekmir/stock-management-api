@@ -118,7 +118,7 @@ object StockOrderService {
 
       // * Create stock order
       val createStockOrderDbio = (for {
-        stockOrder      <- stockOrderRepo.add(StockOrderRow(createdAt))
+        stockOrder      <- stockOrderRepo.insert(StockOrderRow(createdAt))
         updatedProducts <- updateProductsDbio
         createdProducts <- createProductsDbio
         _ <- stockOrderRepo.addProductsToStockOrder(

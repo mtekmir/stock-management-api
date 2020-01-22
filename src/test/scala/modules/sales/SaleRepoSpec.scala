@@ -48,7 +48,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv)
     "should create a sale" in new TestScope {
       val res = db.run(
         for {
-          saleRow <- saleRepo.add(SaleRow(now, total))
+          saleRow <- saleRepo.insert(SaleRow(now, total))
         } yield saleRow
       )
       res.map { case SaleRow(now, _, _, _, _) => now } must beEqualTo(now).await
@@ -58,7 +58,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv)
       val res = db.run(
         for {
           products <- insertTestData
-          saleRow  <- saleRepo.add(SaleRow(now, total))
+          saleRow  <- saleRepo.insert(SaleRow(now, total))
           _        <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
           sale     <- saleRepo.get(saleRow.id)
         } yield sale
@@ -73,7 +73,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv)
       val res = db.run(
         for {
           products <- insertTestData
-          saleRow  <- saleRepo.add(SaleRow(now, total))
+          saleRow  <- saleRepo.insert(SaleRow(now, total))
           _ <- saleRepo.addProductsToSale(
             products.zipWithIndex.map(p => SoldProductRow(p._1.id, saleRow.id, p._2 + 1))
           )
@@ -91,7 +91,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv)
       val sale = db.run(
         for {
           products <- insertTestData
-          saleRow  <- saleRepo.add(SaleRow(now, total))
+          saleRow  <- saleRepo.insert(SaleRow(now, total))
           _        <- saleRepo.addProductsToSale(products.map(p => SoldProductRow(p.id, saleRow.id)))
           _ <- DBIO.sequence(
             products.map(p => saleRepo.syncSoldProduct(saleRow.id, p.id, true))

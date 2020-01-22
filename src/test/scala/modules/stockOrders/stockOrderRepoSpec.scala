@@ -43,7 +43,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpecification with
     "should add a stock order" in new TestScope {
       val res = db.run(
         for {
-          so <- stockOrderRepo.add(StockOrderRow(now))
+          so <- stockOrderRepo.insert(StockOrderRow(now))
         } yield so
       )
       res.map(_.date) must beEqualTo(now).await
@@ -54,7 +54,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpecification with
       val res = db.run(
         for {
           products <- insertTestData
-          so       <- stockOrderRepo.add(StockOrderRow(now))
+          so       <- stockOrderRepo.insert(StockOrderRow(now))
           _ <- stockOrderRepo.addProductsToStockOrder(
             products.map(p => OrderedProductRow(p.id, so.id))
           )
@@ -71,7 +71,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpecification with
       val res = db.run(
         for {
           products <- insertTestData
-          so <- stockOrderRepo.add(StockOrderRow(now))
+          so <- stockOrderRepo.insert(StockOrderRow(now))
           _ <- stockOrderRepo.addProductsToStockOrder(
             products.zip(qtys).map(p => OrderedProductRow(p._1.id, so.id, p._2))
           )
@@ -86,7 +86,7 @@ class StockOrderRepoSpec(implicit ee: ExecutionEnv) extends DbSpecification with
       val res = db.run(
         for {
           products <- insertTestData
-          so       <- stockOrderRepo.add(StockOrderRow(now))
+          so       <- stockOrderRepo.insert(StockOrderRow(now))
           _ <- stockOrderRepo.addProductsToStockOrder(
             products.map(p => OrderedProductRow(p.id, so.id))
           )
