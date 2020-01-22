@@ -135,5 +135,6 @@ case class CreateProductRequest(
 
 case class ProductFilters(
   categoryId: Option[CategoryID] = None,
-  brandId: Option[BrandID] = None
+  brandId: Option[BrandID] = None,
+  query: Option[String] = None
 )

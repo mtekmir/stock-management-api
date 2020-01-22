@@ -39,21 +39,24 @@ object ProductRepo {
         }
       }
 
-      implicit private class ProductQ2(val q: Query[ProductTable, ProductRow, Seq]) {
-        def withBrandAndCategory =
-          q.joinLeft(brands)
-            .on(_.brandId === _.id)
-            .joinLeft(categories)
-            .on {
-              case ((products, brands), category) => products.categoryId === category.id
-            }
-      }
-
       private type ProductQuery = Query[ProductTable, ProductRow, Seq]
 
       implicit class FilterQ1(
         query: ProductQuery
       ) {
+        def filterQueryString(
+          filter: Option[String]
+        ): ProductQuery =
+          filter.foldLeft(query) {
+            case (q, f) => {
+              val queryString = s"$f%"
+              q.filter(
+                p =>
+                  (p.name.toLowerCase like queryString.toLowerCase) || (p.barcode like queryString) || (p.sku like queryString)
+              )
+            }
+          }
+
         def filterOption[A: BaseColumnType](
           filter: Option[A],
           tableToColumn: ProductTable => Rep[Option[A]]
@@ -61,8 +64,16 @@ object ProductRepo {
           filter.foldLeft(query) {
             case (q, f) => q.filter(t => tableToColumn(t) === f)
           }
-      }
 
+        def withBrandAndCategory =
+          query
+            .joinLeft(brands)
+            .on(_.brandId === _.id)
+            .joinLeft(categories)
+            .on {
+              case ((products, brands), category) => products.categoryId === category.id
+            }
+      }
 
       def get(barcode: String): DBIO[Option[ProductDTO]] =
         products
@@ -79,13 +90,12 @@ object ProductRepo {
         products
           .filterOption(filters.brandId, _.brandId)
           .filterOption(filters.categoryId, _.categoryId)
+          .filterQueryString(filters.query)
 
       def count(filters: ProductFilters): DBIO[Int] = getAllBase(filters).length.result
 
       def getAll(filters: ProductFilters): DBIO[Seq[ProductDTO]] =
-        getAllBase(filters)
-          .withBrandAndCategory
-          .result
+        getAllBase(filters).withBrandAndCategory.result
           .map(_.toList)
           .toProductDTO
 
@@ -126,7 +136,10 @@ object ProductRepo {
       def search(q: String): DBIO[Seq[ProductDTO]] = {
         val query = s"$q%"
         products
-          .filter(p => (p.name like query) || (p.barcode like query) || (p.sku like query))
+          .filter(
+            p =>
+              (p.name.toLowerCase like query.toLowerCase) || (p.barcode like query) || (p.sku like query)
+          )
           .withBrandAndCategory
           .take(20)
           .result

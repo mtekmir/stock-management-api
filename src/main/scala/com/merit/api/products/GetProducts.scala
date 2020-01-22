@@ -13,13 +13,14 @@ object GetProducts extends Directives with JsonSupport {
       'page ? 1,
       'rowsPerPage ? 10,
       'brandId.as[Int].?,
-      'categoryId.as[Int].?
-    )) { (page, rowsPerPage, brandId, categoryId) =>
+      'categoryId.as[Int].?,
+      'query.?
+    )) { (page, rowsPerPage, brandId, categoryId, query) =>
       complete(
         productService.getProducts(
           page,
           rowsPerPage,
-          ProductFilters(categoryId.map(CategoryID(_)), brandId.map(BrandID(_)))
+          ProductFilters(categoryId.map(CategoryID(_)), brandId.map(BrandID(_)), query)
         )
       )
     }

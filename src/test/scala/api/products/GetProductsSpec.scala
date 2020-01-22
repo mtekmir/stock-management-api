@@ -43,6 +43,13 @@ class GetProductsSpec extends Specification with Specs2RouteTest with JsonSuppor
         responseAs[PaginatedProductsResponse] === response
       }
     }
+
+    "page, rowsPerPage, brandId, categoryId, query" in new TestScope {
+      Get("/products?page=2&rowsPerPage=10&brandId=1&categoryId=1&query=asd") ~> productRoutes ~> check {
+        status === StatusCodes.OK
+        responseAs[PaginatedProductsResponse] === response
+      }
+    }
   }
 
   class TestScope extends MockContext {
