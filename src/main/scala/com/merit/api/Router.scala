@@ -24,6 +24,9 @@ import com.merit.api.brands.BrandRoutes
 import com.merit.api.categories.CategoryRoutes
 import com.merit.api.inventoryCount.InventoryCountRoutes
 import com.merit.modules.inventoryCount.InventoryCountService
+import akka.http.scaladsl.server.ExceptionHandler
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.RejectionHandler
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -45,18 +48,30 @@ object Router extends Directives with AuthDirectives with JsonSupport {
         case _ => None
       }
 
+    val rejectionHandler = corsRejectionHandler.withFallback(RejectionHandler.default)
+
+    // Your exception handler
+    val exceptionHandler = ExceptionHandler {
+      case e: NoSuchElementException => complete(StatusCodes.NotFound -> e.getMessage)
+    }
+
+    // Combining the two handlers only for convenience
+    val handleErrors = handleRejections(rejectionHandler) & handleExceptions(exceptionHandler)
+
     cors() {
-      LoginRoute(userService, config.jwtConfig) ~
-      SyncSaleRoute(saleService, crawlerAuthenticator) ~
-      SyncStockOrderRoute(stockOrderService, crawlerAuthenticator) ~
-      authenticated(config.jwtConfig) { userId =>
-        ProductRoutes(productService, excelService) ~
-        SaleRoutes(saleService, excelService) ~
-        StockOrderRoutes(stockOrderService, excelService) ~
-        BrandRoutes(brandService) ~
-        CategoryRoutes(categoryService) ~
-        InventoryCountRoutes(inventoryCountService, excelService) ~
-        UserRoutes(userId, userService)
+      handleErrors {
+        LoginRoute(userService, config.jwtConfig) ~
+        SyncSaleRoute(saleService, crawlerAuthenticator) ~
+        SyncStockOrderRoute(stockOrderService, crawlerAuthenticator) ~
+        authenticated(config.jwtConfig) { userId =>
+          ProductRoutes(productService, excelService) ~
+          SaleRoutes(saleService, excelService) ~
+          StockOrderRoutes(stockOrderService, excelService) ~
+          BrandRoutes(brandService) ~
+          CategoryRoutes(categoryService) ~
+          InventoryCountRoutes(inventoryCountService, excelService) ~
+          UserRoutes(userId, userService)
+        }
       }
     }
   }
