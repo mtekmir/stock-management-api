@@ -14,6 +14,7 @@ import com.merit.modules.products.ProductID
 import scala.concurrent.duration.Duration
 import scala.concurrent.Await
 import org.specs2.specification.AfterEach
+import com.merit.modules.products.EditProductRequest
 
 class ProductServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -112,6 +113,49 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         dtos.drop(10).take(5)
       ).await
 
+    }
+
+    "should create a product" in new TestScope {
+      val p = createProduct
+      val res = for {
+        _       <- productService.createProduct(p.toCreateProductReq)
+        product <- productService.getProduct(p.barcode)
+      } yield (product)
+      res.map(_.map(_.copy(id = ProductID.zero))) must beEqualTo(Some(rowToDTO(p))).await
+    }
+
+    "should error out on duplicate barcode on create product req" in new TestScope {
+      val res = for {
+        _   <- productService.createProduct(sampleProducts.head.toCreateProductReq)
+        res <- productService.createProduct(sampleProducts.head.toCreateProductReq)
+      } yield (res)
+      res must beEqualTo(Left(s"Barcode ${sampleProducts.head.barcode} already exists")).await
+    }
+
+    "should error out on duplicate barcode on edit product req" in new TestScope {
+      val res = for {
+        p <- productService.createProduct(sampleProducts.head.toCreateProductReq)
+        res <- productService.editProduct(
+          p.map(_.id).getOrElse(ProductID.zero),
+          EditProductRequest(Some(sampleProducts.head.barcode), categoryId = Some("1"))
+        )
+      } yield (res)
+      res must beEqualTo(Left("Barcode already exists")).await
+    }
+
+    "should edit product" in new TestScope {
+      val product = sampleProducts.head
+      val edited = sampleProducts.tail.head
+      val res = for {
+        p <- productService.createProduct(product.toCreateProductReq)
+        res <- productService.editProduct(
+          p.map(_.id).getOrElse(ProductID.zero),
+          edited.toEditProductReq
+        )
+        updated <- db.run(productRepo.get(p.map(_.id).getOrElse(ProductID.zero)))
+      } yield updated
+
+      res.map(_.map(_.copy(id=ProductID.zero))) must beEqualTo(Some(rowToDTO(edited))).await
     }
   }
 

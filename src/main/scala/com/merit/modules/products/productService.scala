@@ -12,15 +12,27 @@ import slick.jdbc.PostgresProfile.api._
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
 import slick.jdbc.JdbcBackend.Database
+import cats.data.OptionT
+import cats.instances.future._
+import cats.data.EitherT
+import cats.syntax.either._
 
 trait ProductService {
   def batchInsertExcelRows(rows: Seq[ExcelProductRow]): Future[Seq[ProductRow]]
   def getProduct(barcode: String): Future[Option[ProductDTO]]
-  def getProducts(page: Int, rowsPerPage: Int, filters: ProductFilters = ProductFilters()): Future[PaginatedProductsResponse]
+  def getProducts(
+    page: Int,
+    rowsPerPage: Int,
+    filters: ProductFilters = ProductFilters()
+  ): Future[PaginatedProductsResponse]
   def findAll(barcodes: Seq[String]): Future[Seq[ProductDTO]]
   def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]]
   def searchProducts(query: String): Future[Seq[ProductDTO]]
-  def create(p: CreateProductRequest): Future[ProductDTO]
+  def createProduct(p: CreateProductRequest): Future[Either[String, ProductDTO]]
+  def editProduct(
+    id: ProductID,
+    fields: EditProductRequest
+  ): Future[Either[String, ProductDTO]]
 }
 
 object ProductService {
@@ -74,7 +86,11 @@ object ProductService {
     def getProduct(barcode: String): Future[Option[ProductDTO]] =
       db.run(productRepo.get(barcode))
 
-    def getProducts(page: Int, rowsPerPage: Int, filters: ProductFilters): Future[PaginatedProductsResponse] =
+    def getProducts(
+      page: Int,
+      rowsPerPage: Int,
+      filters: ProductFilters
+    ): Future[PaginatedProductsResponse] =
       for {
         products <- db.run(productRepo.getAll(page, rowsPerPage, filters))
         count    <- db.run(productRepo.count(filters))
@@ -85,11 +101,43 @@ object ProductService {
 
     def batchAddQuantity(products: Seq[(String, Int)]): Future[Seq[Int]] =
       db.run(DBIO.sequence(products.map(p => productRepo.addQuantity(p._1, p._2))))
-    
-    def searchProducts(query: String): Future[Seq[ProductDTO]] = 
+
+    def searchProducts(query: String): Future[Seq[ProductDTO]] =
       db.run(productRepo.search(query))
 
-    def create(p: CreateProductRequest): Future[ProductDTO] = 
-      db.run(productRepo.create(p.toRow))
+    def createProduct(p: CreateProductRequest): Future[Either[String, ProductDTO]] =
+      EitherT
+        .liftF(db.run(productRepo.get(p.barcode)))
+        .flatMapF {
+          case None    => db.run(productRepo.create(p.toRow)).map(_.asRight)
+          case Some(_) => Future.successful(s"Barcode ${p.barcode} already exists".asLeft)
+        }
+        .value
+
+    def editProduct(
+      id: ProductID,
+      fields: EditProductRequest
+    ): Future[Either[String, ProductDTO]] = {
+      def duplicate =
+        OptionT
+          .fromOption(fields.barcode)
+          .flatMap(b => OptionT.liftF(db.run(productRepo.get(b).map(_.isDefined))))
+          .value
+
+      def edit =
+        (for {
+          product <- OptionT(db.run(productRepo.getRow(id)))
+          _       <- OptionT.liftF(db.run(productRepo.edit(product, fields)))
+          dto     <- OptionT(db.run(productRepo.get(id)))
+        } yield dto).value
+
+      (EitherT
+        .liftF(duplicate)
+        .flatMapF {
+          case Some(true) => Future.successful("Barcode already exists".asLeft)
+          case _          => edit.map(Either.fromOption(_, s"Product with an id of ${id.value} not found"))
+        })
+        .value
+    }
   }
 }

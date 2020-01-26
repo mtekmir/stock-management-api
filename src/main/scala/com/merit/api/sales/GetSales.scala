@@ -15,7 +15,6 @@ object GetSales extends Directives with JsonSupport {
       'startDate.?,
       'endDate.?
     )) { (page, rowsPerPage, startDate, endDate) =>
-      println(startDate)
       complete(
         saleService
           .getSales(

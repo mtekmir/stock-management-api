@@ -74,8 +74,8 @@ object Main extends App {
   val inventoryCountService =
     InventoryCountService(db, inventoryCountRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
 
-  def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
-  exec(userService.populateUsers)
+  // def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
+  // exec(userService.populateUsers)
 
   val routes =
     Router(

@@ -10,6 +10,8 @@ import com.merit.modules.products.Currency
 import com.merit.modules.sales.SaleDTOProduct
 import com.merit.modules.sales.SaleSummaryProduct
 import com.merit.modules.stockOrders.StockOrderSummaryProduct
+import com.merit.modules.products.CreateProductRequest
+import com.merit.modules.products.EditProductRequest
 
 object ProductUtils {
   private val random                       = Random
@@ -104,6 +106,42 @@ object ProductUtils {
       category,
       false
     )
+  }
+
+  implicit class C1(
+    val r: ProductRow
+  ) {
+    def toCreateProductReq(): CreateProductRequest = {
+      import r._
+      CreateProductRequest(
+        barcode,
+        sku,
+        name,
+        price,
+        discountPrice,
+        qty,
+        variation,
+        taxRate,
+        brandId,
+        categoryId
+      )
+    }
+
+    def toEditProductReq(): EditProductRequest = {
+      import r._
+      EditProductRequest(
+        Some(barcode),
+        Some(sku),
+        Some(name),
+        price.map(_.value.toString),
+        discountPrice.map(_.value.toString),
+        Some(qty.toString),
+        variation,
+        taxRate.map(_.toString),
+        brandId.map(_.toString),
+        categoryId.map(_.toString)
+      )
+    }
   }
 
   def productRowToSaleSummaryProduct(p: ProductRow, soldQty: Int) = {

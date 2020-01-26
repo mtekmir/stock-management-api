@@ -47,7 +47,7 @@ class Schema(val profile: JdbcProfile) {
   class ProductTable(t: Tag) extends Table[ProductRow](t, "products") {
     import CustomColumnTypes._
     def id            = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
-    def barcode       = column[String]("barcode")
+    def barcode       = column[String]("barcode", O.Unique)
     def sku           = column[String]("sku")
     def name          = column[String]("name")
     def price         = column[Option[Currency]]("price", O.SqlType("NUMERIC(10, 2)"))

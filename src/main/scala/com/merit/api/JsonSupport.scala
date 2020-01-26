@@ -18,15 +18,12 @@ import cats.syntax.either._
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.inventoryCount.{InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
 import org.joda.time.format.ISODateTimeFormat
+import com.merit.modules.categories.CategoryID
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
     Encoder.encodeString(d.toString())
 
-  // val dateFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-  // implicit val decodeDateTime: Decoder[DateTime] =
-  //   Decoder.instance(d => d.as[String].map(s => DateTime.parse(s, dateFormatter)))
-    
   implicit val decodeIso: Decoder[DateTime] =
     Decoder.instance(d => d.as[String].map(s => DateTime.parse(s)))
 
@@ -49,6 +46,12 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeBrandId: Encoder[BrandID] = (id: BrandID) => Encoder.encodeLong(id.value)
   implicit val decodeBrandId: Decoder[BrandID] = Decoder.decodeLong.emap { v =>
     BrandID(v).asRight
+  }
+
+  implicit val encodeCategoryId: Encoder[CategoryID] = (id: CategoryID) =>
+    Encoder.encodeLong(id.value)
+  implicit val decodeCategoryId: Decoder[CategoryID] = Decoder.decodeLong.emap { v =>
+    CategoryID(v).asRight
   }
 
   implicit val encodeUserId: Encoder[UserID] = (id: UserID) => Encoder.encodeUUID(id.value)

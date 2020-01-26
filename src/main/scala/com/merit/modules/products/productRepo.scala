@@ -7,11 +7,15 @@ import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
 import cats.implicits._
 import cats.Functor
+import com.merit.modules.brands.BrandID
+import com.merit.modules.categories.CategoryID
 
 trait ProductRepo[DbTask[_]] {
   def count(filters: ProductFilters): DbTask[Int]
   def get(barcode: String): DbTask[Option[ProductDTO]]
+  def get(id: ProductID): DbTask[Option[ProductDTO]]
   def getRow(barcode: String): DbTask[Option[ProductRow]]
+  def getRow(id: ProductID): DbTask[Option[ProductRow]]
   def getAll(page: Int, rowsPerPage: Int, filters: ProductFilters): DbTask[Seq[ProductDTO]]
   def getAll(filters: ProductFilters): DbTask[Seq[ProductDTO]]
   def findAll(barcodes: Seq[String]): DbTask[Seq[ProductDTO]]
@@ -21,6 +25,7 @@ trait ProductRepo[DbTask[_]] {
   def addQuantity(barcode: String, qty: Int): DbTask[Int]
   def search(query: String): DbTask[Seq[ProductDTO]]
   def create(product: ProductRow): DbTask[ProductDTO]
+  def edit(product: ProductRow, fields: EditProductRequest): DbTask[Int]
 }
 
 object ProductRepo {
@@ -83,8 +88,19 @@ object ProductRepo {
           .headOption
           .toProductDTO
 
+      def get(id: ProductID): DBIO[Option[ProductDTO]] =
+        products
+          .filter(_.id === id)
+          .withBrandAndCategory
+          .result
+          .headOption
+          .toProductDTO
+
       def getRow(barcode: String): DBIO[Option[ProductRow]] =
         products.filter(_.barcode === barcode).result.headOption
+
+      def getRow(id: ProductID): DBIO[Option[ProductRow]] =
+        products.filter(_.id === id).result.headOption
 
       private def getAllBase(filters: ProductFilters): ProductQuery =
         products
@@ -153,5 +169,37 @@ object ProductRepo {
           brandRow    <- brands.filter(_.id === row.brandId).result.headOption
           categoryRow <- categories.filter(_.id === row.categoryId).result.headOption
         } yield ProductDTO.fromRow(row, brandRow, categoryRow)
+
+      def edit(product: ProductRow, fields: EditProductRequest): DBIO[Int] = {
+        def isNum(v: String): Boolean = v.forall(_.isDigit)
+        def diff(product: ProductRow, fields: EditProductRequest) =
+          fields.getClass.getDeclaredFields
+            .map(_.getName)
+            .zip(fields.productIterator)
+            .foldLeft(product) {
+              case (product, (field, value)) =>
+                (field, value) match {
+                  case ("barcode", Some(v: String)) => product.copy(barcode = v)
+                  case ("sku", Some(v: String))     => product.copy(sku = v)
+                  case ("name", Some(v: String))    => product.copy(name = v)
+                  case ("price", Some(v: String))   => product.copy(price = Currency.from(v))
+                  case ("discountPrice", Some(v: String)) =>
+                    product.copy(discountPrice = Currency.from(v))
+                  case ("qty", Some(v: String)) if isNum(v) =>
+                    product.copy(qty = v.toInt)
+                  case ("variation", Some(v: String)) => product.copy(variation = Some(v))
+                  case ("taxRate", Some(v: String)) if isNum(v) =>
+                    product.copy(taxRate = Some(v.toInt))
+                  case ("brandId", Some(v: String)) if isNum(v) =>
+                    product.copy(brandId = Some(BrandID(v.toLong)))
+                  case ("categoryId", Some(v: String)) if isNum(v) =>
+                    product.copy(categoryId = Some(CategoryID(v.toLong)))
+                  case (_, _) => product
+                }
+            }
+
+        products.filter(_.id === product.id).update(diff(product, fields))
+      }
+
     }
 }

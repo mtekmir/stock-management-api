@@ -37,7 +37,6 @@ object SaleRepo {
       def filterByDates(
         filters: SaleFilters,
       ): SaleQuery = {
-        println(filters)
         import filters._
         (startDate, endDate) match {
           case (Some(sd), Some(ed)) =>

@@ -133,6 +133,19 @@ case class CreateProductRequest(
   categoryId: Option[CategoryID]
 )
 
+case class EditProductRequest(
+  barcode: Option[String] = None,
+  sku: Option[String] = None,
+  name: Option[String] = None,
+  price: Option[String] = None,
+  discountPrice: Option[String] = None,
+  qty: Option[String] = None,
+  variation: Option[String] = None,
+  taxRate: Option[String] = None,
+  brandId: Option[String] = None,
+  categoryId: Option[String] = None
+)
+
 case class ProductFilters(
   categoryId: Option[CategoryID] = None,
   brandId: Option[BrandID] = None,

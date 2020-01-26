@@ -50,12 +50,10 @@ object Router extends Directives with AuthDirectives with JsonSupport {
 
     val rejectionHandler = corsRejectionHandler.withFallback(RejectionHandler.default)
 
-    // Your exception handler
     val exceptionHandler = ExceptionHandler {
       case e: NoSuchElementException => complete(StatusCodes.NotFound -> e.getMessage)
     }
 
-    // Combining the two handlers only for convenience
     val handleErrors = handleRejections(rejectionHandler) & handleExceptions(exceptionHandler)
 
     cors() {
