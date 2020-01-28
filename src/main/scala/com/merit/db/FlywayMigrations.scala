@@ -5,5 +5,5 @@ import org.flywaydb.core.Flyway
 
 object RunFlywayMigrations {
   def apply(dataSource: HikariDataSource) =
-    Flyway.configure.dataSource(dataSource).baselineOnMigrate(true).load.migrate
+    Flyway.configure.dataSource(dataSource).load.migrate
 }
