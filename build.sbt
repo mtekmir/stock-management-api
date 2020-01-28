@@ -12,10 +12,10 @@ assemblyMergeStrategy in assembly := {
   case _                                   => MergeStrategy.first
 }
 
-val akkaVersion            = "2.6.1"
-val akkaHttpVersion        = "10.1.11"
-val circeVersion           = "0.12.3"
-val slickVersion           = "3.3.2"
+val akkaVersion     = "2.6.1"
+val akkaHttpVersion = "10.1.11"
+val circeVersion    = "0.12.3"
+val slickVersion    = "3.3.2"
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
 
@@ -59,9 +59,10 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-email" % "1.5"
 )
 
-// Slick
+// db
 libraryDependencies ++= Seq(
-  "com.typesafe.slick"   %% "slick"             % slickVersion,
-  "com.typesafe.slick"   %% "slick-hikaricp"    % slickVersion,
-  "org.postgresql"       % "postgresql"         % "42.2.6"
+  "com.typesafe.slick" %% "slick"          % slickVersion,
+  "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
+  "org.postgresql"     % "postgresql"      % "42.2.6",
+  "org.flywaydb"       % "flyway-core"     % "6.2.0"
 )

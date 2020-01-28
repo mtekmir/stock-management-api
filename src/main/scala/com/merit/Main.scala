@@ -1,10 +1,6 @@
 import org.apache.poi.ss.usermodel._
 import scala.jdk.CollectionConverters._
 import db.{DbProfile, Schema}
-import slick.dbio.DBIO
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import slick.jdbc.PostgresProfile.api._
 import com.merit.modules.products.{ProductRepo, ProductService}
 import com.merit.modules.brands.{BrandRepo, BrandService}
 import akka.http.scaladsl.Http
@@ -17,7 +13,7 @@ import com.merit.modules.sales.{SaleRepo, SaleService}
 import com.merit.modules.users.{UserRepo, UserService}
 import com.merit.modules.categories.{CategoryRepo, CategoryService}
 import com.typesafe.config.ConfigFactory
-import com.merit.db.Db
+import com.merit.db.DbSetup
 import pureconfig._
 import pureconfig.generic.auto._
 import com.merit.modules.emails.{EmailServiceActor, EmailMessage}
@@ -46,10 +42,11 @@ object Main extends App {
   ) =
     Config().load()
 
-  val db = Db(dbConfig)
+  val dbSetup = DbSetup(dbConfig)
+  val db = dbSetup.connect 
 
   val schema = Schema(DbProfile)
-  schema.createTables(db)
+  dbSetup.migrate
   val productRepo        = ProductRepo(schema)
   val brandRepo          = BrandRepo(schema)
   val saleRepo           = SaleRepo(schema)
@@ -72,10 +69,14 @@ object Main extends App {
   val emailService =
     system.actorOf(Props(new EmailServiceActor(emailConfig)), name = "EmailService")
   val inventoryCountService =
-    InventoryCountService(db, inventoryCountRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
-
-  // def exec[T](action: DBIO[T]): T = Await.result(db.run(action), 2.seconds)
-  // exec(userService.populateUsers)
+    InventoryCountService(
+      db,
+      inventoryCountRepo,
+      productRepo,
+      brandRepo,
+      categoryRepo,
+      crawlerClient
+    )
 
   val routes =
     Router(

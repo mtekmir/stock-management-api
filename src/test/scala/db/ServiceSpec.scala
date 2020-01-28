@@ -12,7 +12,7 @@ import com.typesafe.config.ConfigFactory
 import slick.jdbc.PostgresProfile
 import pureconfig._
 import pureconfig.generic.auto._
-import com.merit.db.Db
+import com.merit.db.DbSetup
 import com.merit.DbConfig
 
 trait DbSpecification extends Specification with BeforeAll with AfterAll {
@@ -23,7 +23,7 @@ trait DbSpecification extends Specification with BeforeAll with AfterAll {
 
   private val dbSettings = loadConfigOrThrow[DbConfig](ConfigFactory.load, "db")
 
-  val db1 = Db(dbSettings)
+  val db1 = DbSetup(dbSettings).connect()
   var db  = db1
 
   def exec[R](db: Database)(dbio: DBIO[R]) = Await.result(db.run(dbio), Duration.Inf)
@@ -32,8 +32,9 @@ trait DbSpecification extends Specification with BeforeAll with AfterAll {
   override def beforeAll() = {
     exec(db)(sqlu"""drop database if exists #$dbname""")
     exec(db)(sqlu"""create database #$dbname""")
-    db = Db(dbSettings.copy(url = s"jdbc:postgresql://localhost:5434/$dbname"))
-    schema.createTables(db)(scala.concurrent.ExecutionContext.global)
+    val dbSetup = DbSetup(dbSettings.copy(url = s"jdbc:postgresql://localhost:5434/$dbname"))
+    db = dbSetup.connect()
+    dbSetup.migrate()
   }
 
   override def afterAll() = {

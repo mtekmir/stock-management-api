@@ -12,7 +12,7 @@ import org.specs2.specification.AfterAll
 import pureconfig._
 import pureconfig.generic.auto._
 import com.typesafe.config.ConfigFactory
-import com.merit.db.Db
+import com.merit.db.DbSetup
 import org.specs2.specification.BeforeAll
 import com.merit.DbConfig
 
@@ -20,11 +20,12 @@ import com.merit.DbConfig
 trait DbSpec extends Specification with BeforeAll with AfterAll {
   private val dbSettings = loadConfigOrThrow[DbConfig](ConfigFactory.load, "db")
 
-  val db     = Db(dbSettings)
-  val schema = Schema(DbProfile)
+  val dbSetup = DbSetup(dbSettings)
+  val db      = dbSetup.connect()
+  val schema  = Schema(DbProfile)
 
   override def beforeAll(): Unit =
-    schema.createTables(db)(scala.concurrent.ExecutionContext.global)
+    dbSetup.migrate()
 
   override def afterAll() =
     db.close()

@@ -135,7 +135,8 @@ object ProductService {
         .liftF(duplicate)
         .flatMapF {
           case Some(true) => Future.successful("Barcode already exists".asLeft)
-          case _          => edit.map(Either.fromOption(_, s"Product with an id of ${id.value} not found"))
+          case _ =>
+            edit.map(Either.fromOption(_, s"Product with an id of ${id.value} not found"))
         })
         .value
     }
