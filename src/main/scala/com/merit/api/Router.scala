@@ -52,6 +52,11 @@ object Router extends Directives with AuthDirectives with JsonSupport {
 
     val exceptionHandler = ExceptionHandler {
       case e: NoSuchElementException => complete(StatusCodes.NotFound -> e.getMessage)
+      case t: Throwable =>
+        complete {
+          // logger.error("An unhandled error occurred: ", t)
+          StatusCodes.InternalServerError -> "Something went wrong"
+        }
     }
 
     val handleErrors = handleRejections(rejectionHandler) & handleExceptions(exceptionHandler)

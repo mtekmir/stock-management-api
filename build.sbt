@@ -33,7 +33,6 @@ libraryDependencies ++= Seq(
   "ch.megard"              %% "akka-http-cors"      % "0.4.1",
   "org.apache.poi"         % "poi"                  % "4.1.0",
   "org.apache.poi"         % "poi-ooxml"            % "4.1.0",
-  "ch.qos.logback"         % "logback-classic"      % "1.1.2",
   "joda-time"              % "joda-time"            % "2.10.2",
   "org.joda"               % "joda-convert"         % "2.2.1",
   "com.pauldijou"          %% "jwt-core"            % "4.2.0",
@@ -65,4 +64,11 @@ libraryDependencies ++= Seq(
   "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
   "org.postgresql"     % "postgresql"      % "42.2.6",
   "org.flywaydb"       % "flyway-core"     % "6.2.0"
+)
+
+// logging
+
+libraryDependencies ++= Seq(
+  "com.typesafe.scala-logging" %% "scala-logging"  % "3.9.2",
+  "ch.qos.logback"             % "logback-classic" % "1.1.2"
 )
