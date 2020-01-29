@@ -12,6 +12,7 @@ import com.merit.modules.brands.BrandRepo
 import slick.jdbc.JdbcBackend.Database
 import com.merit.external.crawler.{SyncSaleResponse, CrawlerClient}
 import collection.immutable.ListMap
+import com.typesafe.scalalogging.LazyLogging
 
 trait SaleService {
   def importSale(
@@ -42,13 +43,15 @@ object SaleService {
     saleRepo: SaleRepo[DBIO],
     productRepo: ProductRepo[DBIO],
     crawlerClient: CrawlerClient
-  )(implicit ec: ExecutionContext) = new SaleService {
+  )(implicit ec: ExecutionContext) = new SaleService with LazyLogging {
     private def insertFromExcel(
       rows: Seq[ExcelSaleRow],
       date: DateTime,
       total: Currency,
       outlet: SaleOutlet.Value = SaleOutlet.Store
-    ): Future[SaleSummary] =
+    ): Future[SaleSummary] = {
+      logger.info(s"Inserting sale from excel with ${rows.length} rows")
+      logger.info(s"Date: $date, Total: $total, Outlet: ${outlet.toString}")
       db.run(
         (for {
           soldProducts <- productRepo.findAll(rows.map(_.barcode))
@@ -80,6 +83,7 @@ object SaleService {
             )
           )).transactionally
       )
+    }
 
     def importSale(
       rows: Seq[ExcelSaleRow],
@@ -101,6 +105,9 @@ object SaleService {
       discount: Currency,
       products: Seq[ProductDTO]
     ): Future[SaleSummary] = {
+      logger.info(
+        s"Creating sale with total: $total, discount: $discount, products: ${products.toString}"
+      )
       val insertSale = db.run(
         (for {
           sale <- saleRepo.insert(SaleRow(DateTime.now(), total, discount))
@@ -143,7 +150,7 @@ object SaleService {
       page: Int,
       rowsPerPage: Int,
       filters: SaleFilters
-    ): Future[PaginatedSalesResponse] = 
+    ): Future[PaginatedSalesResponse] =
       for {
         sales <- db.run(saleRepo.getAll(page, rowsPerPage, filters)).map {
           _.foldLeft(ListMap[SaleID, SaleDTO]()) {
@@ -173,13 +180,16 @@ object SaleService {
         }
         count <- db.run(saleRepo.count(filters))
       } yield PaginatedSalesResponse(count, sales)
-    
 
-    def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]] =
+    def saveSyncResult(result: SyncSaleResponse): Future[Seq[Int]] = {
+      val synced = result.products.map(p => if (p.synced) 1 else 0).sum
+      logger.info(s"Received sync sale response")
+      logger.info(s"Synced $synced products out of ${result.products.length}")
       db.run(
         DBIO.sequence(
           result.products.map(p => saleRepo.syncSoldProduct(result.saleId, p.id, p.synced))
         )
       )
+    }
   }
 }

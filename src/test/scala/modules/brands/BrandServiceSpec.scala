@@ -36,16 +36,6 @@ class BrandServiceSpec(implicit ee: ExecutionEnv)
       brands must beEqualTo(Seq("testBrand")).await
     }
 
-    "should batch insert brands" in new TestScope {
-      
-      val brandNames = Seq("test1", "test2")
-      val res = for {
-        _ <- brandService.batchInsert(brandNames.map(BrandRow(_)))
-        brands <- brandService.getBrands
-      } yield brands.map(_.name)
-      res must beEqualTo(brandNames).await
-    }
-
     "should not insert the same brand twice" in new TestScope {
       val brandName = "test"
       val res = for {

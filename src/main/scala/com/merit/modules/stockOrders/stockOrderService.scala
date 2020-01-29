@@ -17,6 +17,7 @@ import com.merit.modules.products.ProductRow
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
 import com.merit.external.crawler.{CrawlerClient, SyncStockOrderResponse}
+import com.typesafe.scalalogging.LazyLogging
 
 trait StockOrderService {
   def getStockOrder(id: StockOrderID): Future[Option[StockOrderDTO]]
@@ -35,7 +36,7 @@ object StockOrderService {
     brandRepo: BrandRepo[DBIO],
     categoryRepo: CategoryRepo[DBIO],
     crawlerClient: CrawlerClient
-  )(implicit ec: ExecutionContext): StockOrderService = new StockOrderService {
+  )(implicit ec: ExecutionContext): StockOrderService = new StockOrderService with LazyLogging {
     private def insertBrandIfNotExists(name: String) =
       brandRepo.get(name).flatMap {
         case None        => brandRepo.insert(BrandRow(name))
@@ -64,6 +65,7 @@ object StockOrderService {
       createdAt: DateTime,
       products: Seq[ExcelStockOrderRow]
     ): Future[StockOrderSummary] = {
+      logger.info(s"Inserting stock order from excel with ${products.length} rows")
       // todo test the case of duplicate products
       val barcodeToQty =
         products.foldLeft(Map[String, Int]())((m, p) => m + (p.barcode -> p.qty))
@@ -145,12 +147,15 @@ object StockOrderService {
       } yield summary
     }
 
-    def saveSyncResult(result: SyncStockOrderResponse): Future[Seq[Int]] =
+    def saveSyncResult(result: SyncStockOrderResponse): Future[Seq[Int]] ={
+      val synced = result.products.map(p => if (p.synced) 1 else 0).sum
+      logger.info(s"Received sync stock order response")
+      logger.info(s"Synced $synced products out of ${result.products.length}")
       db.run(
         DBIO.sequence(
           result.products
             .map(p => stockOrderRepo.syncOrderedProduct(result.stockOrderId, p.id, p.synced))
         )
-      )
+      )}
   }
 }

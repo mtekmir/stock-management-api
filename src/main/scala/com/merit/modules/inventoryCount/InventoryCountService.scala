@@ -15,6 +15,7 @@ import com.merit.external.crawler.CrawlerClient
 import cats.data.OptionT
 import cats.instances.future._
 import scala.collection.immutable.ListMap
+import com.typesafe.scalalogging.LazyLogging
 
 trait InventoryCountService {
   def create(
@@ -43,12 +44,15 @@ object InventoryCountService {
   )(
     implicit ec: ExecutionContext
   ): InventoryCountService =
-    new InventoryCountService {
+    new InventoryCountService with LazyLogging {
       def create(
         name: Option[String],
         brandId: Option[BrandID],
         categoryId: Option[CategoryID]
-      ): Future[InventoryCountDTO] =
+      ): Future[InventoryCountDTO] = {
+        logger.info(
+          s"Creating inventory count batch with brandId: $brandId, categoryId: $categoryId"
+        )
         db.run(
           for {
             batch <- inventoryCountRepo.insertBatch(
@@ -63,6 +67,7 @@ object InventoryCountService {
           } yield
             InventoryCountDTO.fromRow(batch, products, brand.map(_.name), category.map(_.name))
         )
+      }
 
       def getBatch(id: InventoryCountBatchID): Future[Option[InventoryCountDTO]] =
         db.run(
@@ -111,22 +116,28 @@ object InventoryCountService {
       def countProduct(
         productId: InventoryCountProductID,
         count: Int
-      ): Future[Option[InventoryCountDTOProduct]] =
+      ): Future[Option[InventoryCountDTOProduct]] = {
+        logger.info(s"Counted $count of product with id $productId")
         for {
           _       <- db.run(inventoryCountRepo.countProduct(productId, count))
           product <- db.run(inventoryCountRepo.getProduct(productId))
         } yield (product)
+      }
 
-      def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int] =
+      def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int] = {
+        logger.info(s"Cancelling inventory count batch with id $batchId")
         db.run(inventoryCountRepo.cancelInventoryCount(batchId))
-
+      }
+      
       def completeInventoryCount(
         batchId: InventoryCountBatchID
-      ): Future[Option[InventoryCountDTO]] =
+      ): Future[Option[InventoryCountDTO]] = {
+        logger.info(s"Completing inventory count batch with id $batchId")
         (for {
           inventoryCount <- OptionT(getBatch(batchId))
           _              <- OptionT.liftF(db.run(inventoryCountRepo.completeInventoryCount(batchId)))
           _              <- OptionT.liftF(crawlerClient.sendInventoryCount(inventoryCount))
         } yield inventoryCount).value
+      }
     }
 }

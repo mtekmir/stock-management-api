@@ -5,34 +5,31 @@ import scala.concurrent.ExecutionContext
 import slick.jdbc.PostgresProfile.api._
 import scala.concurrent.Future
 import com.merit.modules.excel.ExcelProductRow
+import com.typesafe.scalalogging.LazyLogging
 
 trait CategoryService {
   def getCategories: Future[Seq[CategoryRow]]
-  def batchInsert(names: Seq[String]): Future[Seq[CategoryRow]]
   def create(name: String): Future[CategoryRow]
 }
 
 object CategoryService {
   def apply(db: Database, categoryRepo: CategoryRepo[DBIO])(
     implicit ec: ExecutionContext
-  ) =
-    new CategoryService {
-      private def insertIfNotExists(category: CategoryRow): DBIO[CategoryRow] =
+  ) = new CategoryService with LazyLogging {
+    def create(name: String): Future[CategoryRow] = {
+      logger.info(s"Creating a new category with name: $name")
+      db.run(
         categoryRepo
-          .getByName(category.name)
+          .getByName(name)
           .flatMap {
-            case None    => categoryRepo.insert(category)
+            case None    => categoryRepo.insert(CategoryRow(name))
             case Some(c) => DBIO.successful(c)
           }
           .transactionally
-
-      def batchInsert(names: Seq[String]): Future[Seq[CategoryRow]] =
-        db.run(DBIO.sequence(names.map(n => insertIfNotExists(CategoryRow(n)))))
-
-      def create(name: String): Future[CategoryRow] =
-        db.run(insertIfNotExists(CategoryRow(name)))
-      
-      def getCategories: Future[Seq[CategoryRow]] = 
-        db.run(categoryRepo.getAll)
+      )
     }
+
+    def getCategories: Future[Seq[CategoryRow]] =
+      db.run(categoryRepo.getAll)
+  }
 }

@@ -16,6 +16,7 @@ import cats.data.OptionT
 import cats.instances.future._
 import cats.data.EitherT
 import cats.syntax.either._
+import com.typesafe.scalalogging.LazyLogging
 
 trait ProductService {
   def batchInsertExcelRows(rows: Seq[ExcelProductRow]): Future[Seq[ProductRow]]
@@ -41,7 +42,7 @@ object ProductService {
     brandRepo: BrandRepo[DBIO],
     productRepo: ProductRepo[DBIO],
     categoryRepo: CategoryRepo[DBIO]
-  )(implicit ec: ExecutionContext) = new ProductService {
+  )(implicit ec: ExecutionContext) = new ProductService with LazyLogging {
     private def insertBrandIfNotExists(brandName: String): DBIO[BrandRow] =
       brandRepo
         .get(brandName)
@@ -62,7 +63,8 @@ object ProductService {
 
     def batchInsertExcelRows(
       rows: Seq[ExcelProductRow]
-    ): Future[Seq[ProductRow]] =
+    ): Future[Seq[ProductRow]] = {
+      logger.info(s"Batch inserting ${rows.length} products")
       db.run(for {
         brands <- DBIO.sequence(
           rows.map(_.brand).flatten.distinct.map(b => insertBrandIfNotExists(b))
@@ -82,6 +84,7 @@ object ProductService {
         )
         products <- productRepo.batchInsert(productRows)
       } yield products)
+    }
 
     def getProduct(barcode: String): Future[Option[ProductDTO]] =
       db.run(productRepo.get(barcode))
@@ -105,19 +108,24 @@ object ProductService {
     def searchProducts(query: String): Future[Seq[ProductDTO]] =
       db.run(productRepo.search(query))
 
-    def createProduct(p: CreateProductRequest): Future[Either[String, ProductDTO]] =
+    def createProduct(p: CreateProductRequest): Future[Either[String, ProductDTO]] = {
+      logger.info(s"Creating a product: Barcode ${p.barcode}, sku ${p.sku}, name ${p.name}")
       EitherT
         .liftF(db.run(productRepo.get(p.barcode)))
         .flatMapF {
-          case None    => db.run(productRepo.create(p.toRow)).map(_.asRight)
-          case Some(_) => Future.successful(s"Barcode ${p.barcode} already exists".asLeft)
+          case None => db.run(productRepo.create(p.toRow)).map(_.asRight)
+          case Some(_) =>
+            logger.warn(s"Duplicate barcode value provided {${p.barcode}}")
+            Future.successful(s"Barcode ${p.barcode} already exists".asLeft)
         }
         .value
+    }
 
     def editProduct(
       id: ProductID,
       fields: EditProductRequest
     ): Future[Either[String, ProductDTO]] = {
+      logger.info(s"Editing product with id $id")
       def duplicate =
         OptionT
           .fromOption(fields.barcode)
@@ -134,7 +142,9 @@ object ProductService {
       (EitherT
         .liftF(duplicate)
         .flatMapF {
-          case Some(true) => Future.successful("Barcode already exists".asLeft)
+          case Some(true) =>
+            logger.warn(s"Duplicate barcode value provided {${fields.barcode}}")
+            Future.successful("Barcode already exists".asLeft)
           case _ =>
             edit.map(Either.fromOption(_, s"Product with an id of ${id.value} not found"))
         })

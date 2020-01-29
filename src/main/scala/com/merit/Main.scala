@@ -25,8 +25,9 @@ import com.merit.AwsConfig
 import com.merit.external.sqsClient.SqsClient
 import com.merit.{Config, AppConfig}
 import com.merit.modules.inventoryCount.{InventoryCountRepo, InventoryCountService}
+import com.typesafe.scalalogging.LazyLogging
 
-object Main extends App {
+object Main extends App with LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
   implicit val system       = ActorSystem()
   implicit val materializer = ActorMaterializer()
@@ -43,7 +44,7 @@ object Main extends App {
     Config().load()
 
   val dbSetup = DbSetup(dbConfig)
-  val db = dbSetup.connect 
+  val db      = dbSetup.connect
 
   val schema = Schema(DbProfile)
   dbSetup.migrate
@@ -94,7 +95,7 @@ object Main extends App {
   Http()
     .bindAndHandle(routes, httpConfig.interface, httpConfig.port)
     .onComplete {
-      case Success(_) => println(s"Server is up on ${httpConfig.port}")
-      case Failure(e) => println(e)
+      case Success(_) => logger.info(s"Server is up on ${httpConfig.port}")
+      case Failure(e) => logger.error(e.getMessage)
     }
 }

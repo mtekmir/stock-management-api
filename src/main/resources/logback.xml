@@ -5,9 +5,11 @@
         </encoder>
     </appender>
 
+    <!-- 
     <logger name="slick.jdbc.JdbcBackend.statement" level="debug" />
     <logger name="slick.jdbc.JdbcBackend.parameter" level="debug"/>
-<!--    <logger name="slick.jdbc.StatementInvoker.result" level="debug"/>-->
+    <logger name="slick.jdbc.StatementInvoker.result" level="debug"/>
+    -->
     <logger name="akka" level="WARN"/>
 
     <root level="INFO">

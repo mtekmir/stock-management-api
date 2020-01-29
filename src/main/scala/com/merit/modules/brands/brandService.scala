@@ -6,9 +6,9 @@ import slick.jdbc.JdbcBackend
 import scala.concurrent.Future
 import com.merit.modules.excel.ExcelProductRow
 import slick.jdbc.PostgresProfile.api._
+import com.typesafe.scalalogging.LazyLogging
 
 trait BrandService {
-  def batchInsert(bs: Seq[BrandRow]): Future[Seq[BrandRow]]
   def create(brand: BrandRow): Future[BrandRow]
   def getBrands: Future[Seq[BrandRow]]
 }
@@ -16,23 +16,21 @@ trait BrandService {
 object BrandService {
   def apply(db: Database, brandRepo: BrandRepo[DBIO])(
     implicit ec: ExecutionContext
-  ) = new BrandService {
-    private def insertIfNotExists(brand: BrandRow): DBIO[BrandRow] =
-      brandRepo.get(brand.name).flatMap {
-        case Some(b) => DBIO.successful(b)
-        case None    => brandRepo.insert(brand)
-      }.transactionally
-
-    def batchInsert(bs: Seq[BrandRow]): Future[Seq[BrandRow]] = {
-      val action = bs.map(insertIfNotExists)
-
-      db.run(DBIO.sequence(action))
+  ) = new BrandService with LazyLogging {
+    def create(brand: BrandRow): Future[BrandRow] = {
+      logger.info(s"Creating a new brand with name ${brand.name}")
+      db.run(
+        brandRepo
+          .get(brand.name)
+          .flatMap {
+            case Some(b) => DBIO.successful(b)
+            case None    => brandRepo.insert(brand)
+          }
+          .transactionally
+      )
     }
 
-    def create(brand: BrandRow): Future[BrandRow] =
-      db.run(insertIfNotExists(brand))
-
-    def getBrands: Future[Seq[BrandRow]] = 
+    def getBrands: Future[Seq[BrandRow]] =
       db.run(brandRepo.getAll)
   }
 }

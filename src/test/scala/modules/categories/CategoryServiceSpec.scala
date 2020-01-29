@@ -46,15 +46,6 @@ class CategoryServiceSpec(implicit ee: ExecutionEnv)
       } yield categories.map(_.name)
       res must beEqualTo(Seq("New")).await
     }
-
-    "batch inserts categories" in new TestScope {
-      val categoryNames = Seq("c0", "c01", "c03")
-      val res = for {
-        _ <- categoryService.batchInsert(categoryNames)
-        categories <- categoryService.getCategories
-      } yield categories.map(_.name)
-      res must beEqualTo(categoryNames).await
-    }
   }
 
   class TestScope extends Scope {
