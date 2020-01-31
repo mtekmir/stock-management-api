@@ -28,6 +28,7 @@ import org.joda.time.DateTime
 import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.sales.SaleDTO
 import com.merit.modules.sales.PaginatedSalesResponse
+import com.merit.modules.users.UserID
 
 class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Get sales route should call the correct method with parameter" >> {
@@ -57,14 +58,15 @@ class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupp
     val excelService  = mock[ExcelService]
     val total         = Currency(100.00)
     val discount      = Currency(10.37)
+    val userId        = UserID.random
     val products      = getExcelProductRows(1).map(excelRowToSaleDTOProduct(_)).toSeq
-    val response      = PaginatedSalesResponse(
+    val response = PaginatedSalesResponse(
       1,
       Seq(SaleDTO(SaleID(1), DateTime.now(), SaleOutlet.Store, total, discount, products))
     )
 
     (saleService.getSales _) expects (*, *, *) returning (Future(response))
 
-    val saleRoute = SaleRoutes(saleService, excelService)
+    val saleRoute = SaleRoutes(saleService, excelService, userId)
   }
 }

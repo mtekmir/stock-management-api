@@ -25,6 +25,7 @@ import scala.concurrent.Future
 import com.merit.modules.sales.SaleID
 import org.joda.time.DateTime
 import com.merit.modules.sales.SaleOutlet
+import com.merit.modules.users.UserID
 
 class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Sale route" >> {
@@ -54,11 +55,12 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
     val excelService  = mock[ExcelService]
     val total         = Currency(100.00)
     val discount      = Currency(10.37)
+    val userId        = UserID.random
     val products      = Seq(productRowToSaleSummaryProduct(createProduct, 5))
-    (saleService.create _) expects (*, *, *) returning (Future(
+    (saleService.create _) expects (*, *, *, *) returning (Future(
       SaleSummary(SaleID(1), DateTime.now(), total, discount, SaleOutlet.Store, products)
     ))
 
-    val saleRoute = SaleRoutes(saleService, excelService)
+    val saleRoute = SaleRoutes(saleService, excelService, userId)
   }
 }

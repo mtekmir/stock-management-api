@@ -3,6 +3,6 @@ create table if not exists sales_events(
   created timestamp not null,
   event varchar not null,
   message text not null,
-  "saleId" bigint not null references sales(id),
+  "saleId" bigint not null references sales(id) on delete cascade,
   "userId" uuid references users(id)
 )

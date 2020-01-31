@@ -10,7 +10,7 @@
 <!--    <logger name="slick.jdbc.StatementInvoker.result" level="debug"/>-->
     <logger name="akka" level="WARN"/>
 
-    <root level="INFO">
+    <!-- <root level="INFO">
         <appender-ref ref="console"/>
-    </root>
+    </root> -->
 </configuration>

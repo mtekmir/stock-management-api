@@ -22,18 +22,23 @@ import org.specs2.specification.AfterEach
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import utils.SaleUtils._
+import com.merit.modules.salesEvents.SaleEventRepo
+import com.merit.modules.users.UserID
+import com.merit.modules.users.UserRow
+import com.merit.modules.users.UserRepo
 
 class SaleServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
     with FutureMatchers
     with AfterEach {
-  val timeout = 2.seconds
+  val timeout = 3.seconds
   override def after = {
     import schema._
     import schema.profile.api._
 
     val del = db.run(
       for {
+        _ <- salesEvents.delete
         _ <- soldProducts.delete
         _ <- sales.delete
         _ <- products.delete
@@ -51,7 +56,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         sale <- saleService.importSale(
           sampleProducts.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
-          total
+          total,
+          userId
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -66,7 +72,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         sale <- saleService.importSale(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
-          total
+          total,
+          userId
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -84,7 +91,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         sale <- saleService.importSale(
           sampleProducts.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
-          total
+          total,
+          userId
         )
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
@@ -101,7 +109,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         sale <- saleService.importSale(
           nonExistingProducts.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
-          total
+          total,
+          userId
         )
       } yield sale
       sale.map(_.products.length) must beEqualTo(0).await
@@ -114,7 +123,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         s <- saleService.importSale(
           products.map(p => ExcelSaleRow(p.barcode, 1)),
           now,
-          total
+          total,
+          userId
         )
         sale <- saleService.getSale(s.id)
       } yield sale
@@ -134,7 +144,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         s <- saleService.importSale(
           products.zip(qtys).map(p => ExcelSaleRow(p._1.barcode, p._2)),
           now,
-          total
+          total,
+          userId
         )
         sale <- saleService.getSale(s.id)
       } yield sale
@@ -156,7 +167,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         s <- saleService.importSale(
           products.map(p => ExcelSaleRow(p.barcode)),
           now,
-          total
+          total,
+          userId
         )
         _ <- saleService.saveSyncResult(
           SyncSaleResponse(
@@ -179,26 +191,26 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           sales.map(
             s =>
               saleService
-                .importSale(s._3.map(p => ExcelSaleRow(p.barcode, p.qty)), s._1, s._2)
+                .importSale(s._3.map(p => ExcelSaleRow(p.barcode, p.qty)), s._1, s._2, userId)
           )
         )
         res1 <- saleService.getSales(1, 3)
         res2 <- saleService.getSales(2, 3)
         res3 <- saleService.getSales(3, 3)
       } yield (res1, res2, res3)
-      res.map(_._1.count) must beEqualTo(11).await
-      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2)).await
+      res.map(_._1.count) must beEqualTo(11).await(1, timeout)
+      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2)).await(1, timeout)
       res.map(_._1.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await
-      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2)).await
+      ).await(1, timeout)
+      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2)).await(1, timeout)
       res.map(_._2.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(3).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await
-      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2)).await
+      ).await(1, timeout)
+      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2)).await(1, timeout)
       res.map(_._3.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(6).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await
+      ).await(1, timeout)
     }
 
     "should create a sale" in new TestScope {
@@ -206,7 +218,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
 
       val res = for {
         ps              <- productService.batchInsertExcelRows(products)
-        summary         <- saleService.create(total, discount, ps.map(rowToDTO(_, None, None)))
+        summary         <- saleService.create(total, discount, ps.map(rowToDTO(_, None, None)), userId)
         updatedProducts <- productService.findAll(products.map(_.barcode))
       } yield (summary, updatedProducts)
       res.map(_._1.total) must beEqualTo(total).await
@@ -219,20 +231,25 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
   }
 
   class TestScope extends MockContext {
+    val userRepo      = UserRepo(schema)
     val brandRepo     = BrandRepo(schema)
     val categoryRepo  = CategoryRepo(schema)
     val productRepo   = ProductRepo(schema)
     val saleRepo      = SaleRepo(schema)
+    val saleEventRepo = SaleEventRepo(schema)
     val crawlerClient = mock[CrawlerClient]
     val total         = Currency(1000)
     val discount      = Currency(10)
+    val userId = UserID.random
 
     (crawlerClient.sendSale _) expects (*) returning (Future(
       (SyncSaleMessage(SaleID(0), Seq()), SendMessageResponse.builder().build())
     ))
 
+    Await.result(db.run(userRepo.insert(UserRow("", "", "", userId))), Duration.Inf)
+
     val productService = ProductService(db, brandRepo, productRepo, categoryRepo)
-    val saleService    = SaleService(db, saleRepo, productRepo, crawlerClient)
+    val saleService    = SaleService(db, saleRepo, productRepo, saleEventRepo, crawlerClient)
     val sampleProducts = getExcelProductRows(5).sortBy(_.barcode)
     val now            = DateTime.now()
   }

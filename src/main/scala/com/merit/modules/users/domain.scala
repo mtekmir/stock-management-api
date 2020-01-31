@@ -7,6 +7,7 @@ case class UserID(value: UUID) extends AnyVal with MappedTo[UUID]
 
 object UserID {
   def from(str: String): UserID = UserID(UUID.fromString(str))
+  def random = UserID(UUID.randomUUID())
 }
 
 case class UserRow(
