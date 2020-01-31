@@ -24,6 +24,8 @@ object Currency {
 
   def from(input: String): Option[Currency] =
     Try(BigDecimal(input)).toOption.map(c => Currency(format(c)))
+
+  def fromOrZero(input: String): Currency = from(input).getOrElse(Currency(0))
   def fromDb(input: BigDecimal): Currency = Currency(format(BigDecimal(input.toString)))
 }
 
@@ -31,7 +33,7 @@ final case class ProductRow(
   barcode: String,
   sku: String,
   name: String,
-  price: Option[Currency],
+  price: Currency,
   discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],
@@ -62,7 +64,7 @@ final case class ProductDTO(
   barcode: String,
   sku: String,
   name: String,
-  price: Option[Currency],
+  price: Currency,
   discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],
@@ -124,7 +126,7 @@ case class CreateProductRequest(
   barcode: String,
   sku: String,
   name: String,
-  price: Option[Currency],
+  price: Currency,
   discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],

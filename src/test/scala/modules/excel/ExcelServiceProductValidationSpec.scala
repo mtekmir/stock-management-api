@@ -173,7 +173,7 @@ class ExcelServiceProductValidationSpec extends Specification {
       Some("US5"),
       "AO9303-394",
       "Nike Air Zoom Vapor",
-      Currency.from("700.0"),
+      Currency.fromOrZero("700.0"),
       None,
       4,
       Some("Nike"),

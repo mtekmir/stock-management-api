@@ -18,7 +18,7 @@ case class StockOrderDTOProduct(
   barcode: String,
   sku: String,
   name: String,
-  price: Option[Currency],
+  price: Currency,
   discountPrice: Option[Currency],
   qty: Int,
   variation: Option[String],

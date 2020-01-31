@@ -30,7 +30,7 @@ object ImportSaleRoute extends Directives with JsonSupport {
               saleService.importSale(
                 rows,
                 DateTime.parse(date, dateFormatter),
-                Currency.from(total).getOrElse(Currency(0)),
+                Currency.fromOrZero(total),
                 userId
               )
             )

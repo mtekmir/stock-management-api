@@ -38,7 +38,7 @@ class ExcelServiceStockOrderSpec extends Specification {
               sku = "241101-105",
               barcode = "3324921176437",
               qty = 30,
-              price = Currency.from("109.99"),
+              price = Currency.fromOrZero("109.99"),
               category = Some("Kordaj")
             ),
             fullProduct.copy(
@@ -47,7 +47,7 @@ class ExcelServiceStockOrderSpec extends Specification {
               variation = Some("US6"),
               barcode = "4549846707231",
               qty = 1,
-              price = Currency.from("499.99"),
+              price = Currency.fromOrZero("499.99"),
               category = Some("Kadin Ayakkabi"),
               brand = Some("Asics")
             )
@@ -66,14 +66,14 @@ class ExcelServiceStockOrderSpec extends Specification {
     }
 
     val onlyBarcodeProduct =
-      ExcelStockOrderRow("", "", None, "3324921648019", 9, None, None, None, None, None)
+      ExcelStockOrderRow("", "", None, "3324921648019", 9, Currency(0), None, None, None, None)
     val fullProduct = ExcelStockOrderRow(
       "LOONY DAMP X 2",
       "700034-184",
       None,
       "3324921320236",
       200,
-      Currency.from("39.99"),
+      Currency.fromOrZero("39.99"),
       None,
       Some("Titresim Onleyici"),
       Some("Babolat"),

@@ -23,7 +23,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def barcode       = column[String]("barcode", O.Unique)
     def sku           = column[String]("sku")
     def name          = column[String]("name")
-    def price         = column[Option[Currency]]("price", O.SqlType("NUMERIC(10, 2)"))
+    def price         = column[Currency]("price", O.SqlType("NUMERIC(10, 2)"))
     def discountPrice = column[Option[Currency]]("discountPrice", O.SqlType("NUMERIC(10, 2)"))
     def qty           = column[Int]("qty")
     def variation     = column[Option[String]]("variation")

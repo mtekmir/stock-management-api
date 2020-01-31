@@ -17,7 +17,7 @@ object ExcelTestUtils {
             randomBetween(10000000).toString,
             randomProductName,
             randomPrice,
-            randomPrice,
+            randomDiscountPrice,
             randomQty,
             Some(randomBrandName),
             Some(randomCategoryName),

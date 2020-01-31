@@ -32,7 +32,7 @@ object SaleEventRepo {
     def insertSaleCreatedEvent(saleId: SaleID, userId: UserID): DBIO[SaleEventRow] =
       salesEvents returning salesEvents += SaleEventRow(
         SaleEventType.SaleCreated,
-        s"Sale created with id $saleId",
+        s"Sale created with id of ${saleId.value}",
         saleId,
         Some(userId)
       )
@@ -46,7 +46,7 @@ object SaleEventRepo {
     ): DBIO[SaleEventRow] =
       salesEvents returning salesEvents += SaleEventRow(
         SaleEventType.SaleImported,
-        s"""Sale imported with id of $saleId. 
+        s"""Sale imported with id of ${saleId.value}. 
            |Product Count: ${found.length}, Total Quantity: ${found.map(_.qty).sum}, Outlet: ${outlet.toString}
            |Not Found: 
            |${notFound.map(_.barcode).mkString("\n")}
@@ -62,7 +62,7 @@ object SaleEventRepo {
     ): DBIO[SaleEventRow] =
       salesEvents returning salesEvents += SaleEventRow(
         SaleEventType.SaleSynced,
-        s"Sale Synced with id of $saleId. $totalSynced products out of $totalProducts",
+        s"Sale Synced with id of ${saleId.value}. $totalSynced products out of $totalProducts",
         saleId,
         None
       )

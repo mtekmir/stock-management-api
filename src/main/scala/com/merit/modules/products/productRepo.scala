@@ -182,7 +182,11 @@ object ProductRepo {
                   case ("barcode", Some(v: String)) => product.copy(barcode = v)
                   case ("sku", Some(v: String))     => product.copy(sku = v)
                   case ("name", Some(v: String))    => product.copy(name = v)
-                  case ("price", Some(v: String))   => product.copy(price = Currency.from(v))
+                  case ("price", Some(v: String)) =>
+                    Currency.from(v) match {
+                      case None    => product
+                      case Some(c) => product.copy(price = c)
+                    }
                   case ("discountPrice", Some(v: String)) =>
                     product.copy(discountPrice = Currency.from(v))
                   case ("qty", Some(v: String)) if isNum(v) =>

@@ -27,6 +27,8 @@ import com.merit.{Config, AppConfig}
 import com.merit.modules.inventoryCount.{InventoryCountRepo, InventoryCountService}
 import com.merit.modules.salesEvents.{SaleEventRepo, SaleEventService}
 import com.typesafe.scalalogging.LazyLogging
+import com.merit.modules.statsService.StatsRepo
+import com.merit.modules.statsService.StatsService
 
 object Main extends App with LazyLogging {
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -57,10 +59,12 @@ object Main extends App with LazyLogging {
   val stockOrderRepo     = StockOrderRepo(schema)
   val inventoryCountRepo = InventoryCountRepo(schema)
   val saleEventsRepo     = SaleEventRepo(schema)
+  val statsRepo          = StatsRepo(schema)
 
   val sqsClient     = SqsClient(appConfig)
   val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
 
+  val statsService     = StatsService(db, statsRepo)
   val saleEventService = SaleEventService(db, saleEventsRepo)
   val productService   = ProductService(db, brandRepo, productRepo, categoryRepo)
   val brandService     = BrandService(db, brandRepo)
@@ -92,6 +96,7 @@ object Main extends App with LazyLogging {
       categoryService,
       stockOrderService,
       inventoryCountService,
+      statsService,
       appConfig
     )
 

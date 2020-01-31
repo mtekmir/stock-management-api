@@ -17,7 +17,9 @@ object ProductUtils {
   private val random                       = Random
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
   def randomBetween(n: Int)                = Random.nextInt(n).abs
-  def randomPrice                          = Currency.from((Random.nextInt(1000).abs + Random.nextDouble()).toString)
+  def randomPrice                          = Currency.fromOrZero((Random.nextInt(1000).abs + Random.nextDouble()).toString)
+  def randomDiscountPrice =
+    Currency.from((Random.nextInt(1000).abs + Random.nextDouble()).toString)
 
   def randomQty         = Random.nextInt(20)
   def randomBarcode     = randomBetween(100000000).toString
@@ -42,7 +44,7 @@ object ProductUtils {
       randomSku,
       randomProductName,
       randomPrice,
-      randomPrice,
+      randomDiscountPrice,
       randomQty,
       Some("variation"),
       Some(randomBetween(20)),
@@ -133,7 +135,7 @@ object ProductUtils {
         Some(barcode),
         Some(sku),
         Some(name),
-        price.map(_.value.toString),
+        Some(price.value.toString),
         discountPrice.map(_.value.toString),
         Some(qty.toString),
         variation,
