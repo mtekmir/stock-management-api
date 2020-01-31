@@ -15,8 +15,10 @@ object LoginRoute extends Directives with AuthDirectives with JsonSupport {
   def apply(userService: UserService, jwtConfig: JwtConfig): Route =
     (path("login") & entity(as[LoginRequest])) { loginReq =>
       onComplete(userService.login(loginReq.email, loginReq.password)) {
-        case Success(Some(user)) => complete(issueJwt(user.id, jwtConfig.secret))
-        case Success(None)       => complete(AuthorizationFailedRejection)
+        case Success(Some(user)) =>
+          complete(issueJwt(user.id, jwtConfig.secret))
+        case Success(None) => 
+          complete(BadRequest -> "Email or password is incorrect")
         case Failure(e) =>
           println(e)
           complete(InternalServerError -> "Something went wrong")
