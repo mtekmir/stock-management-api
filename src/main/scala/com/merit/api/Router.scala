@@ -68,7 +68,7 @@ object Router extends Directives with AuthDirectives with JsonSupport {
         SyncStockOrderRoute(stockOrderService, crawlerAuthenticator) ~
         authenticated(config.jwtConfig) { userId =>
           ProductRoutes(productService, excelService) ~
-          SaleRoutes(saleService, excelService) ~
+          SaleRoutes(saleService, excelService, userId) ~
           StockOrderRoutes(stockOrderService, excelService) ~
           BrandRoutes(brandService) ~
           CategoryRoutes(categoryService) ~

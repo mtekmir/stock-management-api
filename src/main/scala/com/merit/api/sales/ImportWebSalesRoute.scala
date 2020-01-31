@@ -9,9 +9,12 @@ import org.joda.time.format.DateTimeFormat
 import com.merit.modules.sales.SaleService
 import org.joda.time.DateTime
 import com.merit.modules.products.Currency
+import com.merit.modules.users.UserID
 
 object ImportWebSalesRoute extends Directives with JsonSupport {
-  def apply(saleService: SaleService, excelService: ExcelService): Route =
+  def apply(saleService: SaleService, excelService: ExcelService, 
+  userId: UserID
+  ): Route =
     (path("import") & uploadedFile("file")) {
       case (metadata, file) =>
         val rows = excelService.parseSaleImportFile(file)
@@ -19,7 +22,7 @@ object ImportWebSalesRoute extends Directives with JsonSupport {
         rows match {
           case Left(error) => complete(BadRequest -> error)
           case Right(rows) =>
-            complete(saleService.importSoldProductsFromWeb(rows))
+            complete(saleService.importSoldProductsFromWeb(rows, userId))
         }
 
     }

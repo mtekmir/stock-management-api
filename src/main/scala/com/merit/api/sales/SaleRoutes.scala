@@ -8,19 +8,21 @@ import scala.concurrent.ExecutionContext
 import com.merit.modules.excel.ExcelService
 import akka.http.scaladsl.server.Route
 import com.merit.api.sales.{GetSaleTemplateRoute, SyncSaleRoute, GetSales, CreateSale}
+import com.merit.modules.users.UserID
 
 object SaleRoutes extends Directives with JsonSupport {
   def apply(
     saleService: SaleService,
-    excelService: ExcelService
+    excelService: ExcelService,
+    userId: UserID
   )(
     implicit ec: ExecutionContext
   ): Route =
     pathPrefix("sales") {
-      ImportSaleRoute(saleService, excelService) ~
+      ImportSaleRoute(saleService, excelService, userId) ~
       GetSale(saleService) ~
       GetSales(saleService) ~
       GetSaleTemplateRoute() ~
-      CreateSale(saleService)
+      CreateSale(saleService, userId)
     }
 }

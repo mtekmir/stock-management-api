@@ -4,48 +4,21 @@ import slick.lifted._
 import com.merit.modules.products.{ProductID, ProductRow, SoldProductRow, OrderedProductRow, Currency}
 import com.merit.modules.brands.{BrandID, BrandRow}
 import slick.driver.JdbcProfile
-import slick.jdbc.meta.MTable
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext
 import java.sql.Timestamp
-
 import com.merit.modules.stockOrders.{StockOrderID, StockOrderRow}
 import org.joda.time.DateTime
 import com.merit.modules.sales.{SaleID, SaleRow, SaleOutlet}
 import com.merit.modules.users.{UserID, UserRow}
 import com.merit.modules.categories.{CategoryRow, CategoryID}
 import com.merit.modules.inventoryCount.{InventoryCountBatchRow, InventoryCountProductRow, InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
+import com.merit.modules.salesEvents.{SaleEventRow, SaleEventID, SaleEventType}
+import com.merit.db.DbMappers
 
-class Schema(val profile: JdbcProfile) {
+class Schema(val profile: JdbcProfile) extends DbMappers {
   import profile.api._
 
-  object CustomColumnTypes {
-    implicit val jodaDateTimeType =
-      MappedColumnType.base[DateTime, Timestamp](
-        dt => new Timestamp(dt.getMillis),
-        ts => new DateTime(ts.getTime)
-      )
-
-    implicit val currencyType = MappedColumnType.base[Currency, BigDecimal](
-      c => c.value,
-      bd => Currency.fromDb(bd)
-    )
-
-    implicit val myEnumMapper = MappedColumnType.base[InventoryCountStatus.Value, String](
-      e => e.toString,
-      s => InventoryCountStatus.withName(s)
-    )
-
-    implicit val saleOutletMapper = MappedColumnType.base[SaleOutlet.Value, String](
-      e => e.toString,
-      s => SaleOutlet.withName(s)
-    )
-  }
-
   class ProductTable(t: Tag) extends Table[ProductRow](t, "products") {
-    import CustomColumnTypes._
     def id            = column[ProductID]("id", O.PrimaryKey, O.AutoInc)
     def barcode       = column[String]("barcode", O.Unique)
     def sku           = column[String]("sku")
@@ -106,7 +79,6 @@ class Schema(val profile: JdbcProfile) {
   lazy val brands = TableQuery[BrandTable]
 
   class SaleTable(t: Tag) extends Table[SaleRow](t, "sales") {
-    import CustomColumnTypes._
     def id        = column[SaleID]("id", O.PrimaryKey, O.AutoInc)
     def createdAt = column[DateTime]("created")
     def total     = column[Currency]("total")
@@ -145,7 +117,6 @@ class Schema(val profile: JdbcProfile) {
   lazy val users = TableQuery[UserTable]
 
   class StockOrderTable(t: Tag) extends Table[StockOrderRow](t, "stock_orders") {
-    import CustomColumnTypes._
     def id      = column[StockOrderID]("id", O.PrimaryKey, O.AutoInc)
     def created = column[DateTime]("created")
 
@@ -171,8 +142,6 @@ class Schema(val profile: JdbcProfile) {
 
   class InventoryCountBatchTable(t: Tag)
       extends Table[InventoryCountBatchRow](t, "inventory_count_batches") {
-    import CustomColumnTypes._
-
     def id         = column[InventoryCountBatchID]("id", O.PrimaryKey, O.AutoInc)
     def status     = column[InventoryCountStatus.Value]("status")
     def started    = column[DateTime]("started")
@@ -207,32 +176,21 @@ class Schema(val profile: JdbcProfile) {
 
   lazy val inventoryCountProducts = TableQuery[InventoryCountProductsTable]
 
-  def createTables(db: Database)(implicit ec: ExecutionContext): Seq[Unit] = {
-    val tables =
-      Seq(
-        brands,
-        categories,
-        products,
-        sales,
-        soldProducts,
-        users,
-        stockOrders,
-        orderedProducts,
-        inventoryCountBatches,
-        inventoryCountProducts
-      )
-    val existing = db.run(MTable.getTables)
+  class SalesEventsTable(t: Tag) extends Table[SaleEventRow](t, "sales_events") {
+    def id      = column[SaleEventID]("id", O.PrimaryKey, O.AutoInc)
+    def event   = column[SaleEventType.Value]("event")
+    def message = column[String]("message")
+    def saleId  = column[SaleID]("saleId")
+    def userId  = column[Option[UserID]]("userId")
+    def created = column[DateTime]("created")
 
-    val f = existing.flatMap(ts => {
-      val existingTableNames = ts.map(_.name.name)
-      val createIfNotExists = tables
-        .filterNot(t => existingTableNames.contains(t.baseTableRow.tableName))
-        .map(_.schema.create)
-      db.run(DBIO.sequence(createIfNotExists))
-    })
+    def saleFk = foreignKey("sales_events_sale_fk", saleId, sales)(_.id)
+    def userFk = foreignKey("sales_events_user_fk", userId, users)(_.id)
 
-    Await.result(f, Duration.Inf)
+    def * = (event, message, saleId, userId, created, id).mapTo[SaleEventRow]
   }
+
+  lazy val salesEvents = TableQuery[SalesEventsTable]
 }
 
 object Schema {

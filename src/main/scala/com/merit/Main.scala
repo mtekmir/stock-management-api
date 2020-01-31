@@ -25,6 +25,7 @@ import com.merit.AwsConfig
 import com.merit.external.sqsClient.SqsClient
 import com.merit.{Config, AppConfig}
 import com.merit.modules.inventoryCount.{InventoryCountRepo, InventoryCountService}
+import com.merit.modules.salesEvents.{SaleEventRepo, SaleEventService}
 import com.typesafe.scalalogging.LazyLogging
 
 object Main extends App with LazyLogging {
@@ -55,16 +56,18 @@ object Main extends App with LazyLogging {
   val categoryRepo       = CategoryRepo(schema)
   val stockOrderRepo     = StockOrderRepo(schema)
   val inventoryCountRepo = InventoryCountRepo(schema)
+  val saleEventsRepo     = SaleEventRepo(schema)
 
   val sqsClient     = SqsClient(appConfig)
   val crawlerClient = CrawlerClient(crawlerClientConfig, sqsClient)
 
-  val productService  = ProductService(db, brandRepo, productRepo, categoryRepo)
-  val brandService    = BrandService(db, brandRepo)
-  val categoryService = CategoryService(db, categoryRepo)
-  val excelService    = ExcelService()
-  val saleService     = SaleService(db, saleRepo, productRepo, crawlerClient)
-  val userService     = UserService(db, userRepo)
+  val saleEventService = SaleEventService(db, saleEventsRepo)
+  val productService   = ProductService(db, brandRepo, productRepo, categoryRepo)
+  val brandService     = BrandService(db, brandRepo)
+  val categoryService  = CategoryService(db, categoryRepo)
+  val excelService     = ExcelService()
+  val saleService      = SaleService(db, saleRepo, productRepo, saleEventsRepo, crawlerClient)
+  val userService      = UserService(db, userRepo)
   val stockOrderService =
     StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo, crawlerClient)
   val emailService =

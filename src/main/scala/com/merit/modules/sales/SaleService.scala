@@ -13,20 +13,25 @@ import slick.jdbc.JdbcBackend.Database
 import com.merit.external.crawler.{SyncSaleResponse, CrawlerClient}
 import collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
+import com.merit.modules.salesEvents.SaleEventRepo
+import com.merit.modules.users.UserID
 
 trait SaleService {
   def importSale(
     rows: Seq[ExcelSaleRow],
     date: DateTime,
-    total: Currency
+    total: Currency,
+    userId: UserID
   ): Future[SaleSummary]
   def importSoldProductsFromWeb(
-    rows: Seq[ExcelSaleRow]
+    rows: Seq[ExcelSaleRow],
+    userId: UserID
   ): Future[SaleSummary]
   def create(
     total: Currency,
     discount: Currency,
-    products: Seq[ProductDTO]
+    products: Seq[ProductDTO],
+    userId: UserID
   ): Future[SaleSummary]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
   def getSales(
@@ -42,13 +47,15 @@ object SaleService {
     db: Database,
     saleRepo: SaleRepo[DBIO],
     productRepo: ProductRepo[DBIO],
+    saleEventRepo: SaleEventRepo[DBIO],
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext) = new SaleService with LazyLogging {
     private def insertFromExcel(
       rows: Seq[ExcelSaleRow],
       date: DateTime,
       total: Currency,
-      outlet: SaleOutlet.Value = SaleOutlet.Store
+      outlet: SaleOutlet.Value = SaleOutlet.Store,
+      userId: UserID
     ): Future[SaleSummary] = {
       logger.info(s"Inserting sale from excel with ${rows.length} rows")
       logger.info(s"Date: $date, Total: $total, Outlet: ${outlet.toString}")
@@ -67,6 +74,13 @@ object SaleService {
             )
           )
           _ <- DBIO.sequence(rows.map(r => productRepo.deductQuantity(r.barcode, r.qty)))
+            _ <- saleEventRepo.insertSaleImportedEvent(
+              sale.id,
+              userId,
+              rows.filter(p => soldProducts.find(_.barcode == p.barcode).isDefined),
+              rows.filter(p => soldProducts.find(_.barcode == p.barcode).isEmpty),
+              outlet
+            )
         } yield
           SaleSummary(
             sale.id,
@@ -88,22 +102,25 @@ object SaleService {
     def importSale(
       rows: Seq[ExcelSaleRow],
       date: DateTime,
-      total: Currency
+      total: Currency,
+      userId: UserID
     ): Future[SaleSummary] =
       for {
-        summary <- insertFromExcel(rows, date, total)
+        summary <- insertFromExcel(rows, date, total, SaleOutlet.Store, userId)
         _       <- crawlerClient.sendSale(summary)
       } yield (summary)
 
     def importSoldProductsFromWeb(
-      rows: Seq[ExcelSaleRow]
+      rows: Seq[ExcelSaleRow],
+      userId: UserID
     ): Future[SaleSummary] =
-      insertFromExcel(rows, DateTime.now(), Currency(0), SaleOutlet.Web)
+      insertFromExcel(rows, DateTime.now(), Currency(0), SaleOutlet.Web, userId)
 
     def create(
       total: Currency,
       discount: Currency,
-      products: Seq[ProductDTO]
+      products: Seq[ProductDTO],
+      userId: UserID
     ): Future[SaleSummary] = {
       logger.info(
         s"Creating sale with total: $total, discount: $discount, products: ${products.toString}"
@@ -115,6 +132,7 @@ object SaleService {
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )
           _ <- DBIO.sequence(products.map(p => productRepo.deductQuantity(p.barcode, p.qty)))
+          _  <- saleEventRepo.insertSaleCreatedEvent(sale.id, userId)
         } yield
           SaleSummary(
             sale.id,
@@ -186,9 +204,12 @@ object SaleService {
       logger.info(s"Received sync sale response")
       logger.info(s"Synced $synced products out of ${result.products.length}")
       db.run(
-        DBIO.sequence(
+        for {
+          updated <- DBIO.sequence(
           result.products.map(p => saleRepo.syncSoldProduct(result.saleId, p.id, p.synced))
         )
+          _ <- saleEventRepo.insertSaleSyncedEvent(result.saleId, result.products.length, synced)
+        } yield updated
       )
     }
   }

@@ -10,11 +10,13 @@ import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import akka.http.scaladsl.model.StatusCodes.BadRequest
 import com.merit.modules.products.Currency
+import com.merit.modules.users.UserID
 
 object ImportSaleRoute extends Directives with JsonSupport {
   def apply(
     saleService: SaleService,
-    excelService: ExcelService
+    excelService: ExcelService,
+    userId: UserID
   )(implicit ec: ExecutionContext) =
     (path("import") & formFields('date.as[String], 'total.as[String]) & uploadedFile("file")) {
       case (date, total, (metadata, file)) =>
@@ -28,7 +30,8 @@ object ImportSaleRoute extends Directives with JsonSupport {
               saleService.importSale(
                 rows,
                 DateTime.parse(date, dateFormatter),
-                Currency.from(total).getOrElse(Currency(0))
+                Currency.from(total).getOrElse(Currency(0)),
+                userId
               )
             )
         }

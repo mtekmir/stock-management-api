@@ -52,7 +52,6 @@ object InventoryCountRepo {
     new InventoryCountRepo[slick.dbio.DBIO] {
       import schema._
       import schema.profile.api._
-      import schema.CustomColumnTypes._
 
       def count: DBIO[Int] =
         inventoryCountBatches.length.result

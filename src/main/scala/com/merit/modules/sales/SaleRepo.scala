@@ -27,7 +27,6 @@ trait SaleRepo[DbTask[_]] {
 object SaleRepo {
   def apply(schema: Schema) = new SaleRepo[slick.dbio.DBIO] {
     import schema._
-    import schema.CustomColumnTypes._
     import schema.profile.api._
 
     private type SaleQuery = Query[SaleTable, SaleRow, Seq]
