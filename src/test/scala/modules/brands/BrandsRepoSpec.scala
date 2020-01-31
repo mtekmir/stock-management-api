@@ -46,18 +46,6 @@ class BrandsRepSpec(implicit ee: ExecutionEnv)
       )
       brand must beEqualTo(Some("brand1")).await
     }
-
-    "Should batch insert brands" in new TestScope {
-      val brands = db.run(
-        for {
-          _ <- brandRepo.batchInsert(
-            Seq(BrandRow("brand11"), BrandRow("brand22"), BrandRow("brand33"))
-          )
-          brands <- brandRepo.getAll
-        } yield brands.map(_.name)
-      )
-      brands must beEqualTo(Seq("brand11", "brand22", "brand33")).await
-    }
   }
 
   class TestScope extends Scope {

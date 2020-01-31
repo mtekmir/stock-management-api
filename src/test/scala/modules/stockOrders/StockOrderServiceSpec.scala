@@ -29,7 +29,6 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
     with FutureMatchers
     with BeforeEach {
-  val timeout = 2.seconds
   override def before = {
     import schema._
     import schema.profile.api._
@@ -60,10 +59,10 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
       } yield products
       res.map(_.sortBy(_.barcode).map(p => p.barcode -> p.qty)) must beEqualTo(
         ps.map(p => p.barcode -> (p.qty + 1))
-      ).await(1, timeout)
+      ).await
       res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
         ps.map(p => excelRowToDTO(p).copy(qty = p.qty + 1))
-      ).await(1, timeout)
+      ).await
     }
 
     "existing products should have twice the qty" in new TestScope {
@@ -78,7 +77,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
       } yield products
       res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
         ps.map(excelRowToDTO(_)).map(p => p.copy(qty = p.qty * 2))
-      ).await(1, timeout)
+      ).await
     }
 
     "should create non existing products" in new TestScope {
@@ -93,7 +92,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
 
       res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
         ps.map(excelRowToDTO(_))
-      ).await(1, timeout)
+      ).await
     }
 
     "should handle both existing and nonexisting products" in new TestScope {
@@ -113,7 +112,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         (firstHalf.map(_.copy(qty = 2)) ++ secondHalf)
           .map(excelRowToDTO(_))
           .sortBy(_.barcode)
-      ).await(1, timeout)
+      ).await
     }
 
     "should handle both existing and nonexisting products - 2" in new TestScope {
@@ -132,7 +131,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         (pToCreate ++ pToUpdate.map(p => p.copy(qty = p.qty * 2)))
           .sortBy(_.barcode)
           .map(excelRowToDTO(_))
-      ).await(1, timeout)
+      ).await
     }
 
     "should return created and updated products separately" in new TestScope {
@@ -150,12 +149,12 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
       res.map(_.date) must beEqualTo(now).await
       res.map(_.created.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered))) must beEqualTo(
         pToCreate.map(p => (p.barcode, 0, p.qty))
-      ).await(1, timeout)
+      ).await
       res.map(
         _.updated.sortBy(_.barcode).map(p => (p.barcode, p.prevQty, p.ordered + p.prevQty))
       ) must beEqualTo(
         pToUpdate.map(p => (p.barcode, p.qty, p.qty * 2))
-      ).await(1, timeout)
+      ).await
     }
 
     "sync stock order" in new TestScope {

@@ -14,6 +14,9 @@ import pureconfig._
 import pureconfig.generic.auto._
 import com.merit.db.DbSetup
 import com.merit.DbConfig
+import scala.concurrent.duration._
+import org.specs2.matcher.Matcher
+import org.specs2.concurrent.ExecutionEnv
 
 trait DbSpecification extends Specification with BeforeAll with AfterAll {
   private val dbname =

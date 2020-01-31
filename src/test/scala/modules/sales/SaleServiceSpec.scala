@@ -23,22 +23,20 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import utils.SaleUtils._
 import com.merit.modules.salesEvents.SaleEventRepo
-import com.merit.modules.users.UserID
-import com.merit.modules.users.UserRow
-import com.merit.modules.users.UserRepo
+import com.merit.modules.users.{UserID, UserRow, UserRepo}
+import com.merit.modules.salesEvents.{SaleEventRow, SaleEventType}
+import slick.dbio.DBIO
 
 class SaleServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
     with FutureMatchers
     with AfterEach {
-  val timeout = 3.seconds
   override def after = {
     import schema._
     import schema.profile.api._
 
     val del = db.run(
       for {
-        _ <- salesEvents.delete
         _ <- soldProducts.delete
         _ <- sales.delete
         _ <- products.delete
@@ -62,7 +60,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       } yield sale
       sale.map(_.products.map(p => (p.barcode, p.prevQty, p.soldQty)).sortBy(_._1)) must beEqualTo(
         sampleProducts.map(p => (p.barcode, p.qty, 1)).sortBy(_._1)
-      ).await(1, timeout)
+      ).await
     }
 
     "should insert excel rows with specified quantities" in new TestScope {
@@ -81,7 +79,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           .zip(qtys)
           .map(p => (p._1.barcode, p._1.qty, p._2))
           .sortBy(_._1)
-      ).await(1, timeout)
+      ).await
     }
 
     "should insert excel rows with specified quantities - 2" in new TestScope {
@@ -100,7 +98,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
           .zip(qtys)
           .map(p => (p._1.barcode, p._1.qty, p._2))
           .sortBy(_._1)
-      ).await(1, timeout)
+      ).await
     }
 
     "should do nothing when barcodes are not found" in new TestScope {
@@ -133,7 +131,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         Some(
           products.map(excelRowToSaleDTOProduct(_).copy(qty = 1))
         )
-      ).await(1, timeout)
+      ).await
     }
 
     "should get a sale with id - 2" in new TestScope {
@@ -157,7 +155,7 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
             )
           )
         )
-        .await(1, timeout)
+        .await
     }
 
     "should sync sale" in new TestScope {
@@ -198,19 +196,22 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         res2 <- saleService.getSales(2, 3)
         res3 <- saleService.getSales(3, 3)
       } yield (res1, res2, res3)
-      res.map(_._1.count) must beEqualTo(11).await(1, timeout)
-      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2)).await(1, timeout)
+      res.map(_._1.count) must beEqualTo(11).await
+      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2))
+        .await
       res.map(_._1.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await(1, timeout)
-      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2)).await(1, timeout)
+      ).await
+      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2))
+        .await
       res.map(_._2.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(3).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await(1, timeout)
-      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2)).await(1, timeout)
+      ).await
+      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2))
+        .await
       res.map(_._3.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(6).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
-      ).await(1, timeout)
+      ).await
     }
 
     "should create a sale" in new TestScope {
@@ -236,15 +237,24 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
     val categoryRepo  = CategoryRepo(schema)
     val productRepo   = ProductRepo(schema)
     val saleRepo      = SaleRepo(schema)
-    val saleEventRepo = SaleEventRepo(schema)
+    val saleEventRepo = mock[SaleEventRepo[slick.dbio.DBIO]]
     val crawlerClient = mock[CrawlerClient]
-    val total         = Currency(1000)
-    val discount      = Currency(10)
-    val userId = UserID.random
+
+    val total    = Currency(1000)
+    val discount = Currency(10)
+    val userId   = UserID.random
 
     (crawlerClient.sendSale _) expects (*) returning (Future(
       (SyncSaleMessage(SaleID(0), Seq()), SendMessageResponse.builder().build())
-    ))
+    )) anyNumberOfTimes
+
+    val eventDbio =
+      DBIO.successful(SaleEventRow(SaleEventType.SaleImported, "", SaleID(0), Some(userId)))
+    (saleEventRepo.insertSaleImportedEvent _) expects (*, *, *, *, *) returning eventDbio anyNumberOfTimes
+
+    (saleEventRepo.insertSaleCreatedEvent _) expects (*, *) returning eventDbio anyNumberOfTimes
+
+    (saleEventRepo.insertSaleSyncedEvent _) expects (*, *, *) returning eventDbio anyNumberOfTimes
 
     Await.result(db.run(userRepo.insert(UserRow("", "", "", userId))), Duration.Inf)
 

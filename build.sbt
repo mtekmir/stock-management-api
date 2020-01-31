@@ -18,6 +18,7 @@ val circeVersion    = "0.12.3"
 val slickVersion    = "3.3.2"
 
 testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "sequential")
+testOptions in Test += Tests.Argument(TestFrameworks.Specs2, "timeFactor", "5")
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka"      %% "akka-actor"          % akkaVersion,
