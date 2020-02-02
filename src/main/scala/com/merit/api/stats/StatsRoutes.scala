@@ -6,5 +6,7 @@ import akka.http.scaladsl.server.Route
 
 object StatsRoutes extends Directives {
   def apply(statsService: StatsService): Route =
-    TopSellingProductsRoute(statsService)
+    TopSellingProductsRoute(statsService) ~
+      InventorySummaryRoute(statsService) ~
+      SaleStatsRoute(statsService)
 }

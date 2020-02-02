@@ -1,6 +1,7 @@
 package com.merit.modules.statsService
 
 import com.merit.modules.products.Currency
+import org.joda.time.DateTime
 
 case class TopSellingProduct(
   sku: String,
@@ -17,4 +18,20 @@ case class PaginatedTopSellingProducts(
 case class InventorySummary(
   currentStock: Int,
   stockValue: Currency
+)
+
+case class Stats(
+  revenue: Currency,
+  saleCount: Int,
+  soldProductCount: Int
+)
+
+case class StatsDateFilter(
+  startDate: DateTime,
+  endDate: DateTime
+)
+
+case class Point(
+  x: Int,
+  y: Int
 )

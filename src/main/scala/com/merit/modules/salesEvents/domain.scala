@@ -8,9 +8,9 @@ import org.joda.time.DateTime
 object SaleEventType extends Enumeration {
   type SaleEventType = Value
 
-  val SaleCreated  = Value
-  val SaleImported = Value
-  val SaleSynced   = Value
+  val SaleCreated  = Value("Sale created")
+  val SaleImported = Value("Sale imported")
+  val SaleSynced   = Value("Sale synced")
 }
 
 case class SaleEventID(value: Long) extends AnyVal with MappedTo[Long]

@@ -29,6 +29,8 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.RejectionHandler
 import com.merit.api.stats.StatsRoutes
 import com.merit.modules.statsService.StatsService
+import com.merit.api.events.SaleEventsRoute
+import com.merit.modules.salesEvents.SaleEventService
 
 object Router extends Directives with AuthDirectives with JsonSupport {
   def apply(
@@ -41,6 +43,7 @@ object Router extends Directives with AuthDirectives with JsonSupport {
     stockOrderService: StockOrderService,
     inventoryCountService: InventoryCountService,
     statsService: StatsService,
+    saleEventService: SaleEventService,
     config: AppConfig
   )(implicit ec: ExecutionContext): Route = {
     def crawlerAuthenticator(credentials: Credentials): Option[Boolean] =
@@ -77,7 +80,8 @@ object Router extends Directives with AuthDirectives with JsonSupport {
           CategoryRoutes(categoryService) ~
           InventoryCountRoutes(inventoryCountService, excelService) ~
           UserRoutes(userId, userService) ~
-          StatsRoutes(statsService)
+          StatsRoutes(statsService) ~
+          SaleEventsRoute(saleEventService)
         }
       }
     }

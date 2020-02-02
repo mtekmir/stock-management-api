@@ -19,6 +19,8 @@ import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.inventoryCount.{InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
 import org.joda.time.format.ISODateTimeFormat
 import com.merit.modules.categories.CategoryID
+import com.merit.modules.salesEvents.SaleEventType
+import com.merit.modules.salesEvents.SaleEventID
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -58,6 +60,11 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val decodeUserId: Decoder[UserID] = Decoder.decodeUUID.emap { v =>
     UserID(v).asRight
   }
+  
+  implicit val encodeSaleEventId: Encoder[SaleEventID] = (id: SaleEventID) => Encoder.encodeLong(id.value)
+  implicit val decodeSaleEventId: Decoder[SaleEventID] = Decoder.decodeLong.emap { v =>
+    SaleEventID(v).asRight
+  }
 
   implicit val encodeInventoryCountBatchId: Encoder[InventoryCountBatchID] =
     (id: InventoryCountBatchID) => Encoder.encodeLong(id.value)
@@ -91,4 +98,7 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val decodeSaleOutlet: Decoder[SaleOutlet.Value] =
     Decoder.enumDecoder(SaleOutlet)
+
+  implicit val encodeSaleEvent: Encoder[SaleEventType.Value] =
+    Encoder.enumEncoder(SaleEventType)
 }

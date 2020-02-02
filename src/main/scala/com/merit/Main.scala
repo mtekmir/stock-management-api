@@ -97,6 +97,7 @@ object Main extends App with LazyLogging {
       stockOrderService,
       inventoryCountService,
       statsService,
+      saleEventService,
       appConfig
     )
 
