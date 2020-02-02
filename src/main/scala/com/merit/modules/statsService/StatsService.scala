@@ -5,6 +5,7 @@ import slick.dbio.DBIO
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import com.merit.modules.products.Currency
+import org.joda.time.Duration
 
 trait StatsService {
   def getTopSellingProducts(
@@ -39,6 +40,10 @@ object StatsService {
           case (rev, saleCount, productsSold) => Stats(Currency(rev), saleCount, productsSold)
         })
 
-      def revenueChartData(filters: StatsDateFilter): Future[Seq[Point]] = ???
+      def revenueChartData(filters: StatsDateFilter): Future[Seq[Point]] = {
+        import filters._
+
+        val differenceInDays = (new Duration(endDate, startDate)).toStandardDays().getDays()
+      }
     }
 }
