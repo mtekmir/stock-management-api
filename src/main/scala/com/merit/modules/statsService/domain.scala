@@ -31,7 +31,14 @@ case class StatsDateFilter(
   endDate: DateTime
 )
 
+object ChartOption extends Enumeration {
+  val ChartOption = Value
+  val Daily       = Value("daily")
+  val Weekly      = Value("weekly")
+  val Monthly     = Value("monthly")
+}
+
 case class Point(
-  x: Int,
-  y: Int
+  x: String,
+  y: Currency
 )

@@ -8,5 +8,6 @@ object StatsRoutes extends Directives {
   def apply(statsService: StatsService): Route =
     TopSellingProductsRoute(statsService) ~
       InventorySummaryRoute(statsService) ~
-      SaleStatsRoute(statsService)
+      SaleStatsRoute(statsService) ~
+      RevenueChartRoute(statsService)
 }
