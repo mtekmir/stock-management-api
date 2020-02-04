@@ -16,7 +16,7 @@ object ImportStockOrderRoute extends Directives with JsonSupport {
     stockOrderService: StockOrderService,
     excelService: ExcelService
   )(implicit ec: ExecutionContext): Route =
-    (path("import") & formFields('date.as[String]) & uploadedFile("file")) {
+    (path("stock-orders" / "import") & formFields('date.as[String]) & uploadedFile("file")) {
       case (date, (_, file)) => {
         val rows = excelService.parseStockOrderImportFile(file)
 

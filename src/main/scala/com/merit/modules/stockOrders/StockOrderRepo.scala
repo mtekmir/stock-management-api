@@ -14,7 +14,13 @@ trait StockOrderRepo[DbTask[_]] {
   ): DbTask[Seq[OrderedProductRow]]
   def get(
     id: StockOrderID
-  ): DbTask[Seq[(StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]]
+  ): DbTask[
+    Seq[(StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]
+  ]
+  def getAll(
+    ): DbTask[
+    Seq[(StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]
+  ]
   def syncOrderedProduct(
     stockOrderId: StockOrderID,
     productId: ProductID,
@@ -28,6 +34,29 @@ object StockOrderRepo {
       import schema._
       import schema.profile.api._
 
+      implicit class SOOPS(
+        val q: Query[StockOrderTable, StockOrderRow, Seq]
+      ) {
+        def withProducts =
+          q.join(orderedProducts)
+            .on(_.id === _.stockOrderId)
+            .join(products)
+            .on {
+              case ((so, op), p) => op.productId === p.id
+            }
+            .joinLeft(brands)
+            .on {
+              case (((so, op), p), b) => p.brandId === b.id
+            }
+            .joinLeft(categories)
+            .on {
+              case ((((so, op), p), b), c) => p.categoryId === c.id
+            }
+            .map {
+              case ((((so, op), p), b), c) => (so, p, op.qty, op.synced, b, c)
+            }
+      }
+
       def insert(row: StockOrderRow): DBIO[StockOrderRow] =
         stockOrders returning stockOrders += row
 
@@ -36,29 +65,18 @@ object StockOrderRepo {
       ): DBIO[Seq[OrderedProductRow]] =
         orderedProducts returning orderedProducts ++= products
 
-      def get(id: StockOrderID): slick.dbio.DBIO[Seq[
+      def get(id: StockOrderID): DBIO[Seq[
         (StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])
       ]] =
         stockOrders
           .filter(_.id === id)
-          .join(orderedProducts)
-          .on(_.id === _.stockOrderId)
-          .join(products)
-          .on {
-            case ((so, op), p) => op.productId === p.id
-          }
-          .joinLeft(brands)
-          .on {
-            case (((so, op), p), b) => p.brandId === b.id
-          }
-          .joinLeft(categories)
-          .on {
-            case ((((so, op), p), b), c) => p.categoryId === c.id
-          }
-          .map {
-            case ((((so, op), p), b), c) => (so, p, op.qty, op.synced, b, c)
-          }
+          .withProducts
           .result
+
+      def getAll(): DBIO[
+        Seq[(StockOrderRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]
+      ] =
+        stockOrders.withProducts.result
 
       def syncOrderedProduct(
         stockOrderId: StockOrderID,

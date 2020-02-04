@@ -9,10 +9,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.MediaTypes
 
 object GetStockOrderTemplateRoute extends Directives {
-  def apply(): Route = {
-    (path("stock-order-template") & get) {
+  def apply(): Route =
+    (path("stock-orders" / "stock-order-template") & get) {
       val source =
-        FileIO.fromPath(Paths.get("src/main/resources/excelTemplates/stock-order-template.xlsx"))
+        FileIO.fromPath(
+          Paths.get("src/main/resources/excelTemplates/stock-order-template.xlsx")
+        )
 
       complete(
         HttpResponse(
@@ -25,5 +27,4 @@ object GetStockOrderTemplateRoute extends Directives {
         )
       )
     }
-  }
 }

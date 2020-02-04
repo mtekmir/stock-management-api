@@ -33,6 +33,7 @@ object StockOrderDTOProduct {
     productRow: ProductRow,
     brand: Option[BrandRow] = None,
     category: Option[CategoryRow] = None,
+    ordered: Int,
     synced: Boolean
   ): StockOrderDTOProduct = {
     import productRow._
@@ -43,7 +44,7 @@ object StockOrderDTOProduct {
       name,
       price,
       discountPrice,
-      qty,
+      ordered,
       variation,
       taxRate,
       brand.map(_.name),
