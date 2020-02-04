@@ -31,8 +31,9 @@ import com.merit.api.stats.StatsRoutes
 import com.merit.modules.statsService.StatsService
 import com.merit.api.events.SaleEventsRoute
 import com.merit.modules.salesEvents.SaleEventService
+import com.typesafe.scalalogging.LazyLogging
 
-object Router extends Directives with AuthDirectives with JsonSupport {
+object Router extends Directives with AuthDirectives with JsonSupport with LazyLogging {
   def apply(
     saleService: SaleService,
     productService: ProductService,
@@ -60,7 +61,7 @@ object Router extends Directives with AuthDirectives with JsonSupport {
       case e: NoSuchElementException => complete(StatusCodes.NotFound -> e.getMessage)
       case t: Throwable =>
         complete {
-          // logger.error("An unhandled error occurred: ", t)
+          logger.error("An unhandled error occurred: ", t)
           StatusCodes.InternalServerError -> "Something went wrong"
         }
     }

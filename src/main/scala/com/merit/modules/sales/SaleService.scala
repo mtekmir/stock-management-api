@@ -74,13 +74,13 @@ object SaleService {
             )
           )
           _ <- DBIO.sequence(rows.map(r => productRepo.deductQuantity(r.barcode, r.qty)))
-            _ <- saleEventRepo.insertSaleImportedEvent(
-              sale.id,
-              userId,
-              rows.filter(p => soldProducts.find(_.barcode == p.barcode).isDefined),
-              rows.filter(p => soldProducts.find(_.barcode == p.barcode).isEmpty),
-              outlet
-            )
+          _ <- saleEventRepo.insertSaleImportedEvent(
+            sale.id,
+            userId,
+            rows.filter(p => soldProducts.find(_.barcode == p.barcode).isDefined),
+            rows.filter(p => soldProducts.find(_.barcode == p.barcode).isEmpty),
+            outlet
+          )
         } yield
           SaleSummary(
             sale.id,
@@ -132,7 +132,7 @@ object SaleService {
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )
           _ <- DBIO.sequence(products.map(p => productRepo.deductQuantity(p.barcode, p.qty)))
-          _  <- saleEventRepo.insertSaleCreatedEvent(sale.id, userId)
+          _ <- saleEventRepo.insertSaleCreatedEvent(sale.id, userId)
         } yield
           SaleSummary(
             sale.id,
@@ -206,9 +206,10 @@ object SaleService {
       db.run(
         for {
           updated <- DBIO.sequence(
-          result.products.map(p => saleRepo.syncSoldProduct(result.saleId, p.id, p.synced))
-        )
-          _ <- saleEventRepo.insertSaleSyncedEvent(result.saleId, result.products.length, synced)
+            result.products.map(p => saleRepo.syncSoldProduct(result.saleId, p.id, p.synced))
+          )
+          _ <- saleEventRepo
+            .insertSaleSyncedEvent(result.saleId, result.products.length, synced)
         } yield updated
       )
     }

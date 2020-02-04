@@ -5,13 +5,8 @@ import slick.dbio.DBIO
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import com.merit.modules.products.Currency
-import org.joda.time.DateTimeFieldType
-import org.joda.time.Weeks
-import org.joda.time.Days
 import org.joda.time.DateTime
-import java.time.LocalTime
-import java.util.Calendar
-import org.joda.time.Months
+import java.lang.Math.floorMod
 
 trait StatsService {
   def getTopSellingProducts(
@@ -55,25 +50,6 @@ object StatsService {
       ): Future[Seq[Point]] = {
         import filters._
         import ChartOption._
-        implicit class DTimeOps(d: DateTime) {
-          val cal = Calendar.getInstance()
-          def getWeek: Int = {
-            cal.setTimeInMillis(d.getMillis)
-            cal.get(Calendar.WEEK_OF_YEAR)
-          }
-          def getMonth: Int = {
-            cal.setTimeInMillis(d.getMillis)
-            cal.get(Calendar.MONTH)
-          }
-          def isSameMonth(d2: DateTime): Boolean =
-            d.getMonth == d2.getMonth && d.getYear == d2.getYear
-
-          def isSameWeek(d2: DateTime): Boolean =
-            d.getWeek == d2.getWeek && d.getYear == d2.getYear
-
-          def isSameDay(d2: DateTime): Boolean =
-            d.getDayOfYear == d2.getDayOfYear && d.getYear == d2.getYear
-        }
 
         def getYearDiff(start: DateTime, end: DateTime, times: Int): Int =
           ((end.getYear - start.getYear) * times)
@@ -94,7 +70,7 @@ object StatsService {
               chartOption match {
                 case Daily =>
                   val differenceInDays = getDayDiff(startDate, endDate)
-                  (0 until differenceInDays).map(dayIdx => {
+                  (0 to differenceInDays).map(dayIdx => {
                     val dayOfYear  = startDate.plusDays(dayIdx)
                     val salesOfDay = sales.filter(_.createdAt.isSameDay(dayOfYear))
 
@@ -105,9 +81,13 @@ object StatsService {
                   })
                 case Weekly =>
                   val differenceInWeek = getWeekDiff(startDate, endDate)
-                  (0 until differenceInWeek).map(weekIdx => {
-                    val week        = startDate.plusWeeks(weekIdx)
-                    val salesOfWeek = sales.filter(_.createdAt.isSameWeek(week))
+                  (0 to differenceInWeek).map(weekIdx => {
+                    val weekNum = floorMod(startDate.getWeek + weekIdx, 52) match {
+                      case 0 => 52
+                      case n: Int => n
+                    }
+                    val week        = startDate.withDayOfWeek(1).plusWeeks(weekIdx)
+                    val salesOfWeek = sales.filter(_.createdAt.getWeek == weekNum)
 
                     Point(
                       "Week of " + week.toString("MMM dd, YYYY"),
@@ -117,11 +97,9 @@ object StatsService {
                 case Monthly =>
                   val differenceInMonths = getMonthDiff(startDate, endDate)
                   (0 to differenceInMonths).map(monthIdx => {
-                    val month        = startDate.plusMonths(monthIdx)
+                    val month = startDate.withDayOfMonth(1).plusMonths(monthIdx)
                     val salesOfMonth = sales.filter(_.createdAt.isSameMonth(month))
-                    println(s"monthIdx: $monthIdx")
-                    println(month.getMonth)
-                    println(sales.map(_.createdAt.getMonth))
+
                     Point(
                       month.toString("MMM, YYYY"),
                       Currency(salesOfMonth.map(_.total.value).sum)
