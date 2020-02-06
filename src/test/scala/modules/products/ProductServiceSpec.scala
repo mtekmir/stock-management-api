@@ -67,7 +67,7 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
       val res = for {
         _        <- productService.batchInsertExcelRows(rows)
         products <- productService.findAll(rows.map(_.barcode))
-      } yield (sortedWithZeroIdProductDTO(products))
+      } yield (products.withZeroIds)
       res must beEqualTo(rows.map(r => excelRowToDTO(r))).await
     }
 
@@ -78,7 +78,7 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         _        <- productService.batchInsertExcelRows(rows)
         _        <- productService.batchAddQuantity(rows.map(r => (r.barcode, 5)))
         products <- productService.findAll(rows.map(_.barcode))
-      } yield (sortedWithZeroIdProductDTO(products))
+      } yield (products.withZeroIds)
       res must beEqualTo(rows.map(p => excelRowToDTO(p.copy(qty = p.qty + 5)))).await
     }
 
@@ -91,7 +91,7 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         _        <- productService.batchInsertExcelRows(rows)
         _        <- productService.batchAddQuantity(qtys)
         products <- productService.findAll(rows.map(_.barcode))
-      } yield (sortedWithZeroIdProductDTO(products))
+      } yield (products.withZeroIds)
       res must beEqualTo(rows.map(p => excelRowToDTO(p.copy(qty = p.qty + qtyMap(p.barcode))))).await
     }
 
@@ -105,11 +105,11 @@ class ProductServiceSpec(implicit ee: ExecutionEnv)
         products3 <- productService.getProducts(3, 5)
       } yield (products1, products2, products3)
       res.map(_._1.count) must beEqualTo(15).await
-      res.map(r => sortedWithZeroIdProductDTO(r._1.products)) must beEqualTo(dtos.take(5)).await
-      res.map(r => sortedWithZeroIdProductDTO(r._2.products)) must beEqualTo(
+      res.map(r => r._1.products.withZeroIds.sortBy(_.barcode)) must beEqualTo(dtos.take(5)).await
+      res.map(r => r._2.products.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         dtos.drop(5).take(5)
       ).await
-      res.map(r => sortedWithZeroIdProductDTO(r._3.products)) must beEqualTo(
+      res.map(r => r._3.products.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         dtos.drop(10).take(5)
       ).await
 

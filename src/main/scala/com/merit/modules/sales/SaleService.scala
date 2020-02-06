@@ -32,7 +32,7 @@ trait SaleService {
     discount: Currency,
     products: Seq[ProductDTO],
     userId: UserID
-  ): Future[SaleSummary]
+  ): Future[Option[SaleDTO]]
   def getSale(id: SaleID): Future[Option[SaleDTO]]
   def getSales(
     page: Int,
@@ -121,13 +121,14 @@ object SaleService {
       discount: Currency,
       products: Seq[ProductDTO],
       userId: UserID
-    ): Future[SaleSummary] = {
+    ): Future[Option[SaleDTO]] = {
       logger.info(
         s"Creating sale with total: $total, discount: $discount, products: ${products.toString}"
       )
       val insertSale = db.run(
         (for {
-          sale <- saleRepo.insert(SaleRow(DateTime.now(), total, discount))
+          soldProducts <- productRepo.findAll(products.map(_.barcode))
+          sale         <- saleRepo.insert(SaleRow(DateTime.now(), total, discount))
           _ <- saleRepo.addProductsToSale(
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )
@@ -140,14 +141,22 @@ object SaleService {
             sale.total,
             sale.discount,
             sale.outlet,
-            products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
+            soldProducts.map(
+              p =>
+                SaleSummaryProduct
+                  .fromProductDTO(
+                    p,
+                    products.find(_.barcode == p.barcode).map(_.qty).getOrElse(0)
+                  )
+            )
           )).transactionally
       )
 
       for {
         summary <- insertSale
         _       <- crawlerClient.sendSale(summary)
-      } yield summary
+        dto <- getSale(summary.id)
+      } yield dto
     }
 
     def getSale(id: SaleID): Future[Option[SaleDTO]] =

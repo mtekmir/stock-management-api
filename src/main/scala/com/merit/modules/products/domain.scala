@@ -69,8 +69,8 @@ final case class ProductDTO(
   qty: Int,
   variation: Option[String],
   taxRate: Option[Int],
-  brand: Option[String],
-  category: Option[String]
+  brand: Option[BrandRow],
+  category: Option[CategoryRow]
 )
 
 object ProductDTO {
@@ -90,8 +90,8 @@ object ProductDTO {
       qty,
       variation,
       taxRate,
-      brand.map(_.name),
-      category.map(_.name)
+      brand,
+      category
     )
   }
 

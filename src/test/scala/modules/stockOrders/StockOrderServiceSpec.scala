@@ -24,6 +24,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.external.crawler.{CrawlerClient, SyncStockOrderMessage, SyncStockOrderResponse, SyncMessageProduct, SyncResponseProduct}
 import com.merit.modules.excel.ExcelStockOrderRow
 import com.merit.external.crawler.MessageType
+import com.merit.modules.products.ProductDTO
+import com.merit.modules.brands.BrandID
+import com.merit.modules.categories.CategoryID
 
 class StockOrderServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -46,6 +49,8 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
     Await.result(del, Duration.Inf)
   }
 
+  
+
   "Stock order service" >> {
     "should increase qtys of existing products with 1" in new TestScope {
       val ps = sampleProducts
@@ -60,7 +65,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
       res.map(_.sortBy(_.barcode).map(p => p.barcode -> p.qty)) must beEqualTo(
         ps.map(p => p.barcode -> (p.qty + 1))
       ).await
-      res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         ps.map(p => excelRowToDTO(p).copy(qty = p.qty + 1))
       ).await
     }
@@ -75,7 +80,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         )
         products <- productService.findAll(ps.map(_.barcode))
       } yield products
-      res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         ps.map(excelRowToDTO(_)).map(p => p.copy(qty = p.qty * 2))
       ).await
     }
@@ -90,7 +95,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         products <- productService.findAll(ps.map(_.barcode))
       } yield products
 
-      res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         ps.map(excelRowToDTO(_))
       ).await
     }
@@ -105,10 +110,10 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
           now,
           ps.map(excelProductRowToStockOrderRow(_))
         )
-        products <- productService.getProducts(1,20)
+        products <- productService.getProducts(1, 20)
       } yield products
       // existing products should have twice the qty
-      res.map(_.products.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.products.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         (firstHalf.map(_.copy(qty = 2)) ++ secondHalf)
           .map(excelRowToDTO(_))
           .sortBy(_.barcode)
@@ -127,7 +132,7 @@ class StockOrderServiceSpec(implicit ee: ExecutionEnv)
         )
         products <- productService.findAll(orderedProducts.map(_.barcode))
       } yield products
-      res.map(_.map(_.copy(id = ProductID.zero)).sortBy(_.barcode)) must beEqualTo(
+      res.map(_.withZeroIds.sortBy(_.barcode)) must beEqualTo(
         (pToCreate ++ pToUpdate.map(p => p.copy(qty = p.qty * 2)))
           .sortBy(_.barcode)
           .map(excelRowToDTO(_))

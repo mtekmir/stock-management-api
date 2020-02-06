@@ -38,14 +38,16 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
       val p = createProduct
       val res = db.run(
         for {
-          (brandId, categoryId, _) <- insertTestData
+          (brand, category, _) <- insertTestData
           productId <- productRepo.insert(
-            p.copy(brandId = Some(brandId), categoryId = Some(categoryId))
+            p.copy(brandId = Some(brand.id), categoryId = Some(category.id))
           )
           product <- productRepo.get(p.barcode)
         } yield product.map(_.copy(id = ProductID.zero))
       )
-      res must beEqualTo(Some(rowToDTO(p, Some("b1"), Some("c1")))).await
+      res.map(_.map(_.brand.map(_.name).getOrElse(""))) must beEqualTo(Some("b1")).await
+      res.map(_.map(_.category.map(_.name).getOrElse(""))) must beEqualTo(Some("c1")).await
+      res.map(_.map(_.barcode)) must beEqualTo(Some(p.barcode)).await
     }
 
     "should get a product by barcode" in new TestScope {
@@ -146,7 +148,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
       val res = db.run(
         for {
           (b, c, _) <- insertTestData
-          _         <- productRepo.create(product.copy(brandId = Some(b), categoryId = Some(c)))
+          _         <- productRepo.create(product.copy(brandId = Some(b.id), categoryId = Some(c.id)))
           p         <- productRepo.get(product.barcode)
         } yield p
       )
@@ -161,7 +163,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
         for {
           (b, c, p) <- insertTestData
           _ <- productRepo.batchInsert(products)
-          ps <-productRepo.getAll(ProductFilters(brandId = Some(b)))
+          ps <-productRepo.getAll(ProductFilters(brandId = Some(b.id)))
         } yield (ps, p)
       )
       res.map{ case (p1, p2) => p1.map(_.barcode) === p2.map(_.barcode)}.await
@@ -174,7 +176,7 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
         for {
           (b, c, p) <- insertTestData
           _ <- productRepo.batchInsert(products)
-          ps <-productRepo.getAll(ProductFilters(categoryId = Some(c)))
+          ps <-productRepo.getAll(ProductFilters(categoryId = Some(c.id)))
         } yield (ps, p)
       )
       res.map{ case (p1, p2) => p1.map(_.barcode) === p2.map(_.barcode)}.await
@@ -189,15 +191,15 @@ class ProductRepoSpec(implicit ee: ExecutionEnv)
       import schema.profile.api._
       val sampleProducts = (1 to 2).map(i => createProduct).sortBy(_.barcode)
       for {
-        brandId    <- brands returning brands.map(_.id) += BrandRow("b1")
-        categoryId <- categories returning categories.map(_.id) += CategoryRow("c1")
+        brand    <- brands returning brands += BrandRow("b1")
+        category <- categories returning categories += CategoryRow("c1")
         product <- products returning products ++= sampleProducts.map(
           _.copy(
-            brandId = Some(brandId),
-            categoryId = Some(categoryId)
+            brandId = Some(brand.id),
+            categoryId = Some(category.id)
           )
         )
-      } yield (brandId, categoryId, product)
+      } yield (brand, category, product)
     }
   }
 }

@@ -12,12 +12,17 @@ import com.merit.modules.sales.SaleSummaryProduct
 import com.merit.modules.stockOrders.StockOrderSummaryProduct
 import com.merit.modules.products.CreateProductRequest
 import com.merit.modules.products.EditProductRequest
+import com.merit.modules.categories.CategoryRow
+import com.merit.modules.brands.BrandRow
+import com.merit.modules.brands.BrandID
+import com.merit.modules.categories.CategoryID
 
 object ProductUtils {
   private val random                       = Random
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
   def randomBetween(n: Int)                = Random.nextInt(n).abs
-  def randomPrice                          = Currency.fromOrZero((Random.nextInt(1000).abs + Random.nextDouble()).toString)
+  def randomPrice =
+    Currency.fromOrZero((Random.nextInt(1000).abs + Random.nextDouble()).toString)
   def randomDiscountPrice =
     Currency.from((Random.nextInt(1000).abs + Random.nextDouble()).toString)
 
@@ -54,8 +59,8 @@ object ProductUtils {
 
   def rowToDTO(
     row: ProductRow,
-    b: Option[String] = None,
-    c: Option[String] = None
+    b: Option[BrandRow] = None,
+    c: Option[CategoryRow] = None
   ): ProductDTO = {
     import row._
     ProductDTO(
@@ -87,8 +92,8 @@ object ProductUtils {
       qty,
       variation,
       taxRate,
-      brand,
-      category
+      brand.map(BrandRow(_)),
+      category.map(CategoryRow(_))
     )
   }
 
@@ -151,6 +156,11 @@ object ProductUtils {
     SaleSummaryProduct(p.id, p.barcode, p.name, p.variation, p.qty, soldQty)
   }
 
+  def productRowToSaleDTOProduct(p: ProductRow, soldQty: Int) = {
+    import p._
+    SaleDTOProduct(id, barcode, sku, name, price, discountPrice, soldQty, variation, taxRate, None, None, true)
+  }
+
   def productRowToStockOrderSummaryProduct(p: ProductRow, ordered: Int) = {
     import p._
     StockOrderSummaryProduct(p.id, p.barcode, p.name, p.variation, p.qty, ordered)
@@ -158,4 +168,19 @@ object ProductUtils {
 
   def sortedWithZeroIdProductDTO(products: Seq[ProductDTO]): Seq[ProductDTO] =
     products.sortBy(_.barcode).map(_.copy(id = ProductID.zero))
+
+    implicit class DTOOPS(
+    rows: Seq[ProductDTO]
+  ) {
+    def withZeroIds: Seq[ProductDTO] =
+      rows.map(
+        p =>
+          p.copy(
+            brand = p.brand.map(_.copy(id = BrandID(0))),
+            category = p.category.map(_.copy(id = CategoryID(0))),
+            id = ProductID.zero
+          )
+      )
+  }
+  
 }

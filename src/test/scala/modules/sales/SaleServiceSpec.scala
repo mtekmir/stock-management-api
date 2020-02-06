@@ -222,10 +222,10 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         summary         <- saleService.create(total, discount, ps.map(rowToDTO(_, None, None)), userId)
         updatedProducts <- productService.findAll(products.map(_.barcode))
       } yield (summary, updatedProducts)
-      res.map(_._1.total) must beEqualTo(total).await
-      res.map(_._1.discount) must beEqualTo(discount).await
-      res.map(_._1.products.sortBy(_.barcode).map(p => (p.barcode, p.soldQty))) must beEqualTo(
-        products.map(p => (p.barcode, p.qty))
+      res.map(_._1.map(_.total)) must beEqualTo(Some(total)).await
+      res.map(_._1.map(_.discount)) must beEqualTo(Some(discount)).await
+      res.map(_._1.map(_.products.sortBy(_.barcode).map(p => (p.barcode, p.qty)))) must beEqualTo(
+        Some(products.map(p => (p.barcode, p.qty)))
       ).await
       res.map(_._2.map(_.qty).sum) must beEqualTo(0).await
     }

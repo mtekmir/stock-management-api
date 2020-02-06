@@ -26,6 +26,7 @@ import com.merit.modules.sales.SaleID
 import org.joda.time.DateTime
 import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.users.UserID
+import com.merit.modules.sales.SaleDTO
 
 class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Sale route" >> {
@@ -56,9 +57,9 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
     val total         = Currency(100.00)
     val discount      = Currency(10.37)
     val userId        = UserID.random
-    val products      = Seq(productRowToSaleSummaryProduct(createProduct, 5))
+    val products      = Seq(productRowToSaleDTOProduct(createProduct, 5))
     (saleService.create _) expects (*, *, *, *) returning (Future(
-      SaleSummary(SaleID(1), DateTime.now(), total, discount, SaleOutlet.Store, products)
+      Some(SaleDTO(SaleID(1), DateTime.now(), SaleOutlet.Store, total, discount, products))
     ))
 
     val saleRoute = SaleRoutes(saleService, excelService, userId)
