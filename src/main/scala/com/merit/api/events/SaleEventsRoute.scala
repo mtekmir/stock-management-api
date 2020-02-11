@@ -6,9 +6,8 @@ import com.merit.modules.salesEvents.SaleEventService
 import akka.http.scaladsl.server.Route
 
 object SaleEventsRoute extends Directives with JsonSupport {
-  def apply(saleEventService: SaleEventService): Route = {
+  def apply(saleEventService: SaleEventService): Route =
     path("events" / "sales") {
       complete(saleEventService.getEvents(10))
     }
-  }
 }

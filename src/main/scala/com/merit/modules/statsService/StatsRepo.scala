@@ -6,7 +6,12 @@ import org.joda.time.DateTime
 import com.merit.modules.sales.SaleRow
 
 trait StatsRepo[DbTask[_]] {
+  def count(
+    filters: StatsDateFilter
+  ): DbTask[Int]
   def getTopSellingProducts(
+    page: Int,
+    rowsPerPage: Int,
     filters: StatsDateFilter
   ): DbTask[Seq[(String, String, Option[String], Int)]]
   def getInventorySummary(): DbTask[(Int, BigDecimal)]
@@ -28,7 +33,19 @@ object StatsRepo {
       """
     }
 
+    def count(filters: StatsDateFilter): DBIO[Int] = {
+      import filters._
+      sales
+        .filter(s => s.createdAt >= startDate && s.createdAt <= endDate)
+        .join(soldProducts)
+        .on(_.id === _.saleId)
+        .length
+        .result
+    }
+
     def getTopSellingProducts(
+      page: Int,
+      rowsPerPage: Int,
       filters: StatsDateFilter
     ): DBIO[Seq[(String, String, Option[String], Int)]] =
       sql"""
@@ -42,7 +59,8 @@ object StatsRepo {
         #${getFilterQuery(filters)}
         GROUP BY products.id
         ORDER BY unitSold DESC
-        LIMIT 6
+        LIMIT #$rowsPerPage
+        OFFSET #${(page - 1) * rowsPerPage}
       """.as[(String, String, Option[String], Int)]
 
     def getInventorySummary(): DBIO[(Int, BigDecimal)] =
@@ -68,6 +86,8 @@ object StatsRepo {
     }
 
     def getSalesData(filters: StatsDateFilter): DBIO[Seq[SaleRow]] =
-      sales.filter(s => s.createdAt >= filters.startDate && s.createdAt <= filters.endDate).result
+      sales
+        .filter(s => s.createdAt >= filters.startDate && s.createdAt <= filters.endDate)
+        .result
   }
 }

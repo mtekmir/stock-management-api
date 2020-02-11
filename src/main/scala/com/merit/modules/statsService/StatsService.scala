@@ -10,8 +10,10 @@ import java.lang.Math.floorMod
 
 trait StatsService {
   def getTopSellingProducts(
+    page: Int,
+    rowsPerPage: Int,
     filters: StatsDateFilter
-  ): Future[Seq[TopSellingProduct]]
+  ): Future[PaginatedTopSellingProducts]
   def getInventorySummary(): Future[InventorySummary]
   def getStats(filters: StatsDateFilter): Future[Stats]
   def revenueChartData(
@@ -24,14 +26,20 @@ object StatsService {
   def apply(db: Database, statsRepo: StatsRepo[DBIO])(implicit ec: ExecutionContext) =
     new StatsService {
       def getTopSellingProducts(
+        page: Int,
+        rowsPerPage: Int,
         filters: StatsDateFilter
-      ): Future[Seq[TopSellingProduct]] =
-        db.run(statsRepo.getTopSellingProducts(filters).map {
-          _.map {
-            case (sku, name, variation, soldQty) =>
-              TopSellingProduct(sku, name, variation, soldQty)
-          }
-        })
+      ): Future[PaginatedTopSellingProducts] =
+        db.run(
+          for {
+            count    <- statsRepo.count(filters)
+            products <- statsRepo.getTopSellingProducts(page, rowsPerPage, filters)
+          } yield
+            PaginatedTopSellingProducts(count, products.map {
+              case (sku, name, variation, soldQty) =>
+                TopSellingProduct(sku, name, variation, soldQty)
+            })
+        )
 
       def getInventorySummary(): Future[InventorySummary] =
         db.run(statsRepo.getInventorySummary().map {
@@ -83,7 +91,7 @@ object StatsService {
                   val differenceInWeek = getWeekDiff(startDate, endDate)
                   (0 to differenceInWeek).map(weekIdx => {
                     val weekNum = floorMod(startDate.getWeek + weekIdx, 52) match {
-                      case 0 => 52
+                      case 0      => 52
                       case n: Int => n
                     }
                     val week        = startDate.withDayOfWeek(1).plusWeeks(weekIdx)
@@ -97,7 +105,7 @@ object StatsService {
                 case Monthly =>
                   val differenceInMonths = getMonthDiff(startDate, endDate)
                   (0 to differenceInMonths).map(monthIdx => {
-                    val month = startDate.withDayOfMonth(1).plusMonths(monthIdx)
+                    val month        = startDate.withDayOfMonth(1).plusMonths(monthIdx)
                     val salesOfMonth = sales.filter(_.createdAt.isSameMonth(month))
 
                     Point(
