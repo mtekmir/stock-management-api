@@ -80,7 +80,7 @@ object StatsRepo {
         (select sum(sold_products.qty) 
         	from sold_products 
           join sales on sold_products."saleId" = sales.id
-          #${filters}]
+          #${filters}
         ) as productsSold
       """.as[(BigDecimal, Int, Int)].head
     }
