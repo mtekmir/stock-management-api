@@ -1,0 +1,1 @@
+alter table sales add column order_no varchar;

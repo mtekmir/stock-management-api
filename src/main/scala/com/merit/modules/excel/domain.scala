@@ -5,6 +5,7 @@ import com.merit.modules.categories.CategoryID
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.products.Currency
 import org.joda.time.DateTime
+import com.merit.modules.sales.SaleStatus
 
 sealed trait ExcelRow
 
@@ -22,10 +23,11 @@ case class ExcelProductRow(
 ) extends ExcelRow
 
 case class ExcelWebSaleRow(
-  id: String,
+  orderNo: String,
   total: Currency,
   discount: Currency,
   createdAt: DateTime,
+  status: SaleStatus.Value,
   productName: String,
   sku: String,
   brand: String,
@@ -110,7 +112,8 @@ case class ExcelInventoryCountRow(
 object ValidationErrorTypes extends Enumeration {
   type ErrorType = Value
   val DuplicateBarcodeError, EmptyBarcodeError, EmptySkuError, EmptyQtyError,
-    InvalidBarcodeError, InvalidQtyError, InvalidPriceError, InvalidTaxRateError = Value
+    InvalidBarcodeError, InvalidQtyError, InvalidPriceError, InvalidTaxRateError,
+    InvalidOrderNoError, InvalidDateError, InvalidStatusError = Value
 }
 
 final case class ExcelError(
@@ -133,6 +136,9 @@ case class ExcelValidationError(
     case InvalidQtyError       => invalidQty
     case InvalidPriceError     => invalidPrice
     case InvalidTaxRateError   => invalidTaxRate
+    case InvalidOrderNoError   => invalidOrderNo
+    case InvalidDateError      => invalidDate
+    case InvalidStatusError    => invalidStatus
   }
 }
 
@@ -145,8 +151,12 @@ object ExcelErrorMessages {
   val invalidQty       = "Quantity is not a number"
   val invalidPrice     = "Invalid price value"
   val invalidTaxRate   = "Invalid tax rate"
+  val invalidOrderNo   = "Invalid order number"
+  val invalidDate      = "Invalid date"
+  val invalidStatus    = "Invalid sale status"
 
   val invalidProductImportMessage    = "Product import contains invalid rows"
   val invalidSaleImportMessage       = "Sale import contains invalid rows"
   val invalidStockOrderImportMessage = "Stock order import contains invalid rows"
+  val invalidWebSalesImportMessage   = "Web sales import contains invalid rows"
 }

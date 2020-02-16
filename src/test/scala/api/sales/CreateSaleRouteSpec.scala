@@ -66,6 +66,7 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
           DateTime.now(),
           SaleOutlet.Store,
           SaleStatus.SaleCompleted,
+          None,
           total,
           discount,
           products

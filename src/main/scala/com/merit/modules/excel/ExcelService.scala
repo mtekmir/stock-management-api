@@ -41,11 +41,11 @@ trait ExcelService {
 }
 
 object ExcelService {
-  val inputLocation = "src/main/resources"
-  val numberFormat  = NumberFormat.getInstance()
-  private val Validator     = ExcelServiceValidation()
-  private val Parser        = ExcelParser()
-  private val Writer        = ExcelWriter()
+  val inputLocation     = "src/main/resources"
+  val numberFormat      = NumberFormat.getInstance()
+  private val Validator = ExcelServiceValidation()
+  private val Parser    = ExcelParser()
+  private val Writer    = ExcelWriter()
 
   def apply() = new ExcelService {
     private def processFile(
@@ -65,6 +65,7 @@ object ExcelService {
         case FileFor.Product    => (10, 0)
         case FileFor.Sale       => (2, 0)
         case FileFor.StockOrder => (10, 3)
+        case FileFor.WebSales => (12, 9)
       }
 
       def rowToCells(sheet: Sheet)(rowNum: Int) = {
@@ -131,19 +132,25 @@ object ExcelService {
       }
     }
 
-    def parseWebSaleImportFile(file: File): Either[ExcelError,Seq[ExcelWebSaleRow]] = {
+    def parseWebSaleImportFile(file: File): Either[ExcelError, Seq[ExcelWebSaleRow]] = {
       val (_, rows) = processFile(file, FileFor.WebSales)
+      val errors    = Validator.validateWebSaleRows(rows)
 
-      Parser.parseWebSaleRows(rows).asRight
+      errors match {
+        case Seq() => Parser.parseWebSaleRows(rows).asRight
+        case es =>
+          ExcelError(invalidWebSalesImportMessage, Validator.combineValidationErrors(es)).asLeft
+      }
+
     }
 
-    // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]) = 
+    // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]) =
     //   Writer.writeStockOrderRows(name, rows)
-      
+
     // def writeProductRows(name: String, rows: Seq[ProductDTO]) =
     //   Writer.writeProductRows(name, rows)
 
-    // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]] = 
+    // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]] =
     //   Writer.writeInventoryCountBatch(data)
   }
 }

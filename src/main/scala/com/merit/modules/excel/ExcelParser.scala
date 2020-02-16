@@ -3,6 +3,7 @@ package com.merit.modules.excel
 import com.merit.modules.products.Currency
 import scala.util.Try
 import org.joda.time.format.DateTimeFormat
+import com.merit.modules.sales.SaleStatus
 
 trait ExcelParser {
   def parseProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelProductRow]
@@ -87,15 +88,32 @@ object ExcelParser {
         }
         .toSeq
 
-    def parseWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelWebSaleRow] ={
+    def parseWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelWebSaleRow] = {
       val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
       rows.map {
-        case (Seq(id, total, discount, createdAt, productName, sku, brand, barcode, qty, price, tax), _) =>
+        case (
+            Seq(
+              orderNo,
+              total,
+              discount,
+              createdAt,
+              status,
+              productName,
+              sku,
+              brand,
+              barcode,
+              qty,
+              price,
+              tax
+            ),
+            _
+            ) =>
           ExcelWebSaleRow(
-            id,
+            orderNo,
             Currency.fromOrZero(total),
             Currency.fromOrZero(discount),
             formatter.parseDateTime(createdAt),
+            SaleStatus.parseFromExcel(status),
             productName,
             sku,
             brand,
@@ -104,6 +122,7 @@ object ExcelParser {
             Currency.fromOrZero(price),
             tax.toInt
           )
-      }}
+      }
+    }
   }
 }

@@ -33,6 +33,24 @@ object SaleStatus extends Enumeration {
   val SaleCompleted            = Value("Sale Completed")
   val SaleReturned             = Value("Sale Returned")
   val SalePartiallyReturned    = Value("Sale Partially Returned")
+
+  val trStatuses = Map(
+    "Sipariş Alındı"       -> OrderPlaced,
+    "Paketleniyor"         -> OrderAwaitingShipment,
+    "Kargoya Verildi"      -> OrderShipped,
+    "İade Ödemesi Yapıldı" -> OrderRefunded,
+    "İade Edildi"          -> OrderReturned,
+    "Teslim Edildi"        -> OrderPickedUp,
+    "İade Talebi Alındı"   -> OrderReturnRequested,
+    "İptal Edildi"         -> OrderCancelled,
+    "Ödeme Bekliyor"       -> OrderAwaitingShipment,
+    "Kısmi İade Yapıldı"   -> OrderPartiallyRefunded,
+    "Onaylandı"            -> OrderAccepted,
+    "Tedarik Ediliyor"     -> OrderAwaitingFulfillment
+  )
+
+  def isValid(s: String): Boolean                 = trStatuses.contains(s)
+  def parseFromExcel(s: String): SaleStatus.Value = trStatuses.get(s).getOrElse(SaleCompleted)
 }
 
 case class SaleRow(
@@ -41,6 +59,7 @@ case class SaleRow(
   discount: Currency = Currency(0),
   outlet: SaleOutlet.Value = SaleOutlet.Store,
   status: SaleStatus.Value = SaleStatus.SaleCompleted,
+  orderNo: Option[String] = None,
   id: SaleID = SaleID(0L)
 )
 
@@ -49,6 +68,7 @@ case class SaleDTO(
   createdAt: DateTime,
   outlet: SaleOutlet.Value,
   status: SaleStatus.Value,
+  orderNo: Option[String],
   total: Currency,
   discount: Currency,
   products: Seq[SaleDTOProduct]

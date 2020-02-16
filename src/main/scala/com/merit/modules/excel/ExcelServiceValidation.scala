@@ -1,11 +1,14 @@
 package com.merit.modules.excel
 import com.merit.modules.products.Currency
 import scala.util.Try
+import org.joda.time.format.DateTimeFormat
+import com.merit.modules.sales.SaleStatus
 
 trait ExcelServiceValidation {
   def validateProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
   def validateSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
   def validateStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
+  def validateWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
   def combineValidationErrors(errors: Seq[ExcelValidationError]): Seq[ExcelValidationError]
 }
 
@@ -99,5 +102,39 @@ object ExcelServiceValidation {
         case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
           ExcelValidationError(Seq(index), InvalidTaxRateError)
       }
+
+    def validateWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] = {
+      val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
+      rows.collect {
+        case (Seq(orderNo, _, _, _, _, _, _, _, _, _, _, _), index)
+            if orderNo.forall(_.isDigit) =>
+          ExcelValidationError(Seq(index), InvalidOrderNoError)
+        case (Seq(_, total, _, _, _, _, _, _, _, _, _, _), index)
+            if !Currency.isValid(total) =>
+          ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, discount, _, _, _, _, _, _, _, _, _), index)
+            if !discount.isEmpty && !Currency.isValid(discount) =>
+          ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, createdAt, _, _, _, _, _, _, _, _), index)
+            if Try(formatter.parseDateTime(createdAt)).isFailure =>
+          ExcelValidationError(Seq(index), InvalidDateError)
+        case (Seq(_, _, _, _, status, _, _, _, _, _, _, _), index)
+            if !SaleStatus.isValid(status) =>
+          ExcelValidationError(Seq(index), InvalidStatusError)
+        case (Seq(_, _, _, _, _, _, _, _, barcode, _, _, _), index)
+            if !barcode
+              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14 =>
+          ExcelValidationError(Seq(index), InvalidBarcodeError)
+        case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if qty.isEmpty =>
+          ExcelValidationError(Seq(index), EmptyQtyError)
+        case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if !qty.forall(_.isDigit) =>
+          ExcelValidationError(Seq(index), InvalidQtyError)
+        case (Seq(_, _, _, _, _, _, _, _, _, _, price, _), index)
+            if !price.isEmpty && !Currency.isValid(price) =>
+          ExcelValidationError(Seq(index), InvalidPriceError)
+        case (Seq(_, _, _, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
+          ExcelValidationError(Seq(index), InvalidTaxRateError)
+      }
+    }
   }
 }

@@ -112,20 +112,23 @@ object SaleService {
       } yield (summary)
 
     def importSalesFromWeb(rows: Seq[ExcelWebSaleRow]): Future[Seq[SaleSummary]] = {
+      val a = 1
       // def groupSalesAndProducts(rows: Seq[ExcelWebSaleRow]): Seq[SaleDTO] =
       //   rows.foldLeft(ListMap[String, SaleDTO]()) {
       //     case (
       //         m,
-      //         ExcelWebSaleRow(id, total, discount, createdAt, pName, sku, brand, barcode, qty)
+      //         ExcelWebSaleRow(orderNo, total, discount, createdAt, pName, sku, brand, barcode, qty, price, tax)
       //         ) =>
-      //       m + m.get(id).map(dto => 
-      //         id -> dto.copy(products = dto.products ++ Seq(SaleDTOProduct(id,)))
-      //       ).getOrElse(SaleDTO(id, createdAt, SaleOutlet.Web, total, discount, Seq(SaleDTOProduct())))
+      //       m + m
+      //         .get(id)
+      //         .map(dto => id -> dto.copy(products = dto.products ++ Seq(SaleDTOProduct(id))))
+      //         .getOrElse(
+      //           SaleDTO(id, createdAt, SaleOutlet.Web, total, discount, Seq(SaleDTOProduct()))
+      //         )
       //   }
 
       ???
     }
-
     def create(
       total: Currency,
       discount: Currency,
@@ -178,9 +181,7 @@ object SaleService {
             (s, p) => s :+ SaleDTOProduct.fromRow(p._2, p._5, p._6, p._4, p._3)
           )
           val sale = rows(0)._1
-          Some(
-            SaleDTO(sale.id, sale.createdAt, sale.outlet, sale.status, sale.total, sale.discount, products)
-          )
+          Some(sale.toDTO(products))
         }
       }
 
@@ -205,13 +206,7 @@ object SaleService {
                     ))
                 )
                 .getOrElse(
-                  saleRow.id -> SaleDTO(
-                    saleRow.id,
-                    saleRow.createdAt,
-                    saleRow.outlet,
-                    saleRow.status,
-                    saleRow.total,
-                    saleRow.discount,
+                  saleRow.id -> saleRow.toDTO(
                     Seq(SaleDTOProduct.fromRow(productRow, brand, category, synced, soldQty))
                   )
                 )

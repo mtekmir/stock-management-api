@@ -16,6 +16,7 @@ object SaleUtils {
             DateTime.now(),
             SaleOutlet.Store,
             SaleStatus.SaleCompleted,
+            None,
             Currency(randomBetween(10000)),
             Currency(randomBetween(1000)),
             getExcelProductRows(5).map(excelRowToSaleDTOProduct(_))

@@ -85,8 +85,9 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def discount  = column[Currency]("discount")
     def outlet    = column[SaleOutlet.Value]("outlet")
     def status    = column[SaleStatus.Value]("status")
+    def orderNo   = column[Option[String]]("order_no")
 
-    def * = (createdAt, total, discount, outlet, status, id).mapTo[SaleRow]
+    def * = (createdAt, total, discount, outlet, status, orderNo, id).mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]
