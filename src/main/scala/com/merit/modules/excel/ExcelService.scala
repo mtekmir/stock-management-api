@@ -27,13 +27,14 @@ import akka.stream.IOResult
 
 object FileFor extends Enumeration {
   type FileFor = Value
-  val Product, Sale, StockOrder = Value
+  val Product, Sale, StockOrder, WebSales = Value
 }
 
 trait ExcelService {
   def parseProductImportFile(file: File): Either[ExcelError, Seq[ExcelProductRow]]
   def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]]
   def parseStockOrderImportFile(file: File): Either[ExcelError, Seq[ExcelStockOrderRow]]
+  def parseWebSaleImportFile(file: File): Either[ExcelError, Seq[ExcelWebSaleRow]]
   // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): File
   // def writeProductRows(name: String, rows: Seq[ProductDTO]): File
   // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]]
@@ -128,6 +129,12 @@ object ExcelService {
         case es =>
           ExcelError(invalidStockOrderImportMessage, Validator.combineValidationErrors(es)).asLeft
       }
+    }
+
+    def parseWebSaleImportFile(file: File): Either[ExcelError,Seq[ExcelWebSaleRow]] = {
+      val (_, rows) = processFile(file, FileFor.WebSales)
+
+      Parser.parseWebSaleRows(rows).asRight
     }
 
     // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]) = 

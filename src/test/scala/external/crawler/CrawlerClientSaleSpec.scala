@@ -21,6 +21,7 @@ import com.merit.modules.products.ProductRow
 import org.joda.time.DateTime
 import com.merit.modules.products.Currency
 import com.merit.modules.sales.SaleOutlet
+import com.merit.modules.sales.SaleStatus
 
 class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with FutureMatchers {
 
@@ -67,6 +68,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
     val total     = Currency(1000)
     val discount  = Currency(10)
     val outlet    = SaleOutlet.Store
+    val status    = SaleStatus.SaleCompleted
 
     val crawlerClient = CrawlerClient(CrawlerClientConfig(queueUrl, "u", "p"), sqsClient)
     val products      = (1 to 25).map(_ => createProduct)
@@ -78,6 +80,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       total,
       discount,
       outlet,
+      status,
       products.map(p => productRowToSaleSummaryProduct(p, 1))
     )
 
@@ -87,6 +90,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       total,
       discount,
       outlet,
+      status,
       products.map(p => productRowToSaleSummaryProduct(p, -1))
     )
 
@@ -96,6 +100,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       total,
       discount,
       outlet,
+      status,
       products.map(p => productRowToSaleSummaryProduct(p, 0))
     )
 
@@ -108,6 +113,7 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
         total,
         discount,
         outlet,
+        status,
         products.sortBy(_.barcode).take(8).zip(qtys).map {
           case (p, q) => productRowToSaleSummaryProduct(p, q)
         }

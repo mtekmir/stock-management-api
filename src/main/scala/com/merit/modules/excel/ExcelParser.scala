@@ -1,11 +1,14 @@
 package com.merit.modules.excel
+
 import com.merit.modules.products.Currency
 import scala.util.Try
+import org.joda.time.format.DateTimeFormat
 
 trait ExcelParser {
   def parseProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelProductRow]
   def parseSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelSaleRow]
   def parseStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelStockOrderRow]
+  def parseWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelWebSaleRow]
 }
 
 object ExcelParser {
@@ -40,7 +43,7 @@ object ExcelParser {
             Option(taxRate).filter(_.nonEmpty).map(_.toInt)
           )
       }
-      
+
     def parseStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelStockOrderRow] =
       rows.map {
         case (
@@ -83,5 +86,24 @@ object ExcelParser {
           case (b, q) => ExcelSaleRow(b, q)
         }
         .toSeq
+
+    def parseWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelWebSaleRow] ={
+      val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
+      rows.map {
+        case (Seq(id, total, discount, createdAt, productName, sku, brand, barcode, qty, price, tax), _) =>
+          ExcelWebSaleRow(
+            id,
+            Currency.fromOrZero(total),
+            Currency.fromOrZero(discount),
+            formatter.parseDateTime(createdAt),
+            productName,
+            sku,
+            brand,
+            Option(barcode).filter(_.nonEmpty),
+            qty.toInt,
+            Currency.fromOrZero(price),
+            tax.toInt
+          )
+      }}
   }
 }

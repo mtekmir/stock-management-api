@@ -4,6 +4,7 @@ import com.merit.modules.brands.BrandID
 import com.merit.modules.categories.CategoryID
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.products.Currency
+import org.joda.time.DateTime
 
 sealed trait ExcelRow
 
@@ -19,6 +20,20 @@ case class ExcelProductRow(
   category: Option[String],
   taxRate: Option[Int]
 ) extends ExcelRow
+
+case class ExcelWebSaleRow(
+  id: String,
+  total: Currency,
+  discount: Currency,
+  createdAt: DateTime,
+  productName: String,
+  sku: String,
+  brand: String,
+  barcode: Option[String],
+  qty: Int,
+  price: Currency,
+  tax: Int
+)
 
 object ExcelProductRow {
   def toProductRow(
@@ -68,7 +83,18 @@ object ExcelStockOrderRow {
   ): ProductRow = {
     import row._
 
-    ProductRow(barcode, sku, name, price, discountPrice, qty, variation, taxRate, brandId, categoryId)
+    ProductRow(
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brandId,
+      categoryId
+    )
   }
 }
 

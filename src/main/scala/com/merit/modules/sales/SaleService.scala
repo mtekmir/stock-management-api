@@ -15,6 +15,7 @@ import collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
 import com.merit.modules.salesEvents.SaleEventRepo
 import com.merit.modules.users.UserID
+import com.merit.modules.excel.ExcelWebSaleRow
 
 trait SaleService {
   def importSale(
@@ -23,10 +24,9 @@ trait SaleService {
     total: Currency,
     userId: UserID
   ): Future[SaleSummary]
-  def importSoldProductsFromWeb(
-    rows: Seq[ExcelSaleRow],
-    userId: UserID
-  ): Future[SaleSummary]
+  def importSalesFromWeb(
+    rows: Seq[ExcelWebSaleRow]
+  ): Future[Seq[SaleSummary]]
   def create(
     total: Currency,
     discount: Currency,
@@ -88,6 +88,7 @@ object SaleService {
             sale.total,
             Currency(0),
             sale.outlet,
+            sale.status,
             soldProducts.map(
               p =>
                 SaleSummaryProduct.fromProductDTO(
@@ -110,11 +111,20 @@ object SaleService {
         _       <- crawlerClient.sendSale(summary)
       } yield (summary)
 
-    def importSoldProductsFromWeb(
-      rows: Seq[ExcelSaleRow],
-      userId: UserID
-    ): Future[SaleSummary] =
-      insertFromExcel(rows, DateTime.now(), Currency(0), SaleOutlet.Web, userId)
+    def importSalesFromWeb(rows: Seq[ExcelWebSaleRow]): Future[Seq[SaleSummary]] = {
+      // def groupSalesAndProducts(rows: Seq[ExcelWebSaleRow]): Seq[SaleDTO] =
+      //   rows.foldLeft(ListMap[String, SaleDTO]()) {
+      //     case (
+      //         m,
+      //         ExcelWebSaleRow(id, total, discount, createdAt, pName, sku, brand, barcode, qty)
+      //         ) =>
+      //       m + m.get(id).map(dto => 
+      //         id -> dto.copy(products = dto.products ++ Seq(SaleDTOProduct(id,)))
+      //       ).getOrElse(SaleDTO(id, createdAt, SaleOutlet.Web, total, discount, Seq(SaleDTOProduct())))
+      //   }
+
+      ???
+    }
 
     def create(
       total: Currency,
@@ -141,6 +151,7 @@ object SaleService {
             sale.total,
             sale.discount,
             sale.outlet,
+            sale.status,
             soldProducts.map(
               p =>
                 SaleSummaryProduct
@@ -155,7 +166,7 @@ object SaleService {
       for {
         summary <- insertSale
         _       <- crawlerClient.sendSale(summary)
-        dto <- getSale(summary.id)
+        dto     <- getSale(summary.id)
       } yield dto
     }
 
@@ -168,7 +179,7 @@ object SaleService {
           )
           val sale = rows(0)._1
           Some(
-            SaleDTO(sale.id, sale.createdAt, sale.outlet, sale.total, sale.discount, products)
+            SaleDTO(sale.id, sale.createdAt, sale.outlet, sale.status, sale.total, sale.discount, products)
           )
         }
       }
@@ -198,6 +209,7 @@ object SaleService {
                     saleRow.id,
                     saleRow.createdAt,
                     saleRow.outlet,
+                    saleRow.status,
                     saleRow.total,
                     saleRow.discount,
                     Seq(SaleDTOProduct.fromRow(productRow, brand, category, synced, soldQty))

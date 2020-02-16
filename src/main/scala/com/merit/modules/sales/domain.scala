@@ -15,11 +15,32 @@ object SaleOutlet extends Enumeration {
   val Web   = Value("Web")
 }
 
+object SaleStatus extends Enumeration {
+  type SaleStatus = Value
+
+  val OrderPlaced              = Value("Order Placed")
+  val OrderAwaitingShipment    = Value("Order Awaiting Shipment")
+  val OrderShipped             = Value("Order Shipped")
+  val OrderRefunded            = Value("Order Refunded")
+  val OrderReturned            = Value("Order Returned")
+  val OrderPickedUp            = Value("Order Picked Up")
+  val OrderReturnRequested     = Value("Order Return Requested")
+  val OrderCancelled           = Value("Order Cancelled")
+  val OrderAwaitingPayment     = Value("Order Awaiting Payment")
+  val OrderPartiallyRefunded   = Value("Order Partially Refunded")
+  val OrderAccepted            = Value("Order Accepted")
+  val OrderAwaitingFulfillment = Value("Order Awaiting Fulfillment")
+  val SaleCompleted            = Value("Sale Completed")
+  val SaleReturned             = Value("Sale Returned")
+  val SalePartiallyReturned    = Value("Sale Partially Returned")
+}
+
 case class SaleRow(
   createdAt: DateTime = DateTime.now(),
   total: Currency,
   discount: Currency = Currency(0),
   outlet: SaleOutlet.Value = SaleOutlet.Store,
+  status: SaleStatus.Value = SaleStatus.SaleCompleted,
   id: SaleID = SaleID(0L)
 )
 
@@ -27,6 +48,7 @@ case class SaleDTO(
   id: SaleID,
   createdAt: DateTime,
   outlet: SaleOutlet.Value,
+  status: SaleStatus.Value,
   total: Currency,
   discount: Currency,
   products: Seq[SaleDTOProduct]
@@ -95,6 +117,7 @@ case class SaleSummary(
   total: Currency,
   discount: Currency,
   outlet: SaleOutlet.Value,
+  status: SaleStatus.Value,
   products: Seq[SaleSummaryProduct]
 )
 

@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import java.sql.Timestamp
 import com.merit.modules.stockOrders.{StockOrderID, StockOrderRow}
 import org.joda.time.DateTime
-import com.merit.modules.sales.{SaleID, SaleRow, SaleOutlet}
+import com.merit.modules.sales.{SaleID, SaleRow, SaleOutlet, SaleStatus}
 import com.merit.modules.users.{UserID, UserRow}
 import com.merit.modules.categories.{CategoryRow, CategoryID}
 import com.merit.modules.inventoryCount.{InventoryCountBatchRow, InventoryCountProductRow, InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
@@ -84,8 +84,9 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def total     = column[Currency]("total")
     def discount  = column[Currency]("discount")
     def outlet    = column[SaleOutlet.Value]("outlet")
+    def status    = column[SaleStatus.Value]("status")
 
-    def * = (createdAt, total, discount, outlet, id).mapTo[SaleRow]
+    def * = (createdAt, total, discount, outlet, status, id).mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]

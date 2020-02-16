@@ -21,6 +21,7 @@ import org.joda.time.format.ISODateTimeFormat
 import com.merit.modules.categories.CategoryID
 import com.merit.modules.salesEvents.SaleEventType
 import com.merit.modules.salesEvents.SaleEventID
+import com.merit.modules.sales.SaleStatus
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -98,6 +99,12 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val decodeSaleOutlet: Decoder[SaleOutlet.Value] =
     Decoder.enumDecoder(SaleOutlet)
+
+  implicit val encodeSaleStatus: Encoder[SaleStatus.Value] =
+    Encoder.enumEncoder(SaleStatus)
+
+  implicit val decodeSaleStatus: Decoder[SaleStatus.Value] =
+    Decoder.enumDecoder(SaleStatus)
 
   implicit val encodeSaleEvent: Encoder[SaleEventType.Value] =
     Encoder.enumEncoder(SaleEventType)

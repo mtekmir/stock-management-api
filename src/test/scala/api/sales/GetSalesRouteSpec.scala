@@ -29,6 +29,7 @@ import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.sales.SaleDTO
 import com.merit.modules.sales.PaginatedSalesResponse
 import com.merit.modules.users.UserID
+import com.merit.modules.sales.SaleStatus
 
 class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Get sales route should call the correct method with parameter" >> {
@@ -62,7 +63,17 @@ class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupp
     val products      = getExcelProductRows(1).map(excelRowToSaleDTOProduct(_)).toSeq
     val response = PaginatedSalesResponse(
       1,
-      Seq(SaleDTO(SaleID(1), DateTime.now(), SaleOutlet.Store, total, discount, products))
+      Seq(
+        SaleDTO(
+          SaleID(1),
+          DateTime.now(),
+          SaleOutlet.Store,
+          SaleStatus.SaleCompleted,
+          total,
+          discount,
+          products
+        )
+      )
     )
 
     (saleService.getSales _) expects (*, *, *) returning (Future(response))

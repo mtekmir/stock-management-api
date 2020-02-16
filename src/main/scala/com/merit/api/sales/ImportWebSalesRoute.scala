@@ -22,7 +22,8 @@ object ImportWebSalesRoute extends Directives with JsonSupport {
         rows match {
           case Left(error) => complete(BadRequest -> error)
           case Right(rows) =>
-            complete(saleService.importSoldProductsFromWeb(rows, userId))
+            // complete(saleService.importSoldProductsFromWeb(rows, userId))
+            complete("OK")
         }
 
     }

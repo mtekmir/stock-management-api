@@ -51,7 +51,7 @@ class SaleRepoSpec(implicit ee: ExecutionEnv)
           saleRow <- saleRepo.insert(SaleRow(now, total))
         } yield saleRow
       )
-      res.map { case SaleRow(now, _, _, _, _) => now } must beEqualTo(now).await
+      res.map { case SaleRow(now, _, _, _, _, _) => now } must beEqualTo(now).await
     }
 
     "should add products to sale with default qty(1)" in new TestScope {
