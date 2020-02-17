@@ -106,9 +106,6 @@ object ExcelServiceValidation {
     def validateWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] = {
       val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
       rows.collect {
-        case (Seq(orderNo, _, _, _, _, _, _, _, _, _, _, _), index)
-            if orderNo.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidOrderNoError)
         case (Seq(_, total, _, _, _, _, _, _, _, _, _, _), index)
             if !Currency.isValid(total) =>
           ExcelValidationError(Seq(index), InvalidPriceError)
@@ -122,8 +119,8 @@ object ExcelServiceValidation {
             if !SaleStatus.isValid(status) =>
           ExcelValidationError(Seq(index), InvalidStatusError)
         case (Seq(_, _, _, _, _, _, _, _, barcode, _, _, _), index)
-            if !barcode
-              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14 =>
+            if !barcode.isEmpty && (!barcode
+              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14) =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
         case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if qty.isEmpty =>
           ExcelValidationError(Seq(index), EmptyQtyError)

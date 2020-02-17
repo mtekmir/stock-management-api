@@ -70,7 +70,7 @@ object Main extends App with LazyLogging {
   val brandService     = BrandService(db, brandRepo)
   val categoryService  = CategoryService(db, categoryRepo)
   val excelService     = ExcelService()
-  val saleService      = SaleService(db, saleRepo, productRepo, saleEventsRepo, crawlerClient)
+  val saleService      = SaleService(db, saleRepo, productRepo, saleEventsRepo, brandRepo, crawlerClient)
   val userService      = UserService(db, userRepo)
   val stockOrderService =
     StockOrderService(db, stockOrderRepo, productRepo, brandRepo, categoryRepo, crawlerClient)

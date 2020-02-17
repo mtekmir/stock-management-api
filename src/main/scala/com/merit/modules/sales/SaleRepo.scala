@@ -9,6 +9,7 @@ import org.joda.time.DateTime
 
 trait SaleRepo[DbTask[_]] {
   def insert(sale: SaleRow): DbTask[SaleRow]
+  def batchInsert(sales: Seq[SaleRow]): DbTask[Seq[SaleRow]]
   def addProductsToSale(
     products: Seq[SoldProductRow]
   ): DbTask[Seq[SoldProductRow]]
@@ -83,6 +84,9 @@ object SaleRepo {
 
     def insert(sale: SaleRow): DBIO[SaleRow] =
       sales returning sales += sale
+
+    def batchInsert(salesToInsert: Seq[SaleRow]): DBIO[Seq[SaleRow]] = 
+      sales returning sales ++= salesToInsert
 
     def addProductsToSale(
       products: Seq[SoldProductRow]

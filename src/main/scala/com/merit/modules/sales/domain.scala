@@ -150,3 +150,37 @@ case class PaginatedSalesResponse(
   count: Int,
   sales: Seq[SaleDTO]
 )
+
+case class WebSaleRow(
+  orderNo: String,
+  total: Currency,
+  discount: Currency,
+  createdAt: DateTime,
+  status: SaleStatus.Value,
+  products: Seq[WebSaleRowProduct]
+)
+
+case class WebSaleRowProduct(
+  name: String,
+  sku: Option[String],
+  brand: String,
+  barcode: Option[String],
+  qty: Int,
+  price: Currency,
+  tax: Int
+)
+
+case class WebSaleSummary(
+  orderNo: String,
+  total: Currency,
+  discount: Currency,
+  createdAt: DateTime,
+  status: SaleStatus.Value,
+  products: Seq[WebSaleSummaryProduct]
+)
+
+case class WebSaleSummaryProduct(
+  sku: String,
+  barcode: String,
+  qty: Int,
+)

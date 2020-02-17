@@ -15,15 +15,14 @@ object ImportWebSalesRoute extends Directives with JsonSupport {
   def apply(saleService: SaleService, excelService: ExcelService, 
   userId: UserID
   ): Route =
-    (path("import") & uploadedFile("file")) {
-      case (metadata, file) =>
-        val rows = excelService.parseSaleImportFile(file)
+    (path("import-web-sales") & parameter('deductQuantities ? false) & uploadedFile("file")) {
+      case (deductQuantities, (metadata, file)) =>
+        val rows = excelService.parseWebSaleImportFile(file)
 
         rows match {
           case Left(error) => complete(BadRequest -> error)
           case Right(rows) =>
-            // complete(saleService.importSoldProductsFromWeb(rows, userId))
-            complete("OK")
+            complete(saleService.importSalesFromWeb(rows, deductQuantities))
         }
 
     }

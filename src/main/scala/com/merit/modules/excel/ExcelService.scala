@@ -65,7 +65,7 @@ object ExcelService {
         case FileFor.Product    => (10, 0)
         case FileFor.Sale       => (2, 0)
         case FileFor.StockOrder => (10, 3)
-        case FileFor.WebSales => (12, 9)
+        case FileFor.WebSales   => (12, 9)
       }
 
       def rowToCells(sheet: Sheet)(rowNum: Int) = {
@@ -77,7 +77,7 @@ object ExcelService {
             case (i, c) if i == barcodeColumn =>
               parseBarcode(c)
             case (_, c) =>
-              formatter.formatCellValue(c)
+              formatter.formatCellValue(c).trim
           }
       }
 

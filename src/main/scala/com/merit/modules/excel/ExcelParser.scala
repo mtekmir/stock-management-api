@@ -115,7 +115,7 @@ object ExcelParser {
             formatter.parseDateTime(createdAt),
             SaleStatus.parseFromExcel(status),
             productName,
-            sku,
+            Option(sku).filter(_.nonEmpty),
             brand,
             Option(barcode).filter(_.nonEmpty),
             qty.toInt,

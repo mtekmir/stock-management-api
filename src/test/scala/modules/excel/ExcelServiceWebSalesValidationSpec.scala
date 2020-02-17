@@ -8,7 +8,7 @@ import com.merit.modules.excel._
 
 class ExcelServiceWebSalesValidationSpec extends Specification {
   import ValidationErrorTypes._
-    import ExcelErrorMessages._
+  import ExcelErrorMessages._
 
   "Excel Service web sales import validation" >> {
     "should return errors for invalid rows" in new TestScope {
@@ -36,10 +36,6 @@ class ExcelServiceWebSalesValidationSpec extends Specification {
             ExcelValidationError(
               Seq(7),
               InvalidTaxRateError
-            ),
-            ExcelValidationError(
-              Seq(8,9),
-              InvalidOrderNoError
             )
           ).sortBy(_.errorType)
         )

@@ -26,6 +26,7 @@ import com.merit.modules.salesEvents.SaleEventRepo
 import com.merit.modules.users.{UserID, UserRow, UserRepo}
 import com.merit.modules.salesEvents.{SaleEventRow, SaleEventType}
 import slick.dbio.DBIO
+import shapeless.ops.product
 
 class SaleServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -197,18 +198,15 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         res3 <- saleService.getSales(3, 3)
       } yield (res1, res2, res3)
       res.map(_._1.count) must beEqualTo(11).await
-      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2))
-        .await
+      res.map(_._1.sales.map(_.total)) must beEqualTo(sales.take(3).map(_._2)).await
       res.map(_._1.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
       ).await
-      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2))
-        .await
+      res.map(_._2.sales.map(_.total)) must beEqualTo(sales.drop(3).take(3).map(_._2)).await
       res.map(_._2.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(3).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
       ).await
-      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2))
-        .await
+      res.map(_._3.sales.map(_.total)) must beEqualTo(sales.drop(6).take(3).map(_._2)).await
       res.map(_._3.sales.map(s => sortedWithZeroId(s.products))) must beEqualTo(
         sales.drop(6).take(3).map(_._3.map(excelRowToSaleDTOProduct(_)))
       ).await
@@ -228,6 +226,47 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         Some(products.map(p => (p.barcode, p.qty)))
       ).await
       res.map(_._2.map(_.qty).sum) must beEqualTo(0).await
+    }
+
+    "should create sales on web sale import (with existing products, deduct qty=false)" in new TestScope {
+      val rows = getExcelWebSaleRows(3)
+
+      val res = for {
+        ps        <- productService.batchInsertExcelRows(rows.map(_.toExcelProductRow))
+        summaries <- saleService.importSalesFromWeb(rows)
+      } yield (summaries, products)
+
+      res.map(_._1) must beEqualTo(rows.map(_.toSummary)).await
+    }
+
+    "should create product if no sku and barcode" in new TestScope {
+      val row = getExcelWebSaleRows(1).map(_.copy(barcode = None, sku = None))
+
+      val res = for {
+        summary <- saleService.importSalesFromWeb(row)
+        product <- productService.getProduct(summary.head.products.head.barcode)
+      } yield product
+
+      res.map(_.map(_.name)) must beEqualTo(Some(row.head.productName)).await
+      res.map(_.map(_.qty)) must beEqualTo(Some(0)).await
+      res.map(_.map(_.price)) must beEqualTo(Some(row.head.price)).await
+    }
+
+    "should deduct quantities when deductQuantities=true" in new TestScope {
+      val rows = getExcelWebSaleRows(2)
+
+      val res = for {
+        ps <- productService.batchInsertExcelRows(
+          rows.map(_.toExcelProductRow).map(_.copy(qty = 30))
+        )
+        summary  <- saleService.importSalesFromWeb(rows, true)
+        product1 <- productService.getProduct(rows.head.barcode.get)
+        product2 <- productService.getProduct(rows.tail.head.barcode.get)
+      } yield (summary, product1, product2)
+
+      res.map(_._1) must beEqualTo(rows.map(_.toSummary)).await
+      res.map(_._2.map(_.qty)) must beEqualTo(Some(30 - rows.head.qty)).await
+      res.map(_._3.map(_.qty)) must beEqualTo(Some(30 - rows.tail.head.qty)).await
     }
   }
 
@@ -259,7 +298,8 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
     Await.result(db.run(userRepo.insert(UserRow("", "", "", userId))), Duration.Inf)
 
     val productService = ProductService(db, brandRepo, productRepo, categoryRepo)
-    val saleService    = SaleService(db, saleRepo, productRepo, saleEventRepo, crawlerClient)
+    val saleService =
+      SaleService(db, saleRepo, productRepo, saleEventRepo, brandRepo, crawlerClient)
     val sampleProducts = getExcelProductRows(5).sortBy(_.barcode)
     val now            = DateTime.now()
   }

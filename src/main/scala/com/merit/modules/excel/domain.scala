@@ -29,7 +29,7 @@ case class ExcelWebSaleRow(
   createdAt: DateTime,
   status: SaleStatus.Value,
   productName: String,
-  sku: String,
+  sku: Option[String],
   brand: String,
   barcode: Option[String],
   qty: Int,
