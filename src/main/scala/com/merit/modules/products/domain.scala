@@ -124,8 +124,8 @@ case class PaginatedProductsResponse(
 
 case class CreateProductRequest(
   barcode: String,
-  sku: String,
-  name: String,
+  sku: Option[String],
+  name: Option[String],
   price: Currency,
   discountPrice: Option[Currency],
   qty: Int,

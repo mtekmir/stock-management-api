@@ -1,6 +1,8 @@
 package com.merit.modules
 
 package object products {
+
+  import scala.util.Random
   implicit class C1(
     val r: CreateProductRequest
   ) {
@@ -8,8 +10,8 @@ package object products {
       import r._
       ProductRow(
         barcode,
-        sku,
-        name,
+        sku.getOrElse(Sku.random),
+        name.getOrElse("Empty" + Random.nextInt(100000)),
         price,
         discountPrice,
         qty,
