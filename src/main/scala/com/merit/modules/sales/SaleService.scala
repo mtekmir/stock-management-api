@@ -162,7 +162,6 @@ object SaleService {
       def makeDeduction(ps: Seq[(String, ProductRow, Int)], deductQuantities: Boolean) =
         if (deductQuantities) {
           logger.info(s"Deducting sold quantities from ${ps.length} products")
-          println(ps.map(p => (p._2.qty, p._3)))
           DBIO.sequence(ps.map {
             case (_, product, soldQty) => productRepo.deductQuantity(product.barcode, soldQty)
           })

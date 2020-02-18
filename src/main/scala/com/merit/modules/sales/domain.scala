@@ -30,10 +30,12 @@ object SaleStatus extends Enumeration {
   val OrderPartiallyRefunded   = Value("Order Partially Refunded")
   val OrderAccepted            = Value("Order Accepted")
   val OrderAwaitingFulfillment = Value("Order Awaiting Fulfillment")
+
   val SaleCompleted            = Value("Sale Completed")
   val SaleReturned             = Value("Sale Returned")
   val SalePartiallyReturned    = Value("Sale Partially Returned")
 
+  val fulfilledSaleStatuses = List(OrderShipped, OrderPickedUp, OrderAwaitingShipment, SaleCompleted)
   val trStatuses = Map(
     "Sipariş Alındı"       -> OrderPlaced,
     "Paketleniyor"         -> OrderAwaitingShipment,

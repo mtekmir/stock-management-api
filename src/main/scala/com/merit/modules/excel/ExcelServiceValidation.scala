@@ -87,7 +87,7 @@ object ExcelServiceValidation {
           ExcelValidationError(Seq(index), EmptyBarcodeError)
         case (Seq(_, _, _, barcode, _, _, _, _, _, _), index)
             if !barcode
-              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14 =>
+              .forall(_.isDigit) || barcode.length <= 6 || barcode.length > 14 =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
         case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if qty.isEmpty =>
           ExcelValidationError(Seq(index), EmptyQtyError)
@@ -120,7 +120,7 @@ object ExcelServiceValidation {
           ExcelValidationError(Seq(index), InvalidStatusError)
         case (Seq(_, _, _, _, _, _, _, _, barcode, _, _, _), index)
             if !barcode.isEmpty && (!barcode
-              .forall(_.isDigit) || barcode.length <= 6 || barcode.length >= 14) =>
+              .forall(_.isDigit) || barcode.length <= 6 || barcode.length > 14) =>
           ExcelValidationError(Seq(index), InvalidBarcodeError)
         case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if qty.isEmpty =>
           ExcelValidationError(Seq(index), EmptyQtyError)

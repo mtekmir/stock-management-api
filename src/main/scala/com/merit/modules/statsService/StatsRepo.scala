@@ -15,7 +15,7 @@ trait StatsRepo[DbTask[_]] {
     filters: StatsDateFilter
   ): DbTask[Seq[(String, String, Option[String], Int)]]
   def getInventorySummary(): DbTask[(Int, BigDecimal)]
-  def getStats(filters: StatsDateFilter): DbTask[(BigDecimal, Int, Int)]
+  def getStats(filters: StatsDateFilter): DbTask[(BigDecimal, BigDecimal, Int, Int)]
   def getSalesData(filters: StatsDateFilter): DbTask[Seq[SaleRow]]
 }
 
@@ -71,18 +71,19 @@ object StatsRepo {
         WHERE qty >= 0
       """.as[(Int, BigDecimal)].head
 
-    def getStats(filter: StatsDateFilter): DBIO[(BigDecimal, Int, Int)] = {
+    def getStats(filter: StatsDateFilter): DBIO[(BigDecimal, BigDecimal, Int, Int)] = {
       val filters = getFilterQuery(filter)
 
       sql"""
-        select (select sum(total) from sales #${filters}) as revenue,
+        select (select sum(total) from sales #${filters} and outlet = 'Web') as webRevenue,
+        (select sum(total) from sales #${filters} and outlet = 'Store') as storeRevenue,
         (select count(sales.id) from sales #${filters}) as saleCount,
         (select sum(sold_products.qty) 
         	from sold_products 
           join sales on sold_products."saleId" = sales.id
           #${filters}
         ) as productsSold
-      """.as[(BigDecimal, Int, Int)].head
+      """.as[(BigDecimal, BigDecimal, Int, Int)].head
     }
 
     def getSalesData(filters: StatsDateFilter): DBIO[Seq[SaleRow]] =

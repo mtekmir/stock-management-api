@@ -7,6 +7,9 @@ import scala.concurrent.ExecutionContext
 import com.merit.modules.products.Currency
 import org.joda.time.DateTime
 import java.lang.Math.floorMod
+import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.SaleRow
+import com.merit.modules.sales.SaleOutlet
 
 trait StatsService {
   def getTopSellingProducts(
@@ -49,7 +52,8 @@ object StatsService {
 
       def getStats(filters: StatsDateFilter): Future[Stats] =
         db.run(statsRepo.getStats(filters).map {
-          case (rev, saleCount, productsSold) => Stats(Currency(rev), saleCount, productsSold)
+          case (web, store, saleCount, productsSold) =>
+            Stats(Currency(web), Currency(store), saleCount, productsSold)
         })
 
       def revenueChartData(
@@ -58,6 +62,8 @@ object StatsService {
       ): Future[Seq[Point]] = {
         import filters._
         import ChartOption._
+
+        val statusesToCount = SaleStatus.fulfilledSaleStatuses
 
         def getYearDiff(start: DateTime, end: DateTime, times: Int): Int =
           ((end.getYear - start.getYear) * times)
@@ -71,6 +77,14 @@ object StatsService {
         def getMonthDiff(start: DateTime, end: DateTime): Int =
           end.getMonth - start.getMonth + getYearDiff(start, end, 12)
 
+        def calcTotal(sales: Seq[SaleRow]): Currency = Currency(sales.map(_.total.value).sum)
+        def toPoint(date: String, sales: Seq[SaleRow]): Point =
+          Point(
+            date,
+            calcTotal(sales.filter(_.outlet == SaleOutlet.Web)),
+            calcTotal(sales.filter(_.outlet == SaleOutlet.Store))
+          )
+
         db.run(
           statsRepo
             .getSalesData(filters)
@@ -79,13 +93,13 @@ object StatsService {
                 case Daily =>
                   val differenceInDays = getDayDiff(startDate, endDate)
                   (0 to differenceInDays).map(dayIdx => {
-                    val dayOfYear  = startDate.plusDays(dayIdx)
-                    val salesOfDay = sales.filter(_.createdAt.isSameDay(dayOfYear))
-
-                    Point(
-                      dayOfYear.toString("MMM dd, YYYY"),
-                      Currency(salesOfDay.map(_.total.value).sum)
+                    val dayOfYear = startDate.plusDays(dayIdx)
+                    val salesOfDay = sales.filter(
+                      s =>
+                        s.createdAt.isSameDay(dayOfYear) && statusesToCount.contains(s.status)
                     )
+
+                    toPoint(dayOfYear.toString("MMM dd, YYYY"), salesOfDay)
                   })
                 case Weekly =>
                   val differenceInWeek = getWeekDiff(startDate, endDate)
@@ -94,24 +108,22 @@ object StatsService {
                       case 0      => 52
                       case n: Int => n
                     }
-                    val week        = startDate.withDayOfWeek(1).plusWeeks(weekIdx)
-                    val salesOfWeek = sales.filter(_.createdAt.getWeek == weekNum)
-
-                    Point(
-                      "Week of " + week.toString("MMM dd, YYYY"),
-                      Currency(salesOfWeek.map(_.total.value).sum)
+                    val week = startDate.withDayOfWeek(1).plusWeeks(weekIdx)
+                    val salesOfWeek = sales.filter(
+                      s => s.createdAt.getWeek == weekNum && statusesToCount.contains(s.status)
                     )
+
+                    toPoint("Week of " + week.toString("MMM dd, YYYY"), salesOfWeek)
                   })
                 case Monthly =>
                   val differenceInMonths = getMonthDiff(startDate, endDate)
                   (0 to differenceInMonths).map(monthIdx => {
-                    val month        = startDate.withDayOfMonth(1).plusMonths(monthIdx)
-                    val salesOfMonth = sales.filter(_.createdAt.isSameMonth(month))
-
-                    Point(
-                      month.toString("MMM, YYYY"),
-                      Currency(salesOfMonth.map(_.total.value).sum)
+                    val month = startDate.withDayOfMonth(1).plusMonths(monthIdx)
+                    val salesOfMonth = sales.filter(
+                      s => s.createdAt.isSameMonth(month) && statusesToCount.contains(s.status)
                     )
+
+                    toPoint(month.toString("MMM, YYYY"), salesOfMonth)
                   })
               }
             })

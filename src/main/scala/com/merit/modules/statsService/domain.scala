@@ -21,7 +21,8 @@ case class InventorySummary(
 )
 
 case class Stats(
-  revenue: Currency,
+  webRevenue: Currency,
+  storeRevenue: Currency,
   saleCount: Int,
   soldProductCount: Int
 )
@@ -40,5 +41,6 @@ object ChartOption extends Enumeration {
 
 case class Point(
   x: String,
-  y: Currency
+  web: Currency,
+  store: Currency
 )
