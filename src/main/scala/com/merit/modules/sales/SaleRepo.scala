@@ -35,7 +35,7 @@ object SaleRepo {
       query: SaleQuery
     ) {
       def filterByDates(
-        filters: SaleFilters,
+        filters: SaleFilters
       ): SaleQuery = {
         import filters._
         (startDate, endDate) match {
@@ -85,7 +85,7 @@ object SaleRepo {
     def insert(sale: SaleRow): DBIO[SaleRow] =
       sales returning sales += sale
 
-    def batchInsert(salesToInsert: Seq[SaleRow]): DBIO[Seq[SaleRow]] = 
+    def batchInsert(salesToInsert: Seq[SaleRow]): DBIO[Seq[SaleRow]] =
       sales returning sales ++= salesToInsert
 
     def addProductsToSale(
@@ -105,10 +105,10 @@ object SaleRepo {
     ): DBIO[Seq[(SaleRow, ProductRow, Int, Boolean, Option[BrandRow], Option[CategoryRow])]] =
       sales
         .filterByDates(filters)
+        .sortBy(_.createdAt.desc)
         .drop((page - 1) * rowsPerPage)
         .take(rowsPerPage)
         .withProducts
-        .sortBy(_._1.createdAt.desc)
         .result
 
     def count(filters: SaleFilters): DBIO[Int] =

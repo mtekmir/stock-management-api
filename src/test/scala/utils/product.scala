@@ -16,6 +16,7 @@ import com.merit.modules.categories.CategoryRow
 import com.merit.modules.brands.BrandRow
 import com.merit.modules.brands.BrandID
 import com.merit.modules.categories.CategoryID
+import com.merit.modules.products.Sku
 
 object ProductUtils {
   private val random                       = Random
@@ -122,8 +123,8 @@ object ProductUtils {
       import r._
       CreateProductRequest(
         barcode,
-        sku,
-        name,
+        Some(sku),
+        Some(name),
         price,
         discountPrice,
         qty,
@@ -158,7 +159,20 @@ object ProductUtils {
 
   def productRowToSaleDTOProduct(p: ProductRow, soldQty: Int) = {
     import p._
-    SaleDTOProduct(id, barcode, sku, name, price, discountPrice, soldQty, variation, taxRate, None, None, true)
+    SaleDTOProduct(
+      id,
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      soldQty,
+      variation,
+      taxRate,
+      None,
+      None,
+      true
+    )
   }
 
   def productRowToStockOrderSummaryProduct(p: ProductRow, ordered: Int) = {
@@ -169,7 +183,7 @@ object ProductUtils {
   def sortedWithZeroIdProductDTO(products: Seq[ProductDTO]): Seq[ProductDTO] =
     products.sortBy(_.barcode).map(_.copy(id = ProductID.zero))
 
-    implicit class DTOOPS(
+  implicit class DTOOPS(
     rows: Seq[ProductDTO]
   ) {
     def withZeroIds: Seq[ProductDTO] =
@@ -182,5 +196,5 @@ object ProductUtils {
           )
       )
   }
-  
+
 }
