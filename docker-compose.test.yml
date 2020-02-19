@@ -1,19 +1,7 @@
-version: '3'
+version: '3.1'
 services:
   test-db:
-    image: postgres:latest
+    image: postgres:12.2
     container_name: test-db
     ports:
       - "5434:5432"
-    environment:
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_USER=postgres
-  api:
-    build: 
-      dockerfile: Dockerfile.test
-      context: .
-    container_name: stock-management_api_1
-    ports:
-      - "3111:3111"
-    links:
-      - test-db

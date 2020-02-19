@@ -11,7 +11,7 @@ phases:
   pre_build:
     commands:
       - echo Running Tests
-      - docker-compose up --build -d
+      - docker-compose -f docker-compose.test.yml up --build -d
       - sbt test
       - echo Finished testing
   build:
