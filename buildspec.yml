@@ -10,11 +10,10 @@ phases:
       - echo Finished installing API dependencies
   pre_build:
     commands:
-      - echo skipping tests
-      # - echo Running Tests
-      # - docker-compose -f docker-compose.test.yml up --build -d
-      # - sbt test
-      # - echo Finished testing
+      - echo Running Tests
+      - docker-compose -f docker-compose.test.yml up --build -d
+      - sbt test
+      - echo Finished testing
   build:
     commands:
       - echo Packaging Service
