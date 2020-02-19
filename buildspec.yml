@@ -30,6 +30,6 @@ phases:
 artifacts:
   files:
     - Dockerrun.aws.json
-cache:
-  paths:
-    - '~/.ivy2/cache'
+# cache:
+#   paths:
+#     - '~/.ivy2/cache
