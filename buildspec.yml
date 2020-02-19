@@ -18,7 +18,7 @@ phases:
   build:
     commands:
       - echo Packaging Service
-      - sbt assembly
+      - sbt -J-Xms2048m -J-Xmx2048m assembly
       - echo Logging in to Docker hub
       - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
       - echo Building docker image
