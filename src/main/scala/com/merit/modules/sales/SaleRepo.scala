@@ -109,6 +109,7 @@ object SaleRepo {
         .drop((page - 1) * rowsPerPage)
         .take(rowsPerPage)
         .withProducts
+        .sortBy(_._1.createdAt.desc)
         .result
 
     def count(filters: SaleFilters): DBIO[Int] =
