@@ -75,7 +75,8 @@ object ProductUtils {
       variation,
       taxRate,
       b,
-      c
+      c,
+      deleted
     )
   }
 
@@ -94,7 +95,8 @@ object ProductUtils {
       variation,
       taxRate,
       brand.map(BrandRow(_)),
-      category.map(CategoryRow(_))
+      category.map(CategoryRow(_)),
+      false
     )
   }
 

@@ -154,7 +154,7 @@ object ProductRepo {
         products
           .filter(
             p =>
-              (p.name.toLowerCase like query.toLowerCase) || (p.barcode like query) || (p.sku like query)
+              (p.name.toLowerCase like query.toLowerCase) || (p.barcode like query) || (p.sku like query) && !p.deleted
           )
           .withBrandAndCategory
           .take(20)

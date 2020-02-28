@@ -30,6 +30,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def taxRate       = column[Option[Int]]("taxRate")
     def brandId       = column[Option[BrandID]]("brandId")
     def categoryId    = column[Option[CategoryID]]("categoryId")
+    def deleted       = column[Boolean]("deleted")
 
     def * =
       (
@@ -43,6 +44,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
         taxRate,
         brandId,
         categoryId,
+        deleted,
         id
       ).mapTo[ProductRow]
 

@@ -40,6 +40,7 @@ final case class ProductRow(
   taxRate: Option[Int],
   brandId: Option[BrandID],
   categoryId: Option[CategoryID],
+  deleted: Boolean = false,
   id: ProductID = ProductID(0)
 )
 
@@ -70,7 +71,8 @@ final case class ProductDTO(
   variation: Option[String],
   taxRate: Option[Int],
   brand: Option[BrandRow],
-  category: Option[CategoryRow]
+  category: Option[CategoryRow],
+  deleted: Boolean
 )
 
 object ProductDTO {
@@ -91,7 +93,8 @@ object ProductDTO {
       variation,
       taxRate,
       brand,
-      category
+      category,
+      deleted
     )
   }
 
@@ -112,6 +115,7 @@ object ProductDTO {
       taxRate,
       brandId,
       categoryId,
+      deleted,
       id
     )
   }
