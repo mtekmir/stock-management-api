@@ -15,7 +15,9 @@ trait StatsRepo[DbTask[_]] {
     filters: StatsDateFilter
   ): DbTask[Seq[(String, String, Option[String], Int)]]
   def getInventorySummary(): DbTask[(Int, BigDecimal)]
-  def getStats(filters: StatsDateFilter): DbTask[(BigDecimal, BigDecimal, Int, Int)]
+  def getStats(
+    filters: StatsDateFilter
+  ): DbTask[(Option[BigDecimal], Option[BigDecimal], Int, Int)]
   def getSalesData(filters: StatsDateFilter): DbTask[Seq[SaleRow]]
 }
 
@@ -71,7 +73,9 @@ object StatsRepo {
         WHERE qty >= 0
       """.as[(Int, BigDecimal)].head
 
-    def getStats(filter: StatsDateFilter): DBIO[(BigDecimal, BigDecimal, Int, Int)] = {
+    def getStats(
+      filter: StatsDateFilter
+    ): DBIO[(Option[BigDecimal], Option[BigDecimal], Int, Int)] = {
       val filters = getFilterQuery(filter)
 
       sql"""
@@ -83,7 +87,7 @@ object StatsRepo {
           join sales on sold_products."saleId" = sales.id
           #${filters}
         ) as productsSold
-      """.as[(BigDecimal, BigDecimal, Int, Int)].head
+      """.as[(Option[BigDecimal], Option[BigDecimal], Int, Int)].head
     }
 
     def getSalesData(filters: StatsDateFilter): DBIO[Seq[SaleRow]] =

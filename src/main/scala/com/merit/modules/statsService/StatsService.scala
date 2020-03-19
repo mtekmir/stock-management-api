@@ -53,7 +53,12 @@ object StatsService {
       def getStats(filters: StatsDateFilter): Future[Stats] =
         db.run(statsRepo.getStats(filters).map {
           case (web, store, saleCount, productsSold) =>
-            Stats(Currency(web), Currency(store), saleCount, productsSold)
+            Stats(
+              Currency(web.getOrElse(0)),
+              Currency(store.getOrElse(0)),
+              saleCount,
+              productsSold
+            )
         })
 
       def revenueChartData(

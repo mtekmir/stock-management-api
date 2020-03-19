@@ -47,7 +47,9 @@ object SaleEventRepo {
       salesEvents returning salesEvents += SaleEventRow(
         SaleEventType.SaleImported,
         s"""Sale imported with id of ${saleId.value}. 
-           |Product Count: ${found.length}, Total Quantity: ${found.map(_.qty).sum}, Outlet: ${outlet.toString}
+           |Product Count: ${found.length}, Total Quantity: ${found
+             .map(_.qty)
+             .sum}, Outlet: ${outlet.toString}
            |Not Found: 
            |${notFound.map(_.barcode).mkString("\n")}
            |""".stripMargin,
@@ -68,6 +70,12 @@ object SaleEventRepo {
       )
 
     def getAll(limit: Int): DBIO[Seq[(SaleEventRow, Option[UserRow])]] =
-      salesEvents.take(limit).joinLeft(users).on(_.userId === _.id).result
+      salesEvents
+        .take(limit)
+        .sortBy(_.created.desc)
+        .joinLeft(users)
+        .on(_.userId === _.id)
+        .sortBy(_._1.created.desc)
+        .result
   }
 }
