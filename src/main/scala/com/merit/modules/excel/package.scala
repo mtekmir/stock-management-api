@@ -2,9 +2,9 @@ package com.merit.modules
 
 package object excel {
 
- import com.merit.modules.inventoryCount.InventoryCountDTOProduct
+ import com.merit.modules.inventoryCount.InventoryCountProductDTO
  implicit class C1(
-   val p: InventoryCountDTOProduct
+   val p: InventoryCountProductDTO
  ) {
    def toExcelRow: ExcelInventoryCountRow = {
      import p._

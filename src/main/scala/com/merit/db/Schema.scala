@@ -147,7 +147,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
   class InventoryCountBatchTable(t: Tag)
       extends Table[InventoryCountBatchRow](t, "inventory_count_batches") {
     def id         = column[InventoryCountBatchID]("id", O.PrimaryKey, O.AutoInc)
-    def status     = column[InventoryCountStatus.Value]("status")
+    def status     = column[InventoryCountStatus]("status")
     def started    = column[DateTime]("started")
     def finished   = column[Option[DateTime]]("finished")
     def name       = column[Option[String]]("name")

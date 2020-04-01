@@ -6,9 +6,13 @@ import com.merit.modules.brands.BrandRow
 import com.merit.modules.categories.CategoryRow
 import com.merit.modules.products.ProductID
 import scala.concurrent.ExecutionContext
+import com.merit.modules.inventoryCount.InventoryCountProductStatus._
 
 trait InventoryCountRepo[DbTask[_]] {
-  def count: DbTask[Int]
+  def count(
+    status: InventoryCountStatus
+  ): DbTask[Int]
+  def productCount(batchId: InventoryCountBatchID): DbTask[Int]
   def insertBatch(batch: InventoryCountBatchRow): DbTask[InventoryCountBatchRow]
   def addProductsToBatch(
     products: Seq[InventoryCountProductRow]
@@ -24,7 +28,8 @@ trait InventoryCountRepo[DbTask[_]] {
   ]]
   def getAll(
     page: Int,
-    rowsPerPage: Int
+    rowsPerPage: Int,
+    status: InventoryCountStatus
   ): DbTask[Seq[
     (
       InventoryCountBatchRow,
@@ -38,7 +43,13 @@ trait InventoryCountRepo[DbTask[_]] {
   ): DbTask[Int]
   def getProduct(
     productId: InventoryCountProductID
-  ): DbTask[Option[InventoryCountDTOProduct]]
+  ): DbTask[Option[InventoryCountProductDTO]]
+  def getBatchProducts(
+    batchId: InventoryCountBatchID,
+    status: InventoryCountProductStatus,
+    page: Int,
+    rowsPerPage: Int
+  ): DbTask[Seq[InventoryCountProductDTO]]
   def cancelInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
   def completeInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
 }
@@ -49,8 +60,13 @@ object InventoryCountRepo {
       import schema._
       import schema.profile.api._
 
-      def count: DBIO[Int] =
-        inventoryCountBatches.length.result
+      def count(
+        status: InventoryCountStatus
+      ): DBIO[Int] =
+        inventoryCountBatches.filter(_.status === status).length.result
+
+      def productCount(batchId: InventoryCountBatchID): DBIO[Int] =
+        inventoryCountProducts.filter(_.batchId === batchId).length.result
 
       def insertBatch(batch: InventoryCountBatchRow): DBIO[InventoryCountBatchRow] =
         inventoryCountBatches returning inventoryCountBatches += batch
@@ -63,29 +79,6 @@ object InventoryCountRepo {
       implicit class Q1(
         val q: Query[schema.InventoryCountBatchTable, InventoryCountBatchRow, Seq]
       ) {
-        def withBrandCategoryAndProducts =
-          q.joinLeft(categories)
-            .on {
-              case (batch, categories) => batch.categoryId === categories.id
-            }
-            .joinLeft(brands)
-            .on {
-              case ((batch, categories), brands) => batch.brandId === brands.id
-            }
-            .join(inventoryCountProducts)
-            .on {
-              case (((batch, _), _), batchProducts) => batch.id === batchProducts.batchId
-            }
-            .join(products)
-            .on {
-              case ((((_, _), _), batchProducts), products) =>
-                batchProducts.productId === products.id
-            }
-            .map {
-              case ((((batch, category), brand), batchProducts), products) =>
-                (batch, category, brand, batchProducts, products)
-            }
-
         def withCategoryAndBrand =
           q.joinLeft(categories)
             .on {
@@ -109,7 +102,7 @@ object InventoryCountRepo {
           .result
           .headOption
 
-      def getAll(page: Int, rowsPerPage: Int): DBIO[Seq[
+      def getAll(page: Int, rowsPerPage: Int, status: InventoryCountStatus): DBIO[Seq[
         (
           InventoryCountBatchRow,
           Option[CategoryRow],
@@ -117,9 +110,12 @@ object InventoryCountRepo {
         )
       ]] =
         inventoryCountBatches
+          .filter(_.status === status)
+          .sortBy(_.started.desc)
           .drop((page - 1) * rowsPerPage)
           .take(rowsPerPage)
           .withCategoryAndBrand
+          .sortBy(_._1.started.desc)
           .result
 
       def countProduct(
@@ -133,7 +129,7 @@ object InventoryCountRepo {
 
       def getProduct(
         productId: InventoryCountProductID
-      ): DBIO[Option[InventoryCountDTOProduct]] =
+      ): DBIO[Option[InventoryCountProductDTO]] =
         inventoryCountProducts
           .filter(_.id === productId)
           .join(products)
@@ -143,7 +139,43 @@ object InventoryCountRepo {
           .map {
             _.map {
               case (batchProductRow, productRow) =>
-                InventoryCountDTOProduct.fromRow(batchProductRow, productRow)
+                InventoryCountProductDTO.fromRow(batchProductRow, productRow)
+            }
+          }
+
+      // def filterOnStatus(q: TableQuery[InventoryCountProductsTable], s: InventoryCountProductStatus) =
+      //   q.filter(p => s match {
+      //     case All => true
+      //     case Counted => p.counted.isDefined
+      //     case UnCounted => p.counted.isEmpty
+      //   })
+
+      def getBatchProducts(
+        batchId: InventoryCountBatchID,
+        status: InventoryCountProductStatus,
+        page: Int,
+        rowsPerPage: Int
+      ): DBIO[Seq[InventoryCountProductDTO]] =
+        inventoryCountProducts
+          .filter(
+            _.batchId === batchId
+          )
+          // .filter(p =>
+          //   status match {
+          //     case InventoryCountProductStatus.Counted   => p.counted.isDefined
+          //     case InventoryCountProductStatus.UnCounted => p.counted.isEmpty
+          //     case _      => true
+          //   }
+          // )
+          .drop((page - 1) * rowsPerPage)
+          .take(rowsPerPage)
+          .join(products)
+          .on(_.productId === _.id)
+          .result
+          .map {
+            _.map {
+              case (batchProductRow, productRow) =>
+                InventoryCountProductDTO.fromRow(batchProductRow, productRow)
             }
           }
 

@@ -13,6 +13,8 @@ object InventoryCountRoutes extends Directives {
     pathPrefix("inventory-count") {
       CreateInventoryCountBatch(inventoryCountService) ~
       CountInventoryCountProduct(inventoryCountService) ~
-      GetInventoryCountBatches(inventoryCountService)
+      GetInventoryCountBatches(inventoryCountService) ~
+      GetInventoryCountBatchProducts(inventoryCountService) ~
+      GetInventoryCountBatch(inventoryCountService)
     }
 }

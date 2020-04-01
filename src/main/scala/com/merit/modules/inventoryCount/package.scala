@@ -6,9 +6,9 @@ package object inventoryCount {
   implicit class C2(
     val p: ProductDTO
   ) {
-    def toInventoryCountDTOProduct: InventoryCountDTOProduct = {
+    def toInventoryCountDTOProduct: InventoryCountProductDTO = {
       import p._
-      InventoryCountDTOProduct(
+      InventoryCountProductDTO(
         id,
         sku,
         barcode,

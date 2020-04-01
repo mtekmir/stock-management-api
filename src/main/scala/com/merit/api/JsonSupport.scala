@@ -74,6 +74,13 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
       InventoryCountBatchID(v).asRight
     }
 
+  implicit val encodeInventoryCountStatus: Encoder[InventoryCountStatus] =
+    (s: InventoryCountStatus) => Encoder.encodeString(InventoryCountStatus.toString(s))
+  implicit val decodeInventoryCountStatus: Decoder[InventoryCountStatus] =
+    Decoder.decodeString.emap { v =>
+      InventoryCountStatus.fromString(v).asRight
+    }
+
   implicit val encodeInventoryCountProductId: Encoder[InventoryCountProductID] =
     (id: InventoryCountProductID) => Encoder.encodeLong(id.value)
   implicit val decodeInventoryCountProductId: Decoder[InventoryCountProductID] =
@@ -90,9 +97,6 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val encodeErrorType: Encoder[ValidationErrorTypes.Value] =
     Encoder.enumEncoder(ValidationErrorTypes)
-
-  implicit val encodeInventoryCountStatus: Encoder[InventoryCountStatus.Value] =
-    Encoder.enumEncoder(InventoryCountStatus)
 
   implicit val encodeSaleOutlet: Encoder[SaleOutlet.Value] =
     Encoder.enumEncoder(SaleOutlet)

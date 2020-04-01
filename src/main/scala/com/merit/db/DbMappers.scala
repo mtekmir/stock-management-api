@@ -24,11 +24,6 @@ trait DbMappers { this: Schema =>
     bd => Currency.fromDb(bd)
   )
 
-  implicit val myEnumMapper = MappedColumnType.base[InventoryCountStatus.Value, String](
-    e => e.toString,
-    s => InventoryCountStatus.withName(s)
-  )
-
   implicit val saleOutletMapper = MappedColumnType.base[SaleOutlet.Value, String](
     e => e.toString,
     s => SaleOutlet.withName(s)
@@ -42,5 +37,10 @@ trait DbMappers { this: Schema =>
   implicit val saleStatusMapper = MappedColumnType.base[SaleStatus.Value, String](
     e => e.toString,
     s => SaleStatus.withName(s)
+  )
+
+  implicit val inventoryCountStatusMapper = MappedColumnType.base[InventoryCountStatus, String](
+    s => InventoryCountStatus.toString(s),
+    s => InventoryCountStatus.fromString(s)
   )
 }

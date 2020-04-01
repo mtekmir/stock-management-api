@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.modules.stockOrders.{StockOrderSummary, StockOrderSummaryProduct}
 import com.merit.CrawlerClientConfig
-import com.merit.modules.inventoryCount.{InventoryCountDTO,InventoryCountDTOProduct}
+import com.merit.modules.inventoryCount.{InventoryCountDTO,InventoryCountProductDTO}
 
 trait CrawlerClient {
   def sendSale(sale: SaleSummary): Future[(SyncSaleMessage, SendMessageResponse)]

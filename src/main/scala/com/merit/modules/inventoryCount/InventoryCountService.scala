@@ -25,11 +25,21 @@ trait InventoryCountService {
     category: Option[CategoryID]
   ): Future[InventoryCountDTO]
   def getBatch(id: InventoryCountBatchID): Future[Option[InventoryCountDTO]]
-  def getBatches(page: Int, rowsPerPage: Int): Future[PaginatedInventoryCountBatchesResponse]
+  def getBatches(
+    page: Int,
+    rowsPerPage: Int,
+    status: InventoryCountStatus
+  ): Future[PaginatedInventoryCountBatchesResponse]
+  def getBatchProducts(
+    batchId: InventoryCountBatchID,
+    status: InventoryCountProductStatus,
+    page: Int,
+    rowsPerPage: Int
+  ): Future[PaginatedInventoryCountProductsResponse]
   def countProduct(
     productId: InventoryCountProductID,
     count: Int
-  ): Future[Option[InventoryCountDTOProduct]]
+  ): Future[Option[InventoryCountProductDTO]]
   def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int]
   def completeInventoryCount(batchId: InventoryCountBatchID): Future[Option[InventoryCountDTO]]
 }
@@ -85,67 +95,36 @@ object InventoryCountService {
 
       def getBatches(
         page: Int,
-        rowsPerPage: Int
+        rowsPerPage: Int,
+        status: InventoryCountStatus
       ): Future[PaginatedInventoryCountBatchesResponse] =
         for {
-
-          batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage)).map {
+          batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage, status)).map {
             _.map {
               case (batch, category, brand) =>
                 InventoryCountDTO.fromRow(batch, category, brand)
             }
           }
-          count <- db.run(inventoryCountRepo.count)
+          count <- db.run(inventoryCountRepo.count(status))
         } yield PaginatedInventoryCountBatchesResponse(count, batches)
 
-      // def getBatch(id: InventoryCountBatchID): Future[Option[InventoryCountDTO]] =
-      //   db.run(
-      //     inventoryCountRepo.get(id).map {
-      //       case Nil => None
-      //       case rows =>
-      //         val products = rows.foldLeft(Seq[InventoryCountDTOProduct]()) {
-      //           case (s, (_, _, _, batchProduct, product)) =>
-      //             s :+ InventoryCountDTOProduct.fromRow(batchProduct, product)
-      //         }
-      //         Some(InventoryCountDTO.fromRow(rows(0)._1, rows(0)._2, rows(0)._3))
-      //     }
-      //   )
-
-      // def getBatches(
-      //   page: Int,
-      //   rowsPerPage: Int
-      // ): Future[PaginatedInventoryCountBatchesResponse] =
-      //   for {
-      //     batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage).map {
-      //       _.foldLeft(ListMap[InventoryCountBatchID, InventoryCountDTO]()) {
-      //         case (m, (batchRow, categoryRow, brandRow, batchProductRow, productRow)) =>
-      //           m + m
-      //             .get(batchRow.id)
-      //             .map(
-      //               dto =>
-      //                 (dto.id -> dto.copy(
-      //                   products = dto.products ++ Seq(
-      //                     InventoryCountDTOProduct.fromRow(batchProductRow, productRow)
-      //                   )
-      //                 ))
-      //             )
-      //             .getOrElse(
-      //               batchRow.id -> InventoryCountDTO.fromRow(
-      //                 batchRow,
-      //                 categoryRow,
-      //                 brandRow,
-      //                 Seq(InventoryCountDTOProduct.fromRow(batchProductRow, productRow))
-      //               )
-      //             )
-      //       }.values.toSeq
-      //     })
-      //     count <- db.run(inventoryCountRepo.count)
-      //   } yield PaginatedInventoryCountBatchesResponse(count, batches)
+      def getBatchProducts(
+        batchId: InventoryCountBatchID,
+        status: InventoryCountProductStatus,
+        page: Int,
+        rowsPerPage: Int
+      ): Future[PaginatedInventoryCountProductsResponse] =
+        for {
+          products <- db.run(
+            inventoryCountRepo.getBatchProducts(batchId, status, page, rowsPerPage)
+          )
+          count <- db.run(inventoryCountRepo.productCount(batchId))
+        } yield PaginatedInventoryCountProductsResponse(count, products)
 
       def countProduct(
         productId: InventoryCountProductID,
         count: Int
-      ): Future[Option[InventoryCountDTOProduct]] = {
+      ): Future[Option[InventoryCountProductDTO]] = {
         logger.info(s"Counted $count of product with id $productId")
         for {
           _       <- db.run(inventoryCountRepo.countProduct(productId, count))

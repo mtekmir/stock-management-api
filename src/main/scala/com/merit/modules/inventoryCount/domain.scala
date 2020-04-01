@@ -8,11 +8,36 @@ import com.merit.modules.categories.{CategoryRow, CategoryID}
 
 case class InventoryCountBatchID(value: Long) extends AnyVal with MappedTo[Long]
 
-object InventoryCountStatus extends Enumeration {
-  type InventoryCountStatus = Value
-  val Open      = Value("Open")
-  val Completed = Value("Completed")
-  val Cancelled = Value("Cancelled")
+sealed trait InventoryCountStatus
+object InventoryCountStatus{
+  case object Open extends InventoryCountStatus
+  case object Completed extends InventoryCountStatus
+  case object Cancelled extends InventoryCountStatus
+  def fromString(s: String): InventoryCountStatus = 
+    s match {
+      case "Completed" | "completed" => Completed
+      case "Cancelled" | "cancelled" => Cancelled
+      case _ => Open
+    }
+  def toString(s: InventoryCountStatus) =
+    s match {
+      case Open => "Open"
+      case Completed => "Completed"
+      case Cancelled => "Cancelled"
+    }
+}
+
+sealed trait InventoryCountProductStatus
+object InventoryCountProductStatus {
+  case object Counted extends InventoryCountProductStatus
+  case object UnCounted extends InventoryCountProductStatus
+  case object All extends InventoryCountProductStatus
+  def fromString(s: String): InventoryCountProductStatus =
+    s match {
+      case "counted" | "Counted" => Counted
+      case "uncounted" | "uncounted" => UnCounted
+      case _ => All
+    }
 }
 
 case class InventoryCountBatchRow(
@@ -21,7 +46,7 @@ case class InventoryCountBatchRow(
   name: Option[String],
   categoryId: Option[CategoryID],
   brandId: Option[BrandID],
-  status: InventoryCountStatus.Value = InventoryCountStatus.Open,
+  status: InventoryCountStatus = InventoryCountStatus.Open,
   id: InventoryCountBatchID = InventoryCountBatchID(0)
 )
 
@@ -36,7 +61,7 @@ case class InventoryCountProductRow(
   id: InventoryCountProductID = InventoryCountProductID(0)
 )
 
-case class InventoryCountDTOProduct(
+case class InventoryCountProductDTO(
   id: ProductID,
   sku: String,
   barcode: String,
@@ -49,7 +74,7 @@ case class InventoryCountDTOProduct(
 
 case class InventoryCountDTO(
   id: InventoryCountBatchID,
-  status: InventoryCountStatus.Value,
+  status: InventoryCountStatus,
   started: DateTime,
   finished: Option[DateTime],
   name: Option[String],
@@ -74,12 +99,12 @@ object InventoryCountDTO {
     )
 }
 
-object InventoryCountDTOProduct {
+object InventoryCountProductDTO {
   def fromRow(
     row: InventoryCountProductRow,
     product: ProductRow
   ) =
-    InventoryCountDTOProduct(
+    InventoryCountProductDTO(
       product.id,
       product.sku,
       product.barcode,
@@ -95,4 +120,9 @@ object InventoryCountDTOProduct {
 case class PaginatedInventoryCountBatchesResponse(
   count: Int,
   batches: Seq[InventoryCountDTO]
+)
+
+case class PaginatedInventoryCountProductsResponse(
+  count: Int,
+  products: Seq[InventoryCountProductDTO]
 )
