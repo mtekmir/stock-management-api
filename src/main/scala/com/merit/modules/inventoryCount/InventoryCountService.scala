@@ -19,6 +19,7 @@ import com.typesafe.scalalogging.LazyLogging
 
 trait InventoryCountService {
   def create(
+    startDate: Option[DateTime],
     name: Option[String],
     brand: Option[BrandID],
     category: Option[CategoryID]
@@ -46,6 +47,7 @@ object InventoryCountService {
   ): InventoryCountService =
     new InventoryCountService with LazyLogging {
       def create(
+        startDate: Option[DateTime],
         name: Option[String],
         brandId: Option[BrandID],
         categoryId: Option[CategoryID]
@@ -56,7 +58,13 @@ object InventoryCountService {
         db.run(
           for {
             batch <- inventoryCountRepo.insertBatch(
-              InventoryCountBatchRow(DateTime.now(), None, name, categoryId, brandId)
+              InventoryCountBatchRow(
+                startDate.getOrElse(DateTime.now()),
+                None,
+                name,
+                categoryId,
+                brandId
+              )
             )
             products <- productRepo.getAll(ProductFilters(categoryId, brandId))
             brand    <- brandRepo.get(brandId)

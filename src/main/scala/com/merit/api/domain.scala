@@ -19,6 +19,7 @@ case class CreateSaleRequest(
 )
 
 case class CreateInventoryCountRequest(
+  startDate: Option[DateTime],
   name: Option[String],
   brandId: Option[BrandID],
   categoryId: Option[CategoryID]
