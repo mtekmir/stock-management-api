@@ -64,54 +64,75 @@ object InventoryCountService {
             _ <- inventoryCountRepo.addProductsToBatch(
               products.map(_.toInventoryCountProductRow(batch.id))
             )
-          } yield
-            InventoryCountDTO.fromRow(batch, products, brand.map(_.name), category.map(_.name))
+          } yield InventoryCountDTO.fromRow(batch, category, brand)
         )
       }
 
       def getBatch(id: InventoryCountBatchID): Future[Option[InventoryCountDTO]] =
-        db.run(
-          inventoryCountRepo.get(id).map {
-            case Nil => None
-            case rows =>
-              val products = rows.foldLeft(Seq[InventoryCountDTOProduct]()) {
-                case (s, (_, _, _, batchProduct, product)) =>
-                  s :+ InventoryCountDTOProduct.fromRow(batchProduct, product)
-              }
-              Some(InventoryCountDTO.fromRow(rows(0)._1, rows(0)._2, rows(0)._3, products))
+        db.run(inventoryCountRepo.get(id)).map {
+          _.map {
+            case (batch, category, brand) => InventoryCountDTO.fromRow(batch, category, brand)
           }
-        )
+        }
 
       def getBatches(
         page: Int,
         rowsPerPage: Int
       ): Future[PaginatedInventoryCountBatchesResponse] =
         for {
-          batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage).map {
-            _.foldLeft(ListMap[InventoryCountBatchID, InventoryCountDTO]()) {
-              case (m, (batchRow, categoryRow, brandRow, batchProductRow, productRow)) =>
-                m + m
-                  .get(batchRow.id)
-                  .map(
-                    dto =>
-                      (dto.id -> dto.copy(
-                        products = dto.products ++ Seq(
-                          InventoryCountDTOProduct.fromRow(batchProductRow, productRow)
-                        )
-                      ))
-                  )
-                  .getOrElse(
-                    batchRow.id -> InventoryCountDTO.fromRow(
-                      batchRow,
-                      categoryRow,
-                      brandRow,
-                      Seq(InventoryCountDTOProduct.fromRow(batchProductRow, productRow))
-                    )
-                  )
-            }.values.toSeq
-          })
+
+          batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage)).map {
+            _.map {
+              case (batch, category, brand) =>
+                InventoryCountDTO.fromRow(batch, category, brand)
+            }
+          }
           count <- db.run(inventoryCountRepo.count)
         } yield PaginatedInventoryCountBatchesResponse(count, batches)
+
+      // def getBatch(id: InventoryCountBatchID): Future[Option[InventoryCountDTO]] =
+      //   db.run(
+      //     inventoryCountRepo.get(id).map {
+      //       case Nil => None
+      //       case rows =>
+      //         val products = rows.foldLeft(Seq[InventoryCountDTOProduct]()) {
+      //           case (s, (_, _, _, batchProduct, product)) =>
+      //             s :+ InventoryCountDTOProduct.fromRow(batchProduct, product)
+      //         }
+      //         Some(InventoryCountDTO.fromRow(rows(0)._1, rows(0)._2, rows(0)._3))
+      //     }
+      //   )
+
+      // def getBatches(
+      //   page: Int,
+      //   rowsPerPage: Int
+      // ): Future[PaginatedInventoryCountBatchesResponse] =
+      //   for {
+      //     batches <- db.run(inventoryCountRepo.getAll(page, rowsPerPage).map {
+      //       _.foldLeft(ListMap[InventoryCountBatchID, InventoryCountDTO]()) {
+      //         case (m, (batchRow, categoryRow, brandRow, batchProductRow, productRow)) =>
+      //           m + m
+      //             .get(batchRow.id)
+      //             .map(
+      //               dto =>
+      //                 (dto.id -> dto.copy(
+      //                   products = dto.products ++ Seq(
+      //                     InventoryCountDTOProduct.fromRow(batchProductRow, productRow)
+      //                   )
+      //                 ))
+      //             )
+      //             .getOrElse(
+      //               batchRow.id -> InventoryCountDTO.fromRow(
+      //                 batchRow,
+      //                 categoryRow,
+      //                 brandRow,
+      //                 Seq(InventoryCountDTOProduct.fromRow(batchProductRow, productRow))
+      //               )
+      //             )
+      //       }.values.toSeq
+      //     })
+      //     count <- db.run(inventoryCountRepo.count)
+      //   } yield PaginatedInventoryCountBatchesResponse(count, batches)
 
       def countProduct(
         productId: InventoryCountProductID,
@@ -128,7 +149,7 @@ object InventoryCountService {
         logger.info(s"Cancelling inventory count batch with id $batchId")
         db.run(inventoryCountRepo.cancelInventoryCount(batchId))
       }
-      
+
       def completeInventoryCount(
         batchId: InventoryCountBatchID
       ): Future[Option[InventoryCountDTO]] = {

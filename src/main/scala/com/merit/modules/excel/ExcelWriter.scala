@@ -30,6 +30,7 @@ trait ExcelWriter {
 }
 
 object ExcelWriter {
+  // TODO: Fix or move out
   def apply(): ExcelWriter = new ExcelWriter {
     val outputLocation = "src/main/resources/excelOutput"
     val dateFormatter  = DateTimeFormat.forPattern("d/MM/yyyy");
@@ -157,7 +158,7 @@ object ExcelWriter {
         "counted"
       )
       val fileName = s"InventoryCount_${dateFormatter.print(started)}"
-      writeToFile(wb, sheet, fileName, headers, products.map(_.toExcelRow))
+      writeToFile(wb, sheet, fileName, headers, Seq())
 
       FileIO.fromPath(Paths.get(s"$outputLocation/$fileName.xlsx"))
     }

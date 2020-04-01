@@ -15,13 +15,11 @@ trait InventoryCountRepo[DbTask[_]] {
   ): DbTask[Seq[InventoryCountProductRow]]
   def get(
     id: InventoryCountBatchID
-  ): DbTask[Seq[
+  ): DbTask[Option[
     (
       InventoryCountBatchRow,
       Option[CategoryRow],
-      Option[BrandRow],
-      InventoryCountProductRow,
-      ProductRow
+      Option[BrandRow]
     )
   ]]
   def getAll(
@@ -31,9 +29,7 @@ trait InventoryCountRepo[DbTask[_]] {
     (
       InventoryCountBatchRow,
       Option[CategoryRow],
-      Option[BrandRow],
-      InventoryCountProductRow,
-      ProductRow
+      Option[BrandRow]
     )
   ]]
   def countProduct(
@@ -89,7 +85,19 @@ object InventoryCountRepo {
               case ((((batch, category), brand), batchProducts), products) =>
                 (batch, category, brand, batchProducts, products)
             }
-            .result
+
+        def withCategoryAndBrand =
+          q.joinLeft(categories)
+            .on {
+              case (batch, categories) => batch.categoryId === categories.id
+            }
+            .joinLeft(brands)
+            .on {
+              case ((batch, categories), brands) => batch.brandId === brands.id
+            }
+            .map {
+              case ((batch, categories), brands) => (batch, categories, brands)
+            }
       }
 
       def get(
@@ -97,21 +105,22 @@ object InventoryCountRepo {
       ) =
         inventoryCountBatches
           .filter(_.id === id)
-          .withBrandCategoryAndProducts
+          .withCategoryAndBrand
+          .result
+          .headOption
 
       def getAll(page: Int, rowsPerPage: Int): DBIO[Seq[
         (
           InventoryCountBatchRow,
           Option[CategoryRow],
-          Option[BrandRow],
-          InventoryCountProductRow,
-          ProductRow
+          Option[BrandRow]
         )
       ]] =
         inventoryCountBatches
           .drop((page - 1) * rowsPerPage)
           .take(rowsPerPage)
-          .withBrandCategoryAndProducts
+          .withCategoryAndBrand
+          .result
 
       def countProduct(
         productId: InventoryCountProductID,

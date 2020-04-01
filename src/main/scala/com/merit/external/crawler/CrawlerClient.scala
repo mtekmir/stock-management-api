@@ -77,10 +77,12 @@ object CrawlerClient {
       ): Future[(SyncInventoryCountMessage, SendMessageResponse)] = {
         val message = SyncInventoryCountMessage(
           inventoryCount.id,
-          inventoryCount.products.filter(_.counted.isDefined).map {
-            case InventoryCountDTOProduct(id, _, barcode, _, _, expected, counted, _) =>
-              SyncMessageProduct(id, barcode, counted.get)
-          }
+          // TODO: Fix
+          // inventoryCount.products.filter(_.counted.isDefined).map {
+          //   case InventoryCountDTOProduct(id, _, barcode, _, _, expected, counted, _) =>
+          //     SyncMessageProduct(id, barcode, counted.get)
+          // }
+          Seq()
         )
 
         Future {

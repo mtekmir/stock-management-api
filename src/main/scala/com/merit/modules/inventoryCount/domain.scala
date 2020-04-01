@@ -54,36 +54,14 @@ case class InventoryCountDTO(
   finished: Option[DateTime],
   name: Option[String],
   category: Option[String],
-  brand: Option[String],
-  products: Seq[InventoryCountDTOProduct]
+  brand: Option[String]
 )
 
 object InventoryCountDTO {
   def fromRow(
-    row: InventoryCountBatchRow,
-    products: Seq[ProductDTO],
-    category: Option[String],
-    brand: Option[String]
-  ): InventoryCountDTO = {
-    import row._
-
-    InventoryCountDTO(
-      id,
-      status,
-      started,
-      finished,
-      name,
-      category,
-      brand,
-      products.map(_.toInventoryCountDTOProduct)
-    )
-  }
-
-  def fromRow(
     batch: InventoryCountBatchRow,
     category: Option[CategoryRow],
-    brand: Option[BrandRow],
-    products: Seq[InventoryCountDTOProduct]
+    brand: Option[BrandRow]
   ) =
     InventoryCountDTO(
       batch.id,
@@ -92,8 +70,7 @@ object InventoryCountDTO {
       batch.finished,
       batch.name,
       category.map(_.name),
-      brand.map(_.name),
-      products
+      brand.map(_.name)
     )
 }
 
