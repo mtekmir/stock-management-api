@@ -36,6 +36,14 @@ class ExcelServiceWebSalesValidationSpec extends Specification {
             ExcelValidationError(
               Seq(7),
               InvalidTaxRateError
+            ),
+            ExcelValidationError(
+              Seq(8),
+              InvalidQtyError
+            ),
+            ExcelValidationError(
+              Seq(9),
+              EmptyQtyError
             )
           ).sortBy(_.errorType)
         )

@@ -5,11 +5,11 @@ import org.joda.time.format.DateTimeFormat
 import com.merit.modules.sales.SaleStatus
 
 trait ExcelServiceValidation {
-  def validateProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
-  def validateSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
-  def validateStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
-  def validateWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError]
-  def combineValidationErrors(errors: Seq[ExcelValidationError]): Seq[ExcelValidationError]
+  def validateProductRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError]
+  def validateSaleRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError]
+  def validateStockOrderRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError]
+  def validateWebSaleRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError]
+  def combineValidationErrors(errors: Vector[ExcelValidationError]): Vector[ExcelValidationError]
 }
 
 object ExcelServiceValidation {
@@ -18,8 +18,8 @@ object ExcelServiceValidation {
     import ExcelErrorMessages._
 
     def combineValidationErrors(
-      errors: Seq[ExcelValidationError]
-    ): Seq[ExcelValidationError] =
+      errors: Vector[ExcelValidationError]
+    ): Vector[ExcelValidationError] =
       errors
         .foldLeft(Map[ValidationErrorTypes.Value, ExcelValidationError]()) {
           case (m, e @ ExcelValidationError(rows, t)) =>
@@ -29,30 +29,30 @@ object ExcelServiceValidation {
               .getOrElse((t, e))
         }
         .map(_._2)
-        .toSeq
+        .toVector
 
-    def validateProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] = {
+    def validateProductRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError] = {
       val validationErrors =
         rows.collect {
-          case (Seq(barcode, _, _, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
-            ExcelValidationError(Seq(index), EmptyBarcodeError)
-          case (Seq(barcode, _, _, _, _, _, _, _, _, _), index)
+          case (Vector(barcode, _, _, _, _, _, _, _, _, _), index) if barcode.isEmpty =>
+            ExcelValidationError(Vector(index), EmptyBarcodeError)
+          case (Vector(barcode, _, _, _, _, _, _, _, _, _), index)
               if Try(barcode.toLong).isFailure || barcode.length <= 6 || barcode.length > 14 =>
-            ExcelValidationError(Seq(index), InvalidBarcodeError)
-          case (Seq(_, _, sku, _, _, _, _, _, _, _), index) if sku.isEmpty =>
-            ExcelValidationError(Seq(index), EmptySkuError)
-          case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if qty.isEmpty =>
-            ExcelValidationError(Seq(index), EmptyQtyError)
-          case (Seq(_, _, _, _, _, _, qty, _, _, _), index) if !qty.forall(_.isDigit) =>
-            ExcelValidationError(Seq(index), InvalidQtyError)
-          case (Seq(_, _, _, _, price, _, _, _, _, _), index)
+            ExcelValidationError(Vector(index), InvalidBarcodeError)
+          case (Vector(_, _, sku, _, _, _, _, _, _, _), index) if sku.isEmpty =>
+            ExcelValidationError(Vector(index), EmptySkuError)
+          case (Vector(_, _, _, _, _, _, qty, _, _, _), index) if qty.isEmpty =>
+            ExcelValidationError(Vector(index), EmptyQtyError)
+          case (Vector(_, _, _, _, _, _, qty, _, _, _), index) if !qty.forall(_.isDigit) =>
+            ExcelValidationError(Vector(index), InvalidQtyError)
+          case (Vector(_, _, _, _, price, _, _, _, _, _), index)
               if !price.isEmpty && !Currency.isValid(price) =>
-            ExcelValidationError(Seq(index), InvalidPriceError)
-          case (Seq(_, _, _, _, _, discountPrice, _, _, _, _), index)
+            ExcelValidationError(Vector(index), InvalidPriceError)
+          case (Vector(_, _, _, _, _, discountPrice, _, _, _, _), index)
               if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
-            ExcelValidationError(Seq(index), InvalidPriceError)
-          case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
-            ExcelValidationError(Seq(index), InvalidTaxRateError)
+            ExcelValidationError(Vector(index), InvalidPriceError)
+          case (Vector(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
+            ExcelValidationError(Vector(index), InvalidTaxRateError)
         }
 
       val barcodes       = rows.map(_._1.head)
@@ -73,64 +73,64 @@ object ExcelServiceValidation {
       validationErrors ++ duplicates
     }
 
-    def validateSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] =
+    def validateSaleRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError] =
       rows.collect {
-        case (Seq(barcode, _), index) if barcode.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(_, qty), index) if !qty.isEmpty && Try(qty.toInt).isFailure =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
+        case (Vector(barcode, _), index) if barcode.isEmpty =>
+          ExcelValidationError(Vector(index), EmptyBarcodeError)
+        case (Vector(_, qty), index) if !qty.isEmpty && Try(qty.toInt).isFailure =>
+          ExcelValidationError(Vector(index), InvalidQtyError)
       }
 
-    def validateStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] =
+    def validateStockOrderRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError] =
       rows.collect {
-        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index) if barcode.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyBarcodeError)
-        case (Seq(_, _, _, barcode, _, _, _, _, _, _), index)
+        case (Vector(_, _, _, barcode, _, _, _, _, _, _), index) if barcode.isEmpty =>
+          ExcelValidationError(Vector(index), EmptyBarcodeError)
+        case (Vector(_, _, _, barcode, _, _, _, _, _, _), index)
             if !barcode
               .forall(_.isDigit) || barcode.length <= 6 || barcode.length > 14 =>
-          ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if qty.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, qty, _, _, _, _, _), index) if !qty.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, _, price, _, _, _, _), index)
+          ExcelValidationError(Vector(index), InvalidBarcodeError)
+        case (Vector(_, _, _, _, qty, _, _, _, _, _), index) if qty.isEmpty =>
+          ExcelValidationError(Vector(index), EmptyQtyError)
+        case (Vector(_, _, _, _, qty, _, _, _, _, _), index) if !qty.forall(_.isDigit) =>
+          ExcelValidationError(Vector(index), InvalidQtyError)
+        case (Vector(_, _, _, _, _, price, _, _, _, _), index)
             if !price.isEmpty && !Currency.isValid(price) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, discountPrice, _, _, _), index)
+          ExcelValidationError(Vector(index), InvalidPriceError)
+        case (Vector(_, _, _, _, _, _, discountPrice, _, _, _), index)
             if !discountPrice.isEmpty && !Currency.isValid(discountPrice) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidTaxRateError)
+          ExcelValidationError(Vector(index), InvalidPriceError)
+        case (Vector(_, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
+          ExcelValidationError(Vector(index), InvalidTaxRateError)
       }
 
-    def validateWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelValidationError] = {
+    def validateWebSaleRows(rows: Vector[(Vector[String], Int)]): Vector[ExcelValidationError] = {
       val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
       rows.collect {
-        case (Seq(_, total, _, _, _, _, _, _, _, _, _, _), index)
-            if !Currency.isValid(total) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, discount, _, _, _, _, _, _, _, _, _), index)
-            if !discount.isEmpty && !Currency.isValid(discount) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, createdAt, _, _, _, _, _, _, _, _), index)
-            if Try(formatter.parseDateTime(createdAt)).isFailure =>
-          ExcelValidationError(Seq(index), InvalidDateError)
-        case (Seq(_, _, _, _, status, _, _, _, _, _, _, _), index)
-            if !SaleStatus.isValid(status) =>
-          ExcelValidationError(Seq(index), InvalidStatusError)
-        case (Seq(_, _, _, _, _, _, _, _, barcode, _, _, _), index)
-            if !barcode.isEmpty && (!barcode
-              .forall(_.isDigit) || barcode.length <= 6 || barcode.length > 14) =>
-          ExcelValidationError(Seq(index), InvalidBarcodeError)
-        case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if qty.isEmpty =>
-          ExcelValidationError(Seq(index), EmptyQtyError)
-        case (Seq(_, _, _, _, _, _, _, _, _, qty, _, _), index) if !qty.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidQtyError)
-        case (Seq(_, _, _, _, _, _, _, _, _, _, price, _), index)
-            if !price.isEmpty && !Currency.isValid(price) =>
-          ExcelValidationError(Seq(index), InvalidPriceError)
-        case (Seq(_, _, _, _, _, _, _, _, _, _, _, tax), index) if !tax.forall(_.isDigit) =>
-          ExcelValidationError(Seq(index), InvalidTaxRateError)
+        case (row, index)
+            if !Currency.isValid(row(10)) =>
+          ExcelValidationError(Vector(index), InvalidPriceError)
+        case (row, index)
+            if !row(11).isEmpty && !Currency.isValid(row(11)) =>
+          ExcelValidationError(Vector(index), InvalidPriceError)
+        case (row, index)
+            if Try(formatter.parseDateTime(row(17))).isFailure =>
+          ExcelValidationError(Vector(index), InvalidDateError)
+        case (row, index)
+            if !SaleStatus.isValid(row(18)) =>
+          ExcelValidationError(Vector(index), InvalidStatusError)
+        case (row, index)
+            if !row(50).isEmpty && (!row(50)
+              .forall(_.isDigit) || row(50).length <= 6 || row(50).length > 14) =>
+          ExcelValidationError(Vector(index), InvalidBarcodeError)
+        case (row, index) if row(52).isEmpty =>
+          ExcelValidationError(Vector(index), EmptyQtyError)
+        case (row, index) if !row(52).forall(_.isDigit) =>
+          ExcelValidationError(Vector(index), InvalidQtyError)
+        case (row, index)
+            if !row(54).isEmpty && !Currency.isValid(row(54)) =>
+          ExcelValidationError(Vector(index), InvalidPriceError)
+        case (row, index) if !row(56).forall(_.isDigit) =>
+          ExcelValidationError(Vector(index), InvalidTaxRateError)
       }
     }
   }

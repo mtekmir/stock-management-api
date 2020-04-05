@@ -51,7 +51,7 @@ object ExcelService {
     private def processFile(
       file: File,
       fileFor: FileFor.Value
-    ): (Seq[String], Seq[(Seq[String], Int)]) = {
+    ): (Seq[String], Vector[(Vector[String], Int)]) = {
       val wb        = WorkbookFactory.create(file)
       val formatter = new DataFormatter()
 
@@ -65,12 +65,12 @@ object ExcelService {
         case FileFor.Product    => (10, 0)
         case FileFor.Sale       => (2, 0)
         case FileFor.StockOrder => (10, 3)
-        case FileFor.WebSales   => (12, 9)
+        case FileFor.WebSales   => (59, 50)
       }
 
-      def rowToCells(sheet: Sheet)(rowNum: Int) = {
+      def rowToCells(sheet: Sheet)(rowNum: Int): Vector[String] = {
         val row = sheet.getRow(rowNum)
-        if (row == null) List()
+        if (row == null) Vector()
         else
           (0 until columnCount).map(i => (i, row.getCell(i))).map {
             case (_, c) if c == null => ""
@@ -78,7 +78,7 @@ object ExcelService {
               parseBarcode(c)
             case (_, c) =>
               formatter.formatCellValue(c).trim
-          }
+          }.toVector
       }
 
       val sheet = wb.getSheetAt(0)
@@ -88,7 +88,7 @@ object ExcelService {
       val headers = rows.head._1
       (
         headers,
-        rows.tail.map(r => (r._1, r._2 + 1)).filterNot(r => r._1.forall(_.isEmpty))
+        rows.tail.map(r => (r._1, r._2 + 1)).filterNot(r => r._1.forall(_.isEmpty)).toVector
       )
     }
 
@@ -141,7 +141,6 @@ object ExcelService {
         case es =>
           ExcelError(invalidWebSalesImportMessage, Validator.combineValidationErrors(es)).asLeft
       }
-
     }
 
     // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]) =

@@ -90,37 +90,22 @@ object ExcelParser {
 
     def parseWebSaleRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelWebSaleRow] = {
       val formatter = DateTimeFormat.forPattern("dd.MM.yyyy HH:mm")
+      // The excel file has 59 rows so unapply won't work (max 22 params)
       rows.map {
-        case (
-            Seq(
-              orderNo,
-              total,
-              discount,
-              createdAt,
-              status,
-              productName,
-              sku,
-              brand,
-              barcode,
-              qty,
-              price,
-              tax
-            ),
-            _
-            ) =>
+        case (row, idx) =>
           ExcelWebSaleRow(
-            orderNo,
-            Currency.fromOrZero(total),
-            Currency.fromOrZero(discount),
-            formatter.parseDateTime(createdAt),
-            SaleStatus.parseFromExcel(status),
-            productName,
-            Option(sku).filter(_.nonEmpty),
-            brand,
-            Option(barcode).filter(_.nonEmpty),
-            qty.toInt,
-            Currency.fromOrZero(price),
-            tax.toInt
+            row(1), // order no
+            Currency.fromOrZero(row(10)), // total
+            Currency.fromOrZero(row(11)), // discount
+            formatter.parseDateTime(row(17)), // order date
+            SaleStatus.parseFromExcel(row(18)), // status
+            row(46), // product name
+            Option(row(47)).filter(_.nonEmpty), // sku
+            row(48), // brand
+            Option(row(50)).filter(_.nonEmpty), // barcode
+            row(52).toInt, // qty
+            Currency.fromOrZero(row(54)), // price
+            row(56).toInt // tax
           )
       }
     }
