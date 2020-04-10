@@ -12,7 +12,7 @@ trait InventoryCountRepo[DbTask[_]] {
   def count(
     status: InventoryCountStatus
   ): DbTask[Int]
-  def productCount(batchId: InventoryCountBatchID): DbTask[Int]
+  def productCount(batchId: InventoryCountBatchID, counted: Boolean): DbTask[Int]
   def insertBatch(batch: InventoryCountBatchRow): DbTask[InventoryCountBatchRow]
   def addProductsToBatch(
     products: Seq[InventoryCountProductRow]
@@ -65,8 +65,11 @@ object InventoryCountRepo {
       ): DBIO[Int] =
         inventoryCountBatches.filter(_.status === status).length.result
 
-      def productCount(batchId: InventoryCountBatchID): DBIO[Int] =
-        inventoryCountProducts.filter(_.batchId === batchId).length.result
+      def productCount(batchId: InventoryCountBatchID, counted: Boolean): DBIO[Int] =
+        inventoryCountProducts
+          .filter(p => p.batchId === batchId && p.counted.isDefined === counted)
+          .length
+          .result
 
       def insertBatch(batch: InventoryCountBatchRow): DBIO[InventoryCountBatchRow] =
         inventoryCountBatches returning inventoryCountBatches += batch

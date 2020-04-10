@@ -118,8 +118,9 @@ object InventoryCountService {
           products <- db.run(
             inventoryCountRepo.getBatchProducts(batchId, status, page, rowsPerPage)
           )
-          count <- db.run(inventoryCountRepo.productCount(batchId))
-        } yield PaginatedInventoryCountProductsResponse(count, products)
+          counted <- db.run(inventoryCountRepo.productCount(batchId, counted = true))
+          uncounted <- db.run(inventoryCountRepo.productCount(batchId, counted = false))
+        } yield PaginatedInventoryCountProductsResponse(counted, uncounted, products)
 
       def countProduct(
         productId: InventoryCountProductID,
