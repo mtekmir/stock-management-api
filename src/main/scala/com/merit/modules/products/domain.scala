@@ -157,3 +157,20 @@ case class ProductFilters(
   brandId: Option[BrandID] = None,
   query: Option[String] = None
 )
+
+object PastSaleProduct {
+  def apply(barcode: String, qty: Int = 1): ProductRow =
+    ProductRow(
+      barcode,
+      Sku.random,
+      "Past Sale Product",
+      Currency(0),
+      None,
+      qty,
+      None,
+      None,
+      None,
+      None,
+      deleted = true
+    )
+}

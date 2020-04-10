@@ -2,7 +2,7 @@ package com.merit.modules.sales
 
 import slick.dbio.DBIO
 import scala.concurrent.ExecutionContext
-import com.merit.modules.products.{ProductRepo, SoldProductRow, ProductDTO, Currency, ProductID, ProductRow}
+import com.merit.modules.products.{ProductRepo, SoldProductRow, ProductDTO, Currency, ProductID, ProductRow, Sku, Barcode, PastSaleProduct}
 import com.merit.modules.brands.BrandID
 import com.merit.modules.excel.ExcelSaleRow
 import slick.jdbc.PostgresProfile
@@ -17,8 +17,6 @@ import com.typesafe.scalalogging.LazyLogging
 import com.merit.modules.salesEvents.SaleEventRepo
 import com.merit.modules.users.UserID
 import com.merit.modules.excel.ExcelWebSaleRow
-import com.merit.modules.products.Sku
-import com.merit.modules.products.Barcode
 import com.merit.modules.brands.BrandRow
 
 trait SaleService {
@@ -32,6 +30,11 @@ trait SaleService {
     rows: Seq[ExcelWebSaleRow],
     deductQuantities: Boolean = false
   ): Future[Seq[WebSaleSummary]]
+  def importPastStoreSales(
+    rows: Seq[ExcelSaleRow],
+    date: DateTime,
+    total: Currency
+  ): Future[SaleSummary]
   def create(
     total: Currency,
     discount: Currency,
@@ -213,6 +216,39 @@ object SaleService {
                   .map(p => WebSaleSummaryProduct(p._2.sku, p._2.barcode, p._3))
               )
           ))).transactionally
+      )
+    }
+
+    def importPastStoreSales(
+      rows: Seq[ExcelSaleRow],
+      date: DateTime,
+      total: Currency
+    ): Future[SaleSummary] = {
+      def getProductOrCreateDummyOne(barcode: String, qty: Int): DBIO[ProductDTO] =
+        productRepo.get(barcode).flatMap {
+          case None    => productRepo.create(PastSaleProduct(barcode, qty))
+          case Some(p) => DBIO.successful(p.copy(qty = qty))
+        }
+
+      db.run(
+        for {
+          products <- DBIO.sequence(
+            rows.map(r => getProductOrCreateDummyOne(r.barcode, r.qty))
+          )
+          sale <- saleRepo.insert(SaleRow(date, total))
+          soldProducts <- saleRepo.addProductsToSale(
+            products.map(p => SoldProductRow(p.id, sale.id, p.qty))
+          )
+        } yield
+          SaleSummary(
+            sale.id,
+            date,
+            total,
+            sale.discount,
+            sale.outlet,
+            sale.status,
+            products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
+          )
       )
     }
 
