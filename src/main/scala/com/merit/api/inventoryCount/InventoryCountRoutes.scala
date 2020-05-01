@@ -15,6 +15,7 @@ object InventoryCountRoutes extends Directives {
       CountInventoryCountProduct(inventoryCountService) ~
       GetInventoryCountBatches(inventoryCountService) ~
       GetInventoryCountBatchProducts(inventoryCountService) ~
-      GetInventoryCountBatch(inventoryCountService)
+      GetInventoryCountBatch(inventoryCountService) ~
+      SearchInventoryCountProducts(inventoryCountService)
     }
 }

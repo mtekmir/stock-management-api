@@ -150,11 +150,11 @@ object ProductRepo {
         sqlu"update products set qty = qty + $qty where barcode=$barcode"
 
       def search(q: String): DBIO[Seq[ProductDTO]] = {
-        val query = s"$q%"
+        val query = s"${q.toLowerCase()}%"
         products
           .filter(
             p =>
-              (p.name.toLowerCase like query.toLowerCase) || (p.barcode like query) || (p.sku like query) && !p.deleted
+              (p.name.toLowerCase like query) || (p.barcode like query) || (p.sku.toLowerCase like query) && !p.deleted
           )
           .withBrandAndCategory
           .take(20)

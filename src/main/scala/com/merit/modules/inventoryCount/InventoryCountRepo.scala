@@ -50,6 +50,10 @@ trait InventoryCountRepo[DbTask[_]] {
     page: Int,
     rowsPerPage: Int
   ): DbTask[Seq[InventoryCountProductDTO]]
+  def searchBatchProducts(
+    batchId: InventoryCountBatchID,
+    query: String
+  ): DbTask[Seq[InventoryCountProductDTO]]
   def cancelInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
   def completeInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
 }
@@ -146,13 +150,6 @@ object InventoryCountRepo {
             }
           }
 
-      // def filterOnStatus(q: TableQuery[InventoryCountProductsTable], s: InventoryCountProductStatus) =
-      //   q.filter(p => s match {
-      //     case All => true
-      //     case Counted => p.counted.isDefined
-      //     case UnCounted => p.counted.isEmpty
-      //   })
-
       def getBatchProducts(
         batchId: InventoryCountBatchID,
         status: InventoryCountProductStatus,
@@ -160,16 +157,15 @@ object InventoryCountRepo {
         rowsPerPage: Int
       ): DBIO[Seq[InventoryCountProductDTO]] =
         inventoryCountProducts
+          .filter(_.batchId === batchId)
           .filter(
-            _.batchId === batchId
+            p =>
+              status match {
+                case InventoryCountProductStatus.Counted   => p.counted.isDefined
+                case InventoryCountProductStatus.UnCounted => p.counted.isEmpty
+                case _                                     => p.counted.isEmpty || p.counted.isDefined
+              }
           )
-          // .filter(p =>
-          //   status match {
-          //     case InventoryCountProductStatus.Counted   => p.counted.isDefined
-          //     case InventoryCountProductStatus.UnCounted => p.counted.isEmpty
-          //     case _      => true
-          //   }
-          // )
           .drop((page - 1) * rowsPerPage)
           .take(rowsPerPage)
           .join(products)
@@ -181,6 +177,28 @@ object InventoryCountRepo {
                 InventoryCountProductDTO.fromRow(batchProductRow, productRow)
             }
           }
+
+      def searchBatchProducts(
+        batchId: InventoryCountBatchID,
+        query: String
+      ): DBIO[Seq[InventoryCountProductDTO]] = {
+        val q = s"${query.toLowerCase()}%"
+        inventoryCountProducts
+          .join(products)
+          .on(_.productId === _.id)
+          .filter(_._1.batchId === batchId)
+          .filter {
+            case (_, p) =>
+              (p.name.toLowerCase like q) || (p.barcode like q) || (p.sku.toLowerCase like q)
+          }
+          .result
+          .map {
+            _.map {
+              case (batchProductRow, productRow) =>
+                InventoryCountProductDTO.fromRow(batchProductRow, productRow)
+            }
+          }
+      }
 
       def cancelInventoryCount(batchId: InventoryCountBatchID): DBIO[Int] =
         inventoryCountBatches
