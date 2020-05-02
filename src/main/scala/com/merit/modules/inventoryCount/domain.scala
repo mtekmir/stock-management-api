@@ -9,19 +9,19 @@ import com.merit.modules.categories.{CategoryRow, CategoryID}
 case class InventoryCountBatchID(value: Long) extends AnyVal with MappedTo[Long]
 
 sealed trait InventoryCountStatus
-object InventoryCountStatus{
-  case object Open extends InventoryCountStatus
+object InventoryCountStatus {
+  case object Open      extends InventoryCountStatus
   case object Completed extends InventoryCountStatus
   case object Cancelled extends InventoryCountStatus
-  def fromString(s: String): InventoryCountStatus = 
+  def fromString(s: String): InventoryCountStatus =
     s match {
       case "Completed" | "completed" => Completed
       case "Cancelled" | "cancelled" => Cancelled
-      case _ => Open
+      case _                         => Open
     }
   def toString(s: InventoryCountStatus) =
     s match {
-      case Open => "Open"
+      case Open      => "Open"
       case Completed => "Completed"
       case Cancelled => "Cancelled"
     }
@@ -29,14 +29,14 @@ object InventoryCountStatus{
 
 sealed trait InventoryCountProductStatus
 object InventoryCountProductStatus {
-  case object Counted extends InventoryCountProductStatus
+  case object Counted   extends InventoryCountProductStatus
   case object UnCounted extends InventoryCountProductStatus
-  case object All extends InventoryCountProductStatus
+  case object All       extends InventoryCountProductStatus
   def fromString(s: String): InventoryCountProductStatus =
     s match {
-      case "counted" | "Counted" => Counted
+      case "counted" | "Counted"     => Counted
       case "uncounted" | "uncounted" => UnCounted
-      case _ => All
+      case _                         => All
     }
 }
 
@@ -62,7 +62,7 @@ case class InventoryCountProductRow(
 )
 
 case class InventoryCountProductDTO(
-  id: ProductID,
+  id: InventoryCountProductID,
   sku: String,
   barcode: String,
   name: String,
@@ -105,7 +105,7 @@ object InventoryCountProductDTO {
     product: ProductRow
   ) =
     InventoryCountProductDTO(
-      product.id,
+      row.id,
       product.sku,
       product.barcode,
       product.name,

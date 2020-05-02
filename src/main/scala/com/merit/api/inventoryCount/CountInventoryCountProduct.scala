@@ -8,7 +8,7 @@ import api.CountInventoryCountProductRequest
 
 object CountInventoryCountProduct extends Directives with JsonSupport {
   def apply(inventoryCountService: InventoryCountService): Route =
-    (path("count") & entity(as[CountInventoryCountProductRequest])) { req =>
+    (path("count-product") & entity(as[CountInventoryCountProductRequest])) { req =>
       complete(inventoryCountService.countProduct(req.id, req.count))
     }
 }
