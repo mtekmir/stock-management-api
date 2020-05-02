@@ -170,6 +170,7 @@ object InventoryCountRepo {
           .take(rowsPerPage)
           .join(products)
           .on(_.productId === _.id)
+          .sortBy(_._1.id)
           .result
           .map {
             _.map {
