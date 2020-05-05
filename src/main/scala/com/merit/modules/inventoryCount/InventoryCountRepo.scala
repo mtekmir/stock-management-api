@@ -7,6 +7,7 @@ import com.merit.modules.categories.CategoryRow
 import com.merit.modules.products.ProductID
 import scala.concurrent.ExecutionContext
 import com.merit.modules.inventoryCount.InventoryCountProductStatus._
+import org.joda.time.DateTime
 
 trait InventoryCountRepo[DbTask[_]] {
   def count(
@@ -131,8 +132,8 @@ object InventoryCountRepo {
       ): DBIO[Int] =
         inventoryCountProducts
           .filter(_.id === productId)
-          .map(_.counted)
-          .update(Some(count))
+          .map(p => (p.counted, p.updatedAt))
+          .update((Some(count), DateTime.now()))
 
       def getProduct(
         productId: InventoryCountProductID
@@ -166,11 +167,12 @@ object InventoryCountRepo {
                 case _                                     => p.counted.isEmpty || p.counted.isDefined
               }
           )
+          .sortBy(_.updatedAt.desc)
           .drop((page - 1) * rowsPerPage)
           .take(rowsPerPage)
           .join(products)
           .on(_.productId === _.id)
-          .sortBy(_._1.id)
+          .sortBy(_._1.updatedAt.desc)
           .result
           .map {
             _.map {

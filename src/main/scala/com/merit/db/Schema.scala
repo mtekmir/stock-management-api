@@ -166,6 +166,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
   class InventoryCountProductsTable(t: Tag)
       extends Table[InventoryCountProductRow](t, "inventory_count_products") {
     def id        = column[InventoryCountProductID]("id", O.PrimaryKey, O.AutoInc)
+    def updatedAt = column[DateTime]("updated_at")
     def batchId   = column[InventoryCountBatchID]("batchId")
     def productId = column[ProductID]("productId")
     def expected  = column[Int]("expected")
@@ -175,7 +176,7 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def batchFk   = foreignKey("inventory_count_batch_fk", batchId, inventoryCountBatches)(_.id)
     def productFk = foreignKey("inventory_count_product_fk", productId, products)(_.id)
 
-    def * = (batchId, productId, expected, counted, synced, id).mapTo[InventoryCountProductRow]
+    def * = (batchId, productId, expected, updatedAt, counted, synced, id).mapTo[InventoryCountProductRow]
   }
 
   lazy val inventoryCountProducts = TableQuery[InventoryCountProductsTable]

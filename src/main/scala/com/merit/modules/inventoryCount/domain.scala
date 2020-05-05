@@ -56,6 +56,7 @@ case class InventoryCountProductRow(
   batchId: InventoryCountBatchID,
   productId: ProductID,
   expected: Int,
+  updatedAt: DateTime = DateTime.now(),
   counted: Option[Int] = None,
   synced: Boolean = false,
   id: InventoryCountProductID = InventoryCountProductID(0)
@@ -68,6 +69,7 @@ case class InventoryCountProductDTO(
   name: String,
   variation: Option[String],
   expected: Int,
+  updatedAt: DateTime,
   counted: Option[Int],
   synced: Boolean
 )
@@ -111,6 +113,7 @@ object InventoryCountProductDTO {
       product.name,
       product.variation,
       row.expected,
+      row.updatedAt,
       row.counted,
       row.synced
     )
