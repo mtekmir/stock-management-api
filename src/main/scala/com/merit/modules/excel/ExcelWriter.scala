@@ -30,7 +30,7 @@ trait ExcelWriter {
 }
 
 object ExcelWriter {
-  // TODO: Fix or move out
+  // NOT USED
   def apply(): ExcelWriter = new ExcelWriter {
     val outputLocation = "src/main/resources/excelOutput"
     val dateFormatter  = DateTimeFormat.forPattern("d/MM/yyyy");

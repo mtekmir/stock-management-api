@@ -1,5 +1,6 @@
 package com.merit.modules.stockOrders
 
+import slick.jdbc.JdbcBackend.Database
 import slick.dbio.DBIO
 import scala.concurrent.Future
 import com.merit.modules.excel.ExcelStockOrderRow
@@ -19,6 +20,7 @@ import com.merit.modules.categories.CategoryRow
 import com.merit.external.crawler.{CrawlerClient, SyncStockOrderResponse}
 import com.typesafe.scalalogging.LazyLogging
 import scala.collection.immutable.ListMap
+import com.merit.modules.common.CommonMethodsService
 
 trait StockOrderService {
   def getStockOrder(id: StockOrderID): Future[Option[StockOrderDTO]]
@@ -40,17 +42,7 @@ object StockOrderService {
     crawlerClient: CrawlerClient
   )(implicit ec: ExecutionContext): StockOrderService =
     new StockOrderService with LazyLogging {
-      private def insertBrandIfNotExists(name: String) =
-        brandRepo.get(name).flatMap {
-          case None        => brandRepo.insert(BrandRow(name))
-          case Some(brand) => DBIO.successful(brand)
-        }
-
-      private def insertCategoryIfNotExists(name: String) =
-        categoryRepo.getByName(name).flatMap {
-          case None           => categoryRepo.insert(CategoryRow(name))
-          case Some(category) => DBIO.successful(category)
-        }
+      val commonMethodsService = CommonMethodsService(db, brandRepo, categoryRepo)
 
       def getStockOrder(id: StockOrderID): Future[Option[StockOrderDTO]] =
         db.run(stockOrderRepo.get(id)).map {
@@ -105,13 +97,13 @@ object StockOrderService {
 
         val createProductsDbio: DBIO[Seq[StockOrderSummaryProduct]] = (for {
           brandsMap <- DBIO
-            .sequence(products.flatMap(_.brand).map(insertBrandIfNotExists(_)))
+            .sequence(products.flatMap(_.brand).map(commonMethodsService.insertBrandIfNotExists(_)))
             .map(
               _.foldLeft(Map[String, BrandID]())((m, b) => m + (b.name -> b.id))
             )
 
           categoriesMap <- DBIO
-            .sequence(products.flatMap(_.category).map(insertCategoryIfNotExists(_)))
+            .sequence(products.flatMap(_.category).map(commonMethodsService.insertCategoryIfNotExists(_)))
             .map(
               _.foldLeft(Map[String, CategoryID]())((m, c) => m + (c.name -> c.id))
             )

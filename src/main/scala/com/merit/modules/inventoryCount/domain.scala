@@ -130,3 +130,11 @@ case class PaginatedInventoryCountProductsResponse(
   uncounted: Int,
   products: Seq[InventoryCountProductDTO]
 )
+
+
+case class InventoryCountReview(
+  uncounted: Int,
+  counted: Int,
+  expectedTotalQty: Int,
+  countedTotalQty: Int
+)

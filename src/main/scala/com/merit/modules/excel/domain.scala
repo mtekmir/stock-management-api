@@ -100,15 +100,6 @@ object ExcelStockOrderRow {
   }
 }
 
-case class ExcelInventoryCountRow(
-  sku: String,
-  barcode: String,
-  name: String,
-  variation: Option[String],
-  expected: Int,
-  counted: Option[Int]
-)
-
 object ValidationErrorTypes extends Enumeration {
   type ErrorType = Value
   val DuplicateBarcodeError, EmptyBarcodeError, EmptySkuError, EmptyQtyError,

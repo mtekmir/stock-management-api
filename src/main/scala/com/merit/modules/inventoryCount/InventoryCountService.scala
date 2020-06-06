@@ -17,6 +17,7 @@ import cats.instances.future._
 import cats.implicits._
 import scala.collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
+import com.merit.modules.excel.ExcelStockOrderRow
 
 trait InventoryCountService {
   def create(
@@ -191,8 +192,8 @@ object InventoryCountService {
           inventoryCount <- getBatch(batchId)
           isOk           <- isOkToComplete(batchId, force)
           result <- isOk match {
-            case Left(value)  => Future.successful(Left(value))
-            case Right(_) => completeInventoryCountAction(inventoryCount)
+            case Left(value) => Future.successful(Left(value))
+            case Right(_)    => completeInventoryCountAction(inventoryCount)
           }
         } yield result
 
@@ -204,7 +205,8 @@ object InventoryCountService {
           delB <- db.run(inventoryCountRepo.deleteBatch(id))
         } yield (delB + delP) == 2
 
-      def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean] = 
+      def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean] =
         db.run(inventoryCountRepo.deleteInventoryCountProduct(id)).map(_ == 1)
+
     }
 }

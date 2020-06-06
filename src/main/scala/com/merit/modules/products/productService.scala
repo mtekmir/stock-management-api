@@ -17,6 +17,7 @@ import cats.instances.future._
 import cats.data.EitherT
 import cats.syntax.either._
 import com.typesafe.scalalogging.LazyLogging
+import com.merit.modules.common.CommonMethodsService
 
 trait ProductService {
   def batchInsertExcelRows(rows: Seq[ExcelProductRow]): Future[Seq[ProductRow]]
@@ -43,23 +44,7 @@ object ProductService {
     productRepo: ProductRepo[DBIO],
     categoryRepo: CategoryRepo[DBIO]
   )(implicit ec: ExecutionContext) = new ProductService with LazyLogging {
-    private def insertBrandIfNotExists(brandName: String): DBIO[BrandRow] =
-      brandRepo
-        .get(brandName)
-        .flatMap {
-          case Some(b) => DBIO.successful(b)
-          case None    => brandRepo.insert(BrandRow(brandName))
-        }
-        .transactionally
-
-    private def insertCategoryIfNotExists(categoryName: String): DBIO[CategoryRow] =
-      categoryRepo
-        .getByName(categoryName)
-        .flatMap {
-          case Some(c) => DBIO.successful(c)
-          case None    => categoryRepo.insert(CategoryRow(categoryName))
-        }
-        .transactionally
+    val commonMethodsService = CommonMethodsService(db, brandRepo, categoryRepo)
 
     def batchInsertExcelRows(
       rows: Seq[ExcelProductRow]
@@ -67,10 +52,10 @@ object ProductService {
       logger.info(s"Batch inserting ${rows.length} products")
       db.run(for {
         brands <- DBIO.sequence(
-          rows.map(_.brand).flatten.distinct.map(b => insertBrandIfNotExists(b))
+          rows.map(_.brand).flatten.distinct.map(b => commonMethodsService.insertBrandIfNotExists(b))
         )
         categories <- DBIO.sequence(
-          rows.map(_.category).flatten.distinct.map(c => insertCategoryIfNotExists(c))
+          rows.map(_.category).flatten.distinct.map(c => commonMethodsService.insertCategoryIfNotExists(c))
         )
         productRows <- DBIO.successful(
           rows.map(

@@ -45,6 +45,7 @@ object ExcelParser {
           )
       }
 
+    // Used by stock order + inventory count
     def parseStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelStockOrderRow] =
       rows.map {
         case (
