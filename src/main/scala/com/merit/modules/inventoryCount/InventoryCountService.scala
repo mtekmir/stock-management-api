@@ -14,6 +14,7 @@ import com.merit.modules.categories.CategoryRepo
 import com.merit.external.crawler.CrawlerClient
 import cats.data.OptionT
 import cats.instances.future._
+import cats.implicits._
 import scala.collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
 
@@ -45,7 +46,12 @@ trait InventoryCountService {
     count: Int
   ): Future[Option[InventoryCountProductDTO]]
   def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int]
-  def completeInventoryCount(batchId: InventoryCountBatchID): Future[Option[InventoryCountDTO]]
+  def completeInventoryCount(
+    batchId: InventoryCountBatchID,
+    force: Boolean = false
+  ): Future[Either[String, InventoryCountDTO]]
+  def deleteInventoryCount(id: InventoryCountBatchID): Future[Boolean]
+  def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean]
 }
 
 object InventoryCountService {
@@ -149,14 +155,56 @@ object InventoryCountService {
       }
 
       def completeInventoryCount(
-        batchId: InventoryCountBatchID
-      ): Future[Option[InventoryCountDTO]] = {
+        batchId: InventoryCountBatchID,
+        force: Boolean = false
+      ): Future[Either[String, InventoryCountDTO]] = {
         logger.info(s"Completing inventory count batch with id $batchId")
-        (for {
-          inventoryCount <- OptionT(getBatch(batchId))
-          _              <- OptionT.liftF(db.run(inventoryCountRepo.completeInventoryCount(batchId)))
-          _              <- OptionT.liftF(crawlerClient.sendInventoryCount(inventoryCount))
-        } yield inventoryCount).value
+        def completeInventoryCountAction(
+          maybeDTO: Option[InventoryCountDTO]
+        ): Future[Either[String, InventoryCountDTO]] =
+          maybeDTO match {
+            case Some(dto) =>
+              for {
+                _        <- db.run(inventoryCountRepo.completeInventoryCount(batchId))
+                products <- db.run(inventoryCountRepo.getAllProductsOfBatch(batchId))
+                _        <- crawlerClient.sendInventoryCount(dto, products)
+              } yield dto.asRight
+            case None => Future.successful(Left("Inventory count batch not found"))
+          }
+
+        def isOkToComplete(
+          batchId: InventoryCountBatchID,
+          force: Boolean
+        ): Future[Either[String, Boolean]] =
+          (for {
+            numberOfCounted    <- db.run(inventoryCountRepo.productCount(batchId, true))
+            numberOfNotCounted <- db.run(inventoryCountRepo.productCount(batchId, false))
+          } yield (numberOfCounted, numberOfNotCounted)).map {
+            case (counted, notCounted) if counted < notCounted && !force =>
+              Left("Most of the products are not counted.")
+            case (counted, notCounted) if counted == 0 && !force =>
+              Left("None of the items are counted.")
+            case _ => Right(true)
+          }
+
+        for {
+          inventoryCount <- getBatch(batchId)
+          isOk           <- isOkToComplete(batchId, force)
+          result <- isOk match {
+            case Left(value)  => Future.successful(Left(value))
+            case Right(_) => completeInventoryCountAction(inventoryCount)
+          }
+        } yield result
+
       }
+
+      def deleteInventoryCount(id: InventoryCountBatchID): Future[Boolean] =
+        for {
+          delP <- db.run(inventoryCountRepo.deleteAllInventoryCountProducts(id))
+          delB <- db.run(inventoryCountRepo.deleteBatch(id))
+        } yield (delB + delP) == 2
+
+      def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean] = 
+        db.run(inventoryCountRepo.deleteInventoryCountProduct(id)).map(_ == 1)
     }
 }

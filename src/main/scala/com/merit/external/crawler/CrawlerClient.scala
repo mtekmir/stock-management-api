@@ -7,7 +7,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse
 import com.merit.modules.stockOrders.{StockOrderSummary, StockOrderSummaryProduct}
 import com.merit.CrawlerClientConfig
-import com.merit.modules.inventoryCount.{InventoryCountDTO,InventoryCountProductDTO}
+import com.merit.modules.inventoryCount.{InventoryCountDTO, InventoryCountProductDTO}
+import com.merit.modules.products.ProductID
 
 trait CrawlerClient {
   def sendSale(sale: SaleSummary): Future[(SyncSaleMessage, SendMessageResponse)]
@@ -15,8 +16,9 @@ trait CrawlerClient {
     stockOrder: StockOrderSummary
   ): Future[(SyncStockOrderMessage, SendMessageResponse)]
   def sendInventoryCount(
-    inventoryCount: InventoryCountDTO
-  ): Future[(SyncInventoryCountMessage, SendMessageResponse)]
+    inventoryCount: InventoryCountDTO,
+    products: Seq[InventoryCountProductDTO]
+  ): Future[(Seq[SyncInventoryCountMessage], Seq[SendMessageResponse])]
 }
 
 object CrawlerClient {
@@ -73,28 +75,37 @@ object CrawlerClient {
       }
 
       def sendInventoryCount(
-        inventoryCount: InventoryCountDTO
-      ): Future[(SyncInventoryCountMessage, SendMessageResponse)] = {
-        val message = SyncInventoryCountMessage(
-          inventoryCount.id,
-          // TODO: Fix
-          // inventoryCount.products.filter(_.counted.isDefined).map {
-          //   case InventoryCountDTOProduct(id, _, barcode, _, _, expected, counted, _) =>
-          //     SyncMessageProduct(id, barcode, counted.get)
-          // }
-          Seq()
-        )
+        inventoryCount: InventoryCountDTO,
+        products: Seq[InventoryCountProductDTO]
+      ): Future[(Seq[SyncInventoryCountMessage], Seq[SendMessageResponse])] = {
+        val messages = products
+          .sliding(100, 100)
+          .map(
+            products =>
+              SyncInventoryCountMessage(
+                inventoryCount.id,
+                products = products.map(
+                  p =>
+                    SyncMessageProduct(
+                      ProductID(p.id.value),
+                      p.barcode,
+                      p.counted.getOrElse(0)
+                    )
+                )
+              )
+          )
+          .toSeq
 
-        Future {
-          (
-            message,
+        val responses = messages.map(
+          m =>
             client.sendMessageTo(
               config.queueUrl,
               MessageType.InventoryCount,
-              encodeInventoryCountMessage(message).toString
+              encodeInventoryCountMessage(m).toString()
             )
-          )
-        }
+        )
+
+        Future.successful { (messages, responses) }
       }
 
     }

@@ -57,6 +57,16 @@ trait InventoryCountRepo[DbTask[_]] {
   ): DbTask[Seq[InventoryCountProductDTO]]
   def cancelInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
   def completeInventoryCount(batchId: InventoryCountBatchID): DbTask[Int]
+  def getAllProductsOfBatch(
+    batchId: InventoryCountBatchID
+  ): DbTask[Seq[InventoryCountProductDTO]]
+  def deleteInventoryCountProduct(
+    id: InventoryCountProductID
+  ): DbTask[Int]
+  def deleteAllInventoryCountProducts(
+    batchId: InventoryCountBatchID
+  ): DbTask[Int]
+  def deleteBatch(id: InventoryCountBatchID): DbTask[Int]
 }
 
 object InventoryCountRepo {
@@ -174,12 +184,7 @@ object InventoryCountRepo {
           .on(_.productId === _.id)
           .sortBy(_._1.updatedAt.desc)
           .result
-          .map {
-            _.map {
-              case (batchProductRow, productRow) =>
-                InventoryCountProductDTO.fromRow(batchProductRow, productRow)
-            }
-          }
+          .toInventoryCountProductDTOS
 
       def searchBatchProducts(
         batchId: InventoryCountBatchID,
@@ -195,12 +200,7 @@ object InventoryCountRepo {
               (p.name.toLowerCase like q) || (p.barcode like q) || (p.sku.toLowerCase like q)
           }
           .result
-          .map {
-            _.map {
-              case (batchProductRow, productRow) =>
-                InventoryCountProductDTO.fromRow(batchProductRow, productRow)
-            }
-          }
+          .toInventoryCountProductDTOS
       }
 
       def cancelInventoryCount(batchId: InventoryCountBatchID): DBIO[Int] =
@@ -214,5 +214,24 @@ object InventoryCountRepo {
           .filter(_.id === batchId)
           .map(_.status)
           .update(InventoryCountStatus.Completed)
+
+      def getAllProductsOfBatch(
+        batchId: InventoryCountBatchID
+      ): DBIO[Seq[InventoryCountProductDTO]] =
+        inventoryCountProducts
+          .filter(_.batchId === batchId)
+          .join(products)
+          .on(_.productId === _.id)
+          .result
+          .toInventoryCountProductDTOS
+
+      def deleteInventoryCountProduct(id: InventoryCountProductID): DBIO[Int] =
+        inventoryCountProducts.filter(_.id === id).delete
+
+      def deleteAllInventoryCountProducts(batchId: InventoryCountBatchID): DBIO[Int] =
+        inventoryCountProducts.filter(_.batchId === batchId).delete
+
+      def deleteBatch(id: InventoryCountBatchID): DBIO[Int] =
+        inventoryCountBatches.filter(_.id === id).delete
     }
 }

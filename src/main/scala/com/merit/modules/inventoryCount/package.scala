@@ -1,5 +1,9 @@
 package com.merit.modules
 
+import slick.dbio.DBIO
+import com.merit.modules.products.ProductRow
+import scala.concurrent.ExecutionContext
+
 package object inventoryCount {
 
   import com.merit.modules.products.ProductDTO
@@ -16,5 +20,17 @@ package object inventoryCount {
         expected = qty
       )
     }
+  }
+
+  implicit class C1(
+    val queryResult: DBIO[Seq[(InventoryCountProductRow, ProductRow)]]
+  )(implicit ec: ExecutionContext) {
+    def toInventoryCountProductDTOS =
+      queryResult.map {
+        _.map {
+          case (batchProductRow, productRow) =>
+            InventoryCountProductDTO.fromRow(batchProductRow, productRow)
+        }
+      }
   }
 }
