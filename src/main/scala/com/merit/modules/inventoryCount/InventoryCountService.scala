@@ -18,6 +18,9 @@ import cats.implicits._
 import scala.collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
 import com.merit.modules.excel.ExcelStockOrderRow
+import com.merit.modules.common.CommonMethodsService
+import slick.jdbc.JdbcBackend.Database
+import com.merit.modules.products.ProductRow
 
 trait InventoryCountService {
   def create(
@@ -53,6 +56,7 @@ trait InventoryCountService {
   ): Future[Either[String, InventoryCountDTO]]
   def deleteInventoryCount(id: InventoryCountBatchID): Future[Boolean]
   def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean]
+  def insertFromExcel(createdAt: DateTime, products: Seq[ExcelStockOrderRow]): Future[Any]
 }
 
 object InventoryCountService {
@@ -67,6 +71,8 @@ object InventoryCountService {
     implicit ec: ExecutionContext
   ): InventoryCountService =
     new InventoryCountService with LazyLogging {
+      val commonMethodsService = CommonMethodsService(db, brandRepo, categoryRepo)
+
       def create(
         startDate: Option[DateTime],
         name: Option[String],
@@ -208,5 +214,96 @@ object InventoryCountService {
       def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean] =
         db.run(inventoryCountRepo.deleteInventoryCountProduct(id)).map(_ == 1)
 
+      def insertFromExcel(
+        createdAt: DateTime,
+        products: Seq[ExcelStockOrderRow]
+      ): Future[Any] = {
+        logger.info(s"Inserting inventory count from excel with ${products.length} rows")
+        val barcodeToQty =
+          products.foldLeft(Map[String, Int]())((m, p) => m + (p.barcode -> p.qty))
+
+        val existingProducts =
+          DBIO.sequence(products.map(p => productRepo.get(p.barcode))).map(_.flatten)
+
+        // * Create nonexisting products
+        def createProductsDbio(
+          batchId: InventoryCountBatchID,
+          brandsMap: Map[String, BrandID],
+          categoriesMap: Map[String, CategoryID]
+        ): DBIO[Seq[InventoryCountProductRow]] =
+          (for {
+            existing <- existingProducts
+            products <- productRepo.batchInsert(
+              products
+                .filterNot(p => existing.exists(_.barcode == p.barcode))
+                .map(
+                  p =>
+                    ExcelStockOrderRow.toProductRow(
+                      p,
+                      p.brand.flatMap(brandsMap.get(_)),
+                      p.category.flatMap(categoriesMap.get(_))
+                    )
+                )
+            )
+            insertedAsInventoryCountProductRow <- inventoryCountRepo.addProductsToBatch(
+              products.map(
+                p =>
+                  InventoryCountProductRow(
+                    batchId,
+                    p.id,
+                    0,
+                    DateTime.now(),
+                    Some(p.qty),
+                    false,
+                    isNew = true
+                  )
+              )
+            )
+          } yield insertedAsInventoryCountProductRow).transactionally
+
+        // * Update existing products
+
+        def updateProductsDbio(
+          batchId: InventoryCountBatchID
+        ): DBIO[Seq[InventoryCountProductRow]] =
+          (for {
+            countedProducts <- existingProducts
+              .map(_.map(p => (p, barcodeToQty.get(p.barcode).getOrElse(0))))
+            _ <- DBIO.sequence(
+              countedProducts.map(p => productRepo.replaceQuantity(p._1.barcode, p._2))
+            )
+            insertedAsInventoryCountProductRow <- inventoryCountRepo.addProductsToBatch(
+              countedProducts.map {
+                case (dto, qty) =>
+                  InventoryCountProductRow(batchId, dto.id, dto.qty, DateTime.now(), Some(qty))
+              }
+            )
+          } yield insertedAsInventoryCountProductRow).transactionally
+
+        // * Create stock order
+        // If only one brand and category add them to batch
+        val createInventoryCountDbio = (for {
+          brandsMap <- commonMethodsService.getBrandsMap(products.flatMap(_.brand).distinct)
+          categoriesMap <- commonMethodsService.getCategoryMap(products.flatMap(_.category).distinct)
+          batch <- inventoryCountRepo.insertBatch(
+            InventoryCountBatchRow(
+              createdAt,
+              Some(createdAt),
+              Some(s"Imported from excel at"),
+              if (categoriesMap.size == 1) Some(categoriesMap.values.head) else None,
+              if (brandsMap.size == 1) Some(brandsMap.values.head) else None,
+              InventoryCountStatus.Completed
+            )
+          )
+          updatedProducts <- updateProductsDbio(batch.id)
+          createdProducts <- createProductsDbio(batch.id, brandsMap, categoriesMap)
+        } yield InventoryCountDTO.fromRow(batch, None, None)).transactionally
+
+        for {
+          summary <- db.run(createInventoryCountDbio)
+          products <- db.run(inventoryCountRepo.getAllProductsOfBatch(summary.id))
+          _       <- crawlerClient.sendInventoryCount(summary, products)
+        } yield summary
+      }
     }
 }

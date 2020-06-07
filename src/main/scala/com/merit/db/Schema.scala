@@ -172,11 +172,12 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def expected  = column[Int]("expected")
     def counted   = column[Option[Int]]("counted")
     def synced    = column[Boolean]("synced")
+    def isNew       = column[Boolean]("is_new")
 
     def batchFk   = foreignKey("inventory_count_batch_fk", batchId, inventoryCountBatches)(_.id)
     def productFk = foreignKey("inventory_count_product_fk", productId, products)(_.id)
 
-    def * = (batchId, productId, expected, updatedAt, counted, synced, id).mapTo[InventoryCountProductRow]
+    def * = (batchId, productId, expected, updatedAt, counted, synced, isNew, id).mapTo[InventoryCountProductRow]
   }
 
   lazy val inventoryCountProducts = TableQuery[InventoryCountProductsTable]

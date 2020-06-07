@@ -20,6 +20,22 @@ package object inventoryCount {
         expected = qty
       )
     }
+
+    def toInventoryCountProductDTO(
+      row: InventoryCountProductRow
+    ): InventoryCountProductDTO =
+      InventoryCountProductDTO(
+        row.id,
+        p.sku,
+        p.barcode,
+        p.name,
+        p.variation,
+        row.expected,
+        row.updatedAt,
+        row.counted,
+        row.synced,
+        row.isNew
+      )
   }
 
   implicit class C1(

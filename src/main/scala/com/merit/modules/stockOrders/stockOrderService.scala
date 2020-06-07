@@ -96,17 +96,8 @@ object StockOrderService {
         // * Create nonexisting products
 
         val createProductsDbio: DBIO[Seq[StockOrderSummaryProduct]] = (for {
-          brandsMap <- DBIO
-            .sequence(products.flatMap(_.brand).map(commonMethodsService.insertBrandIfNotExists(_)))
-            .map(
-              _.foldLeft(Map[String, BrandID]())((m, b) => m + (b.name -> b.id))
-            )
-
-          categoriesMap <- DBIO
-            .sequence(products.flatMap(_.category).map(commonMethodsService.insertCategoryIfNotExists(_)))
-            .map(
-              _.foldLeft(Map[String, CategoryID]())((m, c) => m + (c.name -> c.id))
-            )
+          brandsMap     <- commonMethodsService.getBrandsMap(products.flatMap(_.brand))
+          categoriesMap <- commonMethodsService.getCategoryMap(products.flatMap(_.category))
 
           existing <- existingProducts
 

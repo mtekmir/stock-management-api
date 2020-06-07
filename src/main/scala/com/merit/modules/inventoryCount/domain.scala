@@ -59,6 +59,7 @@ case class InventoryCountProductRow(
   updatedAt: DateTime = DateTime.now(),
   counted: Option[Int] = None,
   synced: Boolean = false,
+  isNew: Boolean = false,
   id: InventoryCountProductID = InventoryCountProductID(0)
 )
 
@@ -71,7 +72,8 @@ case class InventoryCountProductDTO(
   expected: Int,
   updatedAt: DateTime,
   counted: Option[Int],
-  synced: Boolean
+  synced: Boolean,
+  isNew: Boolean
 )
 
 case class InventoryCountDTO(
@@ -115,9 +117,9 @@ object InventoryCountProductDTO {
       row.expected,
       row.updatedAt,
       row.counted,
-      row.synced
+      row.synced,
+      row.isNew
     )
-
 }
 
 case class PaginatedInventoryCountBatchesResponse(
@@ -129,12 +131,4 @@ case class PaginatedInventoryCountProductsResponse(
   counted: Int,
   uncounted: Int,
   products: Seq[InventoryCountProductDTO]
-)
-
-
-case class InventoryCountReview(
-  uncounted: Int,
-  counted: Int,
-  expectedTotalQty: Int,
-  countedTotalQty: Int
 )

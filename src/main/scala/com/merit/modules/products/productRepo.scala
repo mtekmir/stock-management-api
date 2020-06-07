@@ -23,6 +23,7 @@ trait ProductRepo[DbTask[_]] {
   def batchInsert(products: Seq[ProductRow]): DbTask[Seq[ProductRow]]
   def deductQuantity(barcode: String, qty: Int): DbTask[Int]
   def addQuantity(barcode: String, qty: Int): DbTask[Int]
+  def replaceQuantity(barcode: String, qty: Int): DbTask[Int]
   def search(query: String): DbTask[Seq[ProductDTO]]
   def create(product: ProductRow): DbTask[ProductDTO]
   def edit(product: ProductRow, fields: EditProductRequest): DbTask[Int]
@@ -149,6 +150,9 @@ object ProductRepo {
       def addQuantity(barcode: String, qty: Int): DBIO[Int] =
         sqlu"update products set qty = qty + $qty where barcode=$barcode"
 
+      def replaceQuantity(barcode: String, qty: Int): DBIO[Int] = 
+        products.filter(_.barcode === barcode).map(_.qty).update(qty)
+
       def search(q: String): DBIO[Seq[ProductDTO]] = {
         val query = s"${q.toLowerCase()}%"
         products
@@ -204,6 +208,5 @@ object ProductRepo {
 
         products.filter(_.id === product.id).update(diff(product, fields))
       }
-
     }
 }
