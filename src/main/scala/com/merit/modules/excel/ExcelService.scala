@@ -27,7 +27,7 @@ import akka.stream.IOResult
 
 object FileFor extends Enumeration {
   type FileFor = Value
-  val Product, Sale, StockOrder, WebSales = Value
+  val Product, Sale, StockOrder, WebSales, InventoryCount = Value
 }
 
 trait ExcelService {
@@ -35,6 +35,9 @@ trait ExcelService {
   def parseSaleImportFile(file: File): Either[ExcelError, Seq[ExcelSaleRow]]
   def parseStockOrderImportFile(file: File): Either[ExcelError, Seq[ExcelStockOrderRow]]
   def parseWebSaleImportFile(file: File): Either[ExcelError, Seq[ExcelWebSaleRow]]
+  def parseInventoryCountImportFile(
+    file: File
+  ): Either[ExcelError, Seq[ExcelInventoryCountRow]]
   // def writeStockOrderRows(name: String, rows: Seq[ExcelStockOrderRow]): File
   // def writeProductRows(name: String, rows: Seq[ProductDTO]): File
   // def writeInventoryCountBatch(data: InventoryCountDTO): Source[ByteString, Future[IOResult]]
@@ -62,23 +65,27 @@ object ExcelService {
             .getOrElse(formatter.formatCellValue(c))
 
       val (columnCount, barcodeColumn) = fileFor match {
-        case FileFor.Product    => (10, 0)
-        case FileFor.Sale       => (2, 0)
-        case FileFor.StockOrder => (10, 3)
-        case FileFor.WebSales   => (59, 50)
+        case FileFor.Product        => (10, 0)
+        case FileFor.Sale           => (2, 0)
+        case FileFor.StockOrder     => (10, 3)
+        case FileFor.InventoryCount => (10, 3)
+        case FileFor.WebSales       => (59, 50)
       }
 
       def rowToCells(sheet: Sheet)(rowNum: Int): Vector[String] = {
         val row = sheet.getRow(rowNum)
         if (row == null) Vector()
         else
-          (0 until columnCount).map(i => (i, row.getCell(i))).map {
-            case (_, c) if c == null => ""
-            case (i, c) if i == barcodeColumn =>
-              parseBarcode(c)
-            case (_, c) =>
-              formatter.formatCellValue(c).trim
-          }.toVector
+          (0 until columnCount)
+            .map(i => (i, row.getCell(i)))
+            .map {
+              case (_, c) if c == null => ""
+              case (i, c) if i == barcodeColumn =>
+                parseBarcode(c)
+              case (_, c) =>
+                formatter.formatCellValue(c).trim
+            }
+            .toVector
       }
 
       val sheet = wb.getSheetAt(0)
@@ -139,6 +146,19 @@ object ExcelService {
 
       errors match {
         case Seq() => Parser.parseWebSaleRows(rows).asRight
+        case es =>
+          ExcelError(invalidWebSalesImportMessage, Validator.combineValidationErrors(es)).asLeft
+      }
+    }
+
+    def parseInventoryCountImportFile(
+      file: File
+    ): Either[ExcelError, Seq[ExcelInventoryCountRow]] = {
+      val (_, rows) = processFile(file, FileFor.InventoryCount)
+      val errors    = Validator.validateStockOrderRows(rows)
+
+      errors match {
+        case Seq() => Parser.parseInventoryCountRows(rows).asRight
         case es =>
           ExcelError(invalidWebSalesImportMessage, Validator.combineValidationErrors(es)).asLeft
       }

@@ -45,7 +45,6 @@ object ExcelParser {
           )
       }
 
-    // Used by stock order + inventory count
     def parseStockOrderRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelStockOrderRow] =
       rows.map {
         case (
@@ -95,20 +94,51 @@ object ExcelParser {
       rows.map {
         case (row, idx) =>
           ExcelWebSaleRow(
-            row(1), // order no
-            Currency.fromOrZero(row(10)), // total
-            Currency.fromOrZero(row(11)), // discount
-            formatter.parseDateTime(row(17)), // order date
+            row(1),                             // order no
+            Currency.fromOrZero(row(10)),       // total
+            Currency.fromOrZero(row(11)),       // discount
+            formatter.parseDateTime(row(17)),   // order date
             SaleStatus.parseFromExcel(row(18)), // status
-            row(46), // product name
+            row(46),                            // product name
             Option(row(47)).filter(_.nonEmpty), // sku
-            row(48), // brand
+            row(48),                            // brand
             Option(row(50)).filter(_.nonEmpty), // barcode
-            row(52).toInt, // qty
-            Currency.fromOrZero(row(54)), // price
-            row(56).toInt // tax
+            row(52).toInt,                      // qty
+            Currency.fromOrZero(row(54)),       // price
+            row(56).toInt                       // tax
           )
       }
     }
+
+    def parseInventoryCountRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelInventoryCountRow] =
+      rows.map {
+        case (
+            Seq(
+              name,
+              sku,
+              variation,
+              barcode,
+              qty,
+              price,
+              discountPrice,
+              category,
+              brand,
+              taxRate
+            ),
+            _
+            ) =>
+          ExcelInventoryCountRow(
+            name,
+            sku,
+            Option(variation).filter(_.nonEmpty),
+            barcode,
+            qty.toInt,
+            Currency.fromOrZero(price),
+            Currency.from(discountPrice),
+            Option(category).filter(_.nonEmpty),
+            Option(brand).filter(_.nonEmpty),
+            Option(taxRate).filter(_.nonEmpty).map(_.toInt)
+          )
+      }
   }
 }

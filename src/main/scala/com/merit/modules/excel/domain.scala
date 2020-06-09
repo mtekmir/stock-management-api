@@ -99,6 +99,41 @@ object ExcelStockOrderRow {
     )
   }
 }
+case class ExcelInventoryCountRow(
+  name: String,
+  sku: String,
+  variation: Option[String],
+  barcode: String,
+  qty: Int,
+  price: Currency,
+  discountPrice: Option[Currency],
+  category: Option[String],
+  brand: Option[String],
+  taxRate: Option[Int]
+) extends ExcelRow
+
+object ExcelInventoryCountRow {
+  def toProductRow(
+    row: ExcelInventoryCountRow,
+    brandId: Option[BrandID],
+    categoryId: Option[CategoryID]
+  ): ProductRow = {
+    import row._
+
+    ProductRow(
+      barcode,
+      sku,
+      name,
+      price,
+      discountPrice,
+      qty,
+      variation,
+      taxRate,
+      brandId,
+      categoryId
+    )
+  }
+}
 
 object ValidationErrorTypes extends Enumeration {
   type ErrorType = Value

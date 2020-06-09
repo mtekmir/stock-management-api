@@ -18,6 +18,7 @@ object InventoryCountRoutes extends Directives {
       GetInventoryCountBatch(inventoryCountService) ~
       SearchInventoryCountProducts(inventoryCountService) ~
       DeleteInventoryCount(inventoryCountService) ~
-      DeleteInventoryCountProduct(inventoryCountService)
+      DeleteInventoryCountProduct(inventoryCountService) ~ 
+      ImportInventoryCount(inventoryCountService, excelService)
     }
 }

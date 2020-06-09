@@ -17,10 +17,10 @@ import cats.instances.future._
 import cats.implicits._
 import scala.collection.immutable.ListMap
 import com.typesafe.scalalogging.LazyLogging
-import com.merit.modules.excel.ExcelStockOrderRow
 import com.merit.modules.common.CommonMethodsService
 import slick.jdbc.JdbcBackend.Database
 import com.merit.modules.products.ProductRow
+import com.merit.modules.excel.ExcelInventoryCountRow
 
 trait InventoryCountService {
   def create(
@@ -58,7 +58,7 @@ trait InventoryCountService {
   def deleteProduct(id: InventoryCountProductID): Future[Boolean]
   def insertFromExcel(
     createdAt: DateTime,
-    products: Seq[ExcelStockOrderRow]
+    products: Seq[ExcelInventoryCountRow]
   ): Future[InventoryCountDTO]
 }
 
@@ -232,7 +232,7 @@ object InventoryCountService {
 
       def insertFromExcel(
         createdAt: DateTime,
-        products: Seq[ExcelStockOrderRow]
+        products: Seq[ExcelInventoryCountRow]
       ): Future[InventoryCountDTO] = {
         logger.info(s"Inserting inventory count from excel with ${products.length} rows")
         val barcodeToQty =
@@ -254,7 +254,7 @@ object InventoryCountService {
                 .filterNot(p => existing.exists(_.barcode == p.barcode))
                 .map(
                   p =>
-                    ExcelStockOrderRow.toProductRow(
+                    ExcelInventoryCountRow.toProductRow(
                       p,
                       p.brand.flatMap(brandsMap.get(_)),
                       p.category.flatMap(categoriesMap.get(_))

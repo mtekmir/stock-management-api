@@ -169,7 +169,7 @@ class InventoryCountServiceSpec(implicit ee: ExecutionEnv)
 
     "should insert from excel 1" in new TestScope {
       val ps   = sampleProducts()
-      val rows = ps.map(excelProductRowToStockOrderRow(_))
+      val rows = ps.map(excelProductRowToInventoryCountRow(_))
       (for {
         p <- productService.batchInsertExcelRows(
           ps.slice(0, 5).map(p => p.copy(qty = p.qty - 3))
@@ -193,7 +193,7 @@ class InventoryCountServiceSpec(implicit ee: ExecutionEnv)
 
     "should insert from excel by inserting new products" in new TestScope {
       val ps   = sampleProducts()
-      val rows = ps.map(excelProductRowToStockOrderRow(_))
+      val rows = ps.map(excelProductRowToInventoryCountRow(_))
       (for {
         dto                  <- invCountService.insertFromExcel(now, rows)
         updatedProducts      <- db.run(DBIO.sequence(ps.map(p => productRepo.get(p.barcode))))
@@ -223,7 +223,7 @@ class InventoryCountServiceSpec(implicit ee: ExecutionEnv)
 
     "should insert from excel by updating quantities of existing products" in new TestScope {
       val ps   = sampleProducts()
-      val rows = ps.map(excelProductRowToStockOrderRow(_))
+      val rows = ps.map(excelProductRowToInventoryCountRow(_))
       (for {
         _                    <- productService.batchInsertExcelRows(ps)
         dto                  <- invCountService.insertFromExcel(now, rows.map(r => r.copy(qty = r.qty + 5)))

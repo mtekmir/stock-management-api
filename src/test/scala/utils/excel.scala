@@ -14,6 +14,7 @@ import com.merit.modules.products.Currency
 import com.merit.modules.products.ProductRow
 import com.merit.modules.sales.WebSaleSummary
 import com.merit.modules.sales.WebSaleSummaryProduct
+import com.merit.modules.excel.ExcelInventoryCountRow
 
 object ExcelTestUtils {
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
@@ -49,6 +50,22 @@ object ExcelTestUtils {
   def excelProductRowToStockOrderRow(row: ExcelProductRow): ExcelStockOrderRow = {
     import row._
     ExcelStockOrderRow(
+      name,
+      sku,
+      variation,
+      barcode,
+      qty,
+      price,
+      discountPrice,
+      category,
+      brand,
+      taxRate
+    )
+  }
+
+  def excelProductRowToInventoryCountRow(row: ExcelProductRow) = {
+    import row._
+    ExcelInventoryCountRow(
       name,
       sku,
       variation,
