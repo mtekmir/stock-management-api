@@ -49,14 +49,17 @@ trait InventoryCountService {
     productId: InventoryCountProductID,
     count: Int
   ): Future[Option[InventoryCountProductDTO]]
-  def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int]
-  def completeInventoryCount(
+  def cancel(batchId: InventoryCountBatchID): Future[Int]
+  def complete(
     batchId: InventoryCountBatchID,
     force: Boolean = false
   ): Future[Either[String, InventoryCountDTO]]
-  def deleteInventoryCount(id: InventoryCountBatchID): Future[Boolean]
-  def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean]
-  def insertFromExcel(createdAt: DateTime, products: Seq[ExcelStockOrderRow]): Future[Any]
+  def delete(id: InventoryCountBatchID): Future[Boolean]
+  def deleteProduct(id: InventoryCountProductID): Future[Boolean]
+  def insertFromExcel(
+    createdAt: DateTime,
+    products: Seq[ExcelStockOrderRow]
+  ): Future[InventoryCountDTO]
 }
 
 object InventoryCountService {
@@ -156,12 +159,12 @@ object InventoryCountService {
         } yield (product)
       }
 
-      def cancelInventoryCount(batchId: InventoryCountBatchID): Future[Int] = {
+      def cancel(batchId: InventoryCountBatchID): Future[Int] = {
         logger.info(s"Cancelling inventory count batch with id $batchId")
         db.run(inventoryCountRepo.cancelInventoryCount(batchId))
       }
 
-      def completeInventoryCount(
+      def complete(
         batchId: InventoryCountBatchID,
         force: Boolean = false
       ): Future[Either[String, InventoryCountDTO]] = {
@@ -174,8 +177,21 @@ object InventoryCountService {
               for {
                 _        <- db.run(inventoryCountRepo.completeInventoryCount(batchId))
                 products <- db.run(inventoryCountRepo.getAllProductsOfBatch(batchId))
-                _        <- crawlerClient.sendInventoryCount(dto, products)
-              } yield dto.asRight
+                // replace quantities of products in batch, 0 if not counted
+                _ <- db.run(
+                  DBIO.sequence(
+                    products
+                      .map(p => productRepo.replaceQuantity(p.barcode, p.counted.getOrElse(0)))
+                  )
+                )
+                _ <- crawlerClient.sendInventoryCount(dto, products)
+              } yield
+                dto
+                  .copy(
+                    status = InventoryCountStatus.Completed,
+                    finished = Some(DateTime.now())
+                  )
+                  .asRight
             case None => Future.successful(Left("Inventory count batch not found"))
           }
 
@@ -187,10 +203,10 @@ object InventoryCountService {
             numberOfCounted    <- db.run(inventoryCountRepo.productCount(batchId, true))
             numberOfNotCounted <- db.run(inventoryCountRepo.productCount(batchId, false))
           } yield (numberOfCounted, numberOfNotCounted)).map {
+            case (counted, notCounted) if counted == 0 && !force =>
+              Left("None of the products are counted.")
             case (counted, notCounted) if counted < notCounted && !force =>
               Left("Most of the products are not counted.")
-            case (counted, notCounted) if counted == 0 && !force =>
-              Left("None of the items are counted.")
             case _ => Right(true)
           }
 
@@ -205,19 +221,19 @@ object InventoryCountService {
 
       }
 
-      def deleteInventoryCount(id: InventoryCountBatchID): Future[Boolean] =
+      def delete(id: InventoryCountBatchID): Future[Boolean] =
         for {
           delP <- db.run(inventoryCountRepo.deleteAllInventoryCountProducts(id))
           delB <- db.run(inventoryCountRepo.deleteBatch(id))
         } yield (delB + delP) == 2
 
-      def deleteInventoryCountProduct(id: InventoryCountProductID): Future[Boolean] =
+      def deleteProduct(id: InventoryCountProductID): Future[Boolean] =
         db.run(inventoryCountRepo.deleteInventoryCountProduct(id)).map(_ == 1)
 
       def insertFromExcel(
         createdAt: DateTime,
         products: Seq[ExcelStockOrderRow]
-      ): Future[Any] = {
+      ): Future[InventoryCountDTO] = {
         logger.info(s"Inserting inventory count from excel with ${products.length} rows")
         val barcodeToQty =
           products.foldLeft(Map[String, Int]())((m, p) => m + (p.barcode -> p.qty))
@@ -284,12 +300,14 @@ object InventoryCountService {
         // If only one brand and category add them to batch
         val createInventoryCountDbio = (for {
           brandsMap <- commonMethodsService.getBrandsMap(products.flatMap(_.brand).distinct)
-          categoriesMap <- commonMethodsService.getCategoryMap(products.flatMap(_.category).distinct)
+          categoriesMap <- commonMethodsService.getCategoryMap(
+            products.flatMap(_.category).distinct
+          )
           batch <- inventoryCountRepo.insertBatch(
             InventoryCountBatchRow(
               createdAt,
               Some(createdAt),
-              Some(s"Imported from excel at"),
+              Some(s"Imported from excel at ${createdAt.toString("dd-MM-yyyy HH:mm")}"),
               if (categoriesMap.size == 1) Some(categoriesMap.values.head) else None,
               if (brandsMap.size == 1) Some(brandsMap.values.head) else None,
               InventoryCountStatus.Completed
@@ -300,9 +318,9 @@ object InventoryCountService {
         } yield InventoryCountDTO.fromRow(batch, None, None)).transactionally
 
         for {
-          summary <- db.run(createInventoryCountDbio)
+          summary  <- db.run(createInventoryCountDbio)
           products <- db.run(inventoryCountRepo.getAllProductsOfBatch(summary.id))
-          _       <- crawlerClient.sendInventoryCount(summary, products)
+          _        <- crawlerClient.sendInventoryCount(summary, products)
         } yield summary
       }
     }

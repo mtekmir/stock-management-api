@@ -13,7 +13,7 @@ object DeleteInventoryCountProduct extends Directives with JsonSupport {
       LongNumber.map(InventoryCountProductID(_))
 
     (delete & path("product" / productId)) { id =>
-      complete(inventoryCountService.deleteInventoryCountProduct(id))
+      complete(inventoryCountService.deleteProduct(id))
     }
   }
 }

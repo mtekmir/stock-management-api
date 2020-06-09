@@ -17,7 +17,11 @@ import com.merit.modules.sales.WebSaleSummaryProduct
 
 object ExcelTestUtils {
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
-  def getExcelProductRows(n: Int): Seq[ExcelProductRow] =
+  def getExcelProductRows(
+    n: Int,
+    brand: Option[String] = None,
+    category: Option[String] = None
+  ): Seq[ExcelProductRow] =
     (1 to n)
       .map(
         i =>
@@ -29,8 +33,14 @@ object ExcelTestUtils {
             randomPrice,
             randomDiscountPrice,
             randomQty,
-            Some(randomBrandName),
-            Some(randomCategoryName),
+            brand match {
+              case None    => Some(randomBrandName)
+              case Some(b) => Some(b)
+            },
+            category match {
+              case None    => Some(randomCategoryName)
+              case Some(c) => Some(c)
+            },
             Some(randomBetween(20))
           )
       )

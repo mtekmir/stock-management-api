@@ -212,8 +212,8 @@ object InventoryCountRepo {
       def completeInventoryCount(batchId: InventoryCountBatchID): DBIO[Int] =
         inventoryCountBatches
           .filter(_.id === batchId)
-          .map(_.status)
-          .update(InventoryCountStatus.Completed)
+          .map(b => (b.status, b.finished))
+          .update((InventoryCountStatus.Completed, Some(DateTime.now())))
 
       def getAllProductsOfBatch(
         batchId: InventoryCountBatchID

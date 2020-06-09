@@ -13,7 +13,7 @@ object DeleteInventoryCount extends Directives with JsonSupport {
       LongNumber.map(InventoryCountBatchID(_))
 
     (delete & path(batchIdMatcher) & pathEnd) { (batchId) =>
-      complete(inventoryCountService.deleteInventoryCount(batchId))
+      complete(inventoryCountService.delete(batchId))
     }
   }
 }
