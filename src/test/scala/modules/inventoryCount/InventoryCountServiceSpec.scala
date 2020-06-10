@@ -35,6 +35,8 @@ import com.merit.external.crawler.SyncSaleMessage
 import com.merit.modules.sales.SaleSummary
 import com.merit.modules.stockOrders.StockOrderSummary
 import org.specs2.specification.Scope
+import com.merit.external.crawler.SyncInventoryCountResponse
+import com.merit.external.crawler.SyncResponseInventoryCountProduct
 
 class InventoryCountServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -294,6 +296,27 @@ class InventoryCountServiceSpec(implicit ee: ExecutionEnv)
         })
         checkQInRegistry(updatedBatchProducts.products)
         checkQInRegistry2(updatedProducts)
+      }).await
+    }
+
+    "should save sync result" in new TestScope {
+      val ps = sampleProducts(20)
+      (for {
+        dto             <- insertBatchWithProducts(ps)
+        _               <- invCountService.complete(dto.id, force = true)
+        batchProductRes <- invCountService.getBatchProducts(dto.id, All, 1, 20)
+        res <- invCountService.saveSyncResult(
+          SyncInventoryCountResponse(
+            dto.id,
+            batchProductRes.products
+              .map(p => SyncResponseInventoryCountProduct(p.id, p.barcode, 5, true))
+          )
+        )
+        updatedBatchProductsRes <- invCountService.getBatchProducts(dto.id, All, 1, 20)
+      } yield {
+        updatedBatchProductsRes.products.map(p => if (p.synced) 1 else 0).sum must beEqualTo(
+          batchProductRes.products.length
+        )
       }).await
     }
   }

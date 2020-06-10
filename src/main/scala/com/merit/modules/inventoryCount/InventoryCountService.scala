@@ -21,6 +21,7 @@ import com.merit.modules.common.CommonMethodsService
 import slick.jdbc.JdbcBackend.Database
 import com.merit.modules.products.ProductRow
 import com.merit.modules.excel.ExcelInventoryCountRow
+import com.merit.external.crawler.SyncInventoryCountResponse
 
 trait InventoryCountService {
   def create(
@@ -60,6 +61,7 @@ trait InventoryCountService {
     createdAt: DateTime,
     products: Seq[ExcelInventoryCountRow]
   ): Future[InventoryCountDTO]
+  def saveSyncResult(result: SyncInventoryCountResponse): Future[Boolean]
 }
 
 object InventoryCountService {
@@ -322,6 +324,25 @@ object InventoryCountService {
           products <- db.run(inventoryCountRepo.getAllProductsOfBatch(summary.id))
           _        <- crawlerClient.sendInventoryCount(summary, products)
         } yield summary
+      }
+
+      def saveSyncResult(result: SyncInventoryCountResponse): Future[Boolean] = {
+        val synced = result.products.map(p => if (p.synced) 1 else 0).sum
+        logger.info(s"Received sync inventory count response")
+        logger.info(s"Synced $synced products out of ${result.products.length}")
+        db.run(
+            DBIO.sequence(
+              result.products
+                .map(p => inventoryCountRepo.syncProduct(p.id, p.synced))
+            )
+          )
+          .map(_.sum)
+          .map {
+            case sum if sum == result.products.length => true
+            case _ =>
+              logger.info("Received product count and updated product count does not match")
+              false
+          }
       }
     }
 }

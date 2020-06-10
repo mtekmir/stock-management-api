@@ -4,6 +4,7 @@ import com.merit.modules.sales.SaleID
 import com.merit.modules.products.ProductID
 import com.merit.modules.stockOrders.StockOrderID
 import com.merit.modules.inventoryCount.InventoryCountBatchID
+import com.merit.modules.inventoryCount.InventoryCountProductID
 
 object MessageType extends Enumeration {
   type MessageType = Value
@@ -14,6 +15,19 @@ case class SyncMessageProduct(
   id: ProductID,
   barcode: String,
   qty: Int  // Will be n if sold, -(n) if returned
+)
+
+case class SyncInventoryCountProduct(
+  id: InventoryCountProductID,
+  barcode: String,
+  qty: Int
+)
+
+case class SyncResponseInventoryCountProduct(
+  id: InventoryCountProductID,
+  barcode: String,
+  qty: Int,
+  synced: Boolean
 )
 
 case class SyncResponseProduct(
@@ -35,7 +49,7 @@ case class SyncStockOrderMessage(
 
 case class SyncInventoryCountMessage(
   inventoryCountBatchId: InventoryCountBatchID,
-  products: Seq[SyncMessageProduct]
+  products: Seq[SyncInventoryCountProduct]
 )
 
 case class SyncSaleResponse(
@@ -50,5 +64,5 @@ case class SyncStockOrderResponse(
 
 case class SyncInventoryCountResponse(
   inventoryCountBatchId: InventoryCountBatchID,
-  products: Seq[SyncResponseProduct]
+  products: Seq[SyncResponseInventoryCountProduct]
 )

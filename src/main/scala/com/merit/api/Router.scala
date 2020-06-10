@@ -32,6 +32,7 @@ import com.merit.modules.statsService.StatsService
 import com.merit.api.events.SaleEventsRoute
 import com.merit.modules.salesEvents.SaleEventService
 import com.typesafe.scalalogging.LazyLogging
+import com.merit.api.inventoryCount.SyncInventoryCount
 
 object Router extends Directives with AuthDirectives with JsonSupport with LazyLogging {
   def apply(
@@ -73,6 +74,7 @@ object Router extends Directives with AuthDirectives with JsonSupport with LazyL
         LoginRoute(userService, config.jwtConfig) ~
         SyncSaleRoute(saleService, crawlerAuthenticator) ~
         SyncStockOrderRoute(stockOrderService, crawlerAuthenticator) ~
+        SyncInventoryCount(inventoryCountService, crawlerAuthenticator) ~
         authenticated(config.jwtConfig) { userId =>
           ProductRoutes(productService, excelService) ~
           SaleRoutes(saleService, excelService, userId) ~

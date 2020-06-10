@@ -67,6 +67,7 @@ trait InventoryCountRepo[DbTask[_]] {
     batchId: InventoryCountBatchID
   ): DbTask[Int]
   def deleteBatch(id: InventoryCountBatchID): DbTask[Int]
+  def syncProduct(id: InventoryCountProductID, synced: Boolean): DbTask[Int]
 }
 
 object InventoryCountRepo {
@@ -233,5 +234,8 @@ object InventoryCountRepo {
 
       def deleteBatch(id: InventoryCountBatchID): DBIO[Int] =
         inventoryCountBatches.filter(_.id === id).delete
+
+      def syncProduct(id: InventoryCountProductID, synced: Boolean): DBIO[Int] =
+        inventoryCountProducts.filter(_.id === id).map(_.synced).update(synced)
     }
 }

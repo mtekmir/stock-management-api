@@ -145,6 +145,25 @@ class InventoryCountRepoSpec(implicit ee: ExecutionEnv)
         batchProducts.length must beEqualTo(0)
       }).await
     }
+
+    "should sync product" in new TestScope {
+      val ps = sampleProducts(2)
+      (for {
+        row <- db.run(
+          invCountRepo.insertBatch(InventoryCountBatchRow(now, None, None, None, None))
+        )
+        products <- productService.batchInsertExcelRows(ps)
+        inserted <- db.run(
+          invCountRepo.addProductsToBatch(
+            products.map(p => InventoryCountProductRow(row.id, p.id, p.qty, now))
+          )
+        )
+        _             <- db.run(DBIO.sequence(inserted.map(p => invCountRepo.syncProduct(p.id, true))))
+        batchProducts <- db.run(invCountRepo.getBatchProducts(row.id, All, 1, 10))
+      } yield {
+        batchProducts.map(_.synced) must beEqualTo(Seq(true, true))
+      }).await
+    }
   }
 
   class TestScope extends Scope {

@@ -86,8 +86,8 @@ object CrawlerClient {
                 inventoryCount.id,
                 products = products.map(
                   p =>
-                    SyncMessageProduct(
-                      ProductID(p.id.value),
+                    SyncInventoryCountProduct(
+                      p.id,
                       p.barcode,
                       p.counted.getOrElse(0)
                     )

@@ -6,6 +6,7 @@ import com.merit.modules.sales.SaleID
 import io.circe.Decoder
 import com.merit.modules.products.ProductID
 import com.merit.modules.inventoryCount.InventoryCountBatchID
+import com.merit.modules.inventoryCount.InventoryCountProductID
 
 trait CrawlerCodec {
   implicit val encodeSaleId: Encoder[SaleID] = (id: SaleID) => Encoder.encodeLong(id.value)
@@ -19,6 +20,13 @@ trait CrawlerCodec {
     ProductID(v).asRight
   }
 
+  implicit val encodeInvCountProductId: Encoder[InventoryCountProductID] =
+    (id: InventoryCountProductID) => Encoder.encodeLong(id.value)
+  implicit val decodeInvCountProductId: Decoder[InventoryCountProductID] =
+    Decoder.decodeLong.emap { v =>
+      InventoryCountProductID(v).asRight
+    }
+
   implicit val encodeInventoryCountBatchId: Encoder[InventoryCountBatchID] =
     (id: InventoryCountBatchID) => Encoder.encodeLong(id.value)
   implicit val decodeInventoryCountBatchId: Decoder[InventoryCountBatchID] =
@@ -27,6 +35,11 @@ trait CrawlerCodec {
     }
 
   implicit val encodeProduct: Encoder[SyncMessageProduct] =
+    Encoder.forProduct3("id", "barcode", "qty")(
+      p => (p.id, p.barcode, p.qty)
+    )
+
+  implicit val encodeInvCountProduct: Encoder[SyncInventoryCountProduct] =
     Encoder.forProduct3("id", "barcode", "qty")(
       p => (p.id, p.barcode, p.qty)
     )
