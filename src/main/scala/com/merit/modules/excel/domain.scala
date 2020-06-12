@@ -6,6 +6,7 @@ import com.merit.modules.brands.BrandRow
 import com.merit.modules.products.Currency
 import org.joda.time.DateTime
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 sealed trait ExcelRow
 
@@ -26,6 +27,7 @@ case class ExcelWebSaleRow(
   orderNo: String,
   total: Currency,
   discount: Currency,
+  paymentMethod: PaymentMethod.Value,
   createdAt: DateTime,
   status: SaleStatus.Value,
   productName: String,

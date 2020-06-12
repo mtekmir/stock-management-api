@@ -27,6 +27,8 @@ import com.merit.modules.users.{UserID, UserRow, UserRepo}
 import com.merit.modules.salesEvents.{SaleEventRow, SaleEventType}
 import slick.dbio.DBIO
 import shapeless.ops.product
+import com.merit.modules.sales.PaymentMethod
+import com.merit.modules.sales.SaleStatus
 
 class SaleServiceSpec(implicit ee: ExecutionEnv)
     extends DbSpecification
@@ -216,8 +218,15 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       val products = getExcelProductRows(5).sortBy(_.barcode)
 
       val res = for {
-        ps              <- productService.batchInsertExcelRows(products)
-        summary         <- saleService.create(total, discount, ps.map(rowToDTO(_, None, None)), userId)
+        ps <- productService.batchInsertExcelRows(products)
+        summary <- saleService.create(
+          total,
+          discount,
+          None,
+          PaymentMethod.OnCredit,
+          ps.map(rowToDTO(_, None, None)),
+          userId
+        )
         updatedProducts <- productService.findAll(products.map(_.barcode))
       } yield (summary, updatedProducts)
       res.map(_._1.map(_.total)) must beEqualTo(Some(total)).await
@@ -226,6 +235,9 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
         Some(products.map(p => (p.barcode, p.qty)))
       ).await
       res.map(_._2.map(_.qty).sum) must beEqualTo(0).await
+      res.map(_._1.map(s => (s.description, s.paymentMethod))) must beEqualTo(
+        Some(None, PaymentMethod.OnCredit)
+      ).await
     }
 
     "should create sales on web sale import (with existing products, deduct qty=false)" in new TestScope {
@@ -267,6 +279,26 @@ class SaleServiceSpec(implicit ee: ExecutionEnv)
       res.map(_._1) must beEqualTo(rows.map(_.toSummary)).await
       res.map(_._2.map(_.qty)) must beEqualTo(Some(30 - rows.head.qty)).await
       res.map(_._3.map(_.qty)) must beEqualTo(Some(30 - rows.tail.head.qty)).await
+    }
+
+    "should create sale with no products and description" in new TestScope {
+      import schema._
+      import schema.profile.api._
+      (for {
+        saleRes <- saleService.create(
+          Currency(1000),
+          Currency(0),
+          Some("test-description"),
+          PaymentMethod.Cash,
+          Seq(),
+          UserID.random
+        )
+        sale <- db.run(sales.filter(_.description === "test-description").result.headOption) // currently only way of finding the sale
+      } yield {
+        saleRes must beNone
+        sale.map(_.status) must beSome(SaleStatus.SaleCompleted)
+        sale.map(_.description) must beSome(Some("test-description"))
+      }).await
     }
   }
 

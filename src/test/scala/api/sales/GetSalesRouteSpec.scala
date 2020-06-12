@@ -30,6 +30,7 @@ import com.merit.modules.sales.SaleDTO
 import com.merit.modules.sales.PaginatedSalesResponse
 import com.merit.modules.users.UserID
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Get sales route should call the correct method with parameter" >> {
@@ -72,6 +73,8 @@ class GetSalesRouteSpec extends Specification with Specs2RouteTest with JsonSupp
           None,
           total,
           discount,
+          None,
+          PaymentMethod.Cash,
           products
         )
       )

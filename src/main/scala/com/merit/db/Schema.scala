@@ -14,6 +14,7 @@ import com.merit.modules.categories.{CategoryRow, CategoryID}
 import com.merit.modules.inventoryCount.{InventoryCountBatchRow, InventoryCountProductRow, InventoryCountBatchID, InventoryCountProductID, InventoryCountStatus}
 import com.merit.modules.salesEvents.{SaleEventRow, SaleEventID, SaleEventType}
 import com.merit.db.DbMappers
+import com.merit.modules.sales.PaymentMethod
 
 class Schema(val profile: JdbcProfile) extends DbMappers {
   import profile.api._
@@ -81,15 +82,19 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
   lazy val brands = TableQuery[BrandTable]
 
   class SaleTable(t: Tag) extends Table[SaleRow](t, "sales") {
-    def id        = column[SaleID]("id", O.PrimaryKey, O.AutoInc)
-    def createdAt = column[DateTime]("created")
-    def total     = column[Currency]("total")
-    def discount  = column[Currency]("discount")
-    def outlet    = column[SaleOutlet.Value]("outlet")
-    def status    = column[SaleStatus.Value]("status")
-    def orderNo   = column[Option[String]]("order_no")
+    def id            = column[SaleID]("id", O.PrimaryKey, O.AutoInc)
+    def createdAt     = column[DateTime]("created")
+    def total         = column[Currency]("total")
+    def discount      = column[Currency]("discount")
+    def outlet        = column[SaleOutlet.Value]("outlet")
+    def status        = column[SaleStatus.Value]("status")
+    def orderNo       = column[Option[String]]("order_no")
+    def description   = column[Option[String]]("description")
+    def paymentMethod = column[PaymentMethod.Value]("payment_method")
 
-    def * = (createdAt, total, discount, outlet, status, orderNo, id).mapTo[SaleRow]
+    def * =
+      (createdAt, total, discount, outlet, status, orderNo, description, paymentMethod, id)
+        .mapTo[SaleRow]
   }
 
   lazy val sales = TableQuery[SaleTable]
@@ -172,12 +177,14 @@ class Schema(val profile: JdbcProfile) extends DbMappers {
     def expected  = column[Int]("expected")
     def counted   = column[Option[Int]]("counted")
     def synced    = column[Boolean]("synced")
-    def isNew       = column[Boolean]("is_new")
+    def isNew     = column[Boolean]("is_new")
 
     def batchFk   = foreignKey("inventory_count_batch_fk", batchId, inventoryCountBatches)(_.id)
     def productFk = foreignKey("inventory_count_product_fk", productId, products)(_.id)
 
-    def * = (batchId, productId, expected, updatedAt, counted, synced, isNew, id).mapTo[InventoryCountProductRow]
+    def * =
+      (batchId, productId, expected, updatedAt, counted, synced, isNew, id)
+        .mapTo[InventoryCountProductRow]
   }
 
   lazy val inventoryCountProducts = TableQuery[InventoryCountProductsTable]

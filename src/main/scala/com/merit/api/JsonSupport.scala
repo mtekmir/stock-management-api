@@ -22,6 +22,7 @@ import com.merit.modules.categories.CategoryID
 import com.merit.modules.salesEvents.SaleEventType
 import com.merit.modules.salesEvents.SaleEventID
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val encodeDT: Encoder[DateTime] = (d: DateTime) =>
@@ -61,8 +62,9 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
   implicit val decodeUserId: Decoder[UserID] = Decoder.decodeUUID.emap { v =>
     UserID(v).asRight
   }
-  
-  implicit val encodeSaleEventId: Encoder[SaleEventID] = (id: SaleEventID) => Encoder.encodeLong(id.value)
+
+  implicit val encodeSaleEventId: Encoder[SaleEventID] = (id: SaleEventID) =>
+    Encoder.encodeLong(id.value)
   implicit val decodeSaleEventId: Decoder[SaleEventID] = Decoder.decodeLong.emap { v =>
     SaleEventID(v).asRight
   }
@@ -112,4 +114,10 @@ trait JsonSupport extends FailFastCirceSupport with AutoDerivation {
 
   implicit val encodeSaleEvent: Encoder[SaleEventType.Value] =
     Encoder.enumEncoder(SaleEventType)
+
+  implicit val encodePaymentMethod: Encoder[PaymentMethod.Value] =
+    Encoder.enumEncoder(PaymentMethod)
+
+  implicit val decodePaymentMethod: Decoder[PaymentMethod.Value] =
+    Decoder.enumDecoder(PaymentMethod)
 }

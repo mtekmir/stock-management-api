@@ -1,5 +1,7 @@
 package com.merit.modules
 
+import com.merit.modules.products.ProductDTO
+
 package object sales {
 
   import scala.collection.immutable.ListMap
@@ -10,7 +12,33 @@ package object sales {
   ) {
     def toDTO(products: Seq[SaleDTOProduct]): SaleDTO = {
       import sale._
-      SaleDTO(id, createdAt, outlet, status, orderNo, total, discount, products)
+      SaleDTO(
+        id,
+        createdAt,
+        outlet,
+        status,
+        orderNo,
+        total,
+        discount,
+        description,
+        paymentMethod,
+        products
+      )
+    }
+
+    def toSummary(products: Seq[ProductDTO]) = {
+      import sale._
+      SaleSummary(
+        sale.id,
+        sale.createdAt,
+        sale.total,
+        sale.discount,
+        sale.outlet,
+        sale.status,
+        sale.description,
+        sale.paymentMethod,
+        products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
+      )
     }
   }
 
@@ -30,6 +58,7 @@ package object sales {
                   discount,
                   createdAt,
                   status,
+                  paymentMethod,
                   Seq()
                 ))
               }

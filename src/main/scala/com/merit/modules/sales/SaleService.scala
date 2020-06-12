@@ -38,6 +38,8 @@ trait SaleService {
   def create(
     total: Currency,
     discount: Currency,
+    description: Option[String],
+    paymentMethod: PaymentMethod.Value,
     products: Seq[ProductDTO],
     userId: UserID
   ): Future[Option[SaleDTO]]
@@ -98,6 +100,8 @@ object SaleService {
             Currency(0),
             sale.outlet,
             sale.status,
+            sale.description,
+            sale.paymentMethod,
             soldProducts.map(
               p =>
                 SaleSummaryProduct.fromProductDTO(
@@ -186,7 +190,9 @@ object SaleService {
                   s.discount,
                   SaleOutlet.Web,
                   s.status,
-                  Some(s.orderNo)
+                  Some(s.orderNo),
+                  None,
+                  s.paymentMethod
                 )
             )
           )
@@ -211,6 +217,7 @@ object SaleService {
                 s.discount,
                 s.createdAt,
                 s.status,
+                s.paymentMethod,
                 products
                   .filter(_._1 == s.orderNo.getOrElse(""))
                   .map(p => WebSaleSummaryProduct(p._2.sku, p._2.barcode, p._3))
@@ -239,22 +246,15 @@ object SaleService {
           soldProducts <- saleRepo.addProductsToSale(
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )
-        } yield
-          SaleSummary(
-            sale.id,
-            date,
-            total,
-            sale.discount,
-            sale.outlet,
-            sale.status,
-            products.map(p => SaleSummaryProduct.fromProductDTO(p, p.qty))
-          )
+        } yield sale.toSummary(products)
       )
     }
 
     def create(
       total: Currency,
       discount: Currency,
+      description: Option[String],
+      paymentMethod: PaymentMethod.Value,
       products: Seq[ProductDTO],
       userId: UserID
     ): Future[Option[SaleDTO]] = {
@@ -264,7 +264,18 @@ object SaleService {
       val insertSale = db.run(
         (for {
           soldProducts <- productRepo.findAll(products.map(_.barcode))
-          sale         <- saleRepo.insert(SaleRow(DateTime.now(), total, discount))
+          sale <- saleRepo.insert(
+            SaleRow(
+              DateTime.now(),
+              total,
+              discount,
+              SaleOutlet.Store,
+              SaleStatus.SaleCompleted,
+              None,
+              description,
+              paymentMethod
+            )
+          )
           _ <- saleRepo.addProductsToSale(
             products.map(p => SoldProductRow(p.id, sale.id, p.qty))
           )
@@ -278,6 +289,8 @@ object SaleService {
             sale.discount,
             sale.outlet,
             sale.status,
+            sale.description,
+            sale.paymentMethod,
             soldProducts.map(
               p =>
                 SaleSummaryProduct

@@ -22,6 +22,7 @@ import org.joda.time.DateTime
 import com.merit.modules.products.Currency
 import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with FutureMatchers {
 
@@ -81,6 +82,8 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       discount,
       outlet,
       status,
+      None,
+      PaymentMethod.Cash,
       products.map(p => productRowToSaleSummaryProduct(p, 1))
     )
 
@@ -91,6 +94,8 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       discount,
       outlet,
       status,
+      None,
+      PaymentMethod.Cash,
       products.map(p => productRowToSaleSummaryProduct(p, -1))
     )
 
@@ -101,6 +106,8 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
       discount,
       outlet,
       status,
+      None,
+      PaymentMethod.Cash,
       products.map(p => productRowToSaleSummaryProduct(p, 0))
     )
 
@@ -114,6 +121,8 @@ class CrawlerClientSpec(implicit ee: ExecutionEnv) extends Specification with Fu
         discount,
         outlet,
         status,
+        None,
+        PaymentMethod.Cash,
         products.sortBy(_.barcode).take(8).zip(qtys).map {
           case (p, q) => productRowToSaleSummaryProduct(p, q)
         }

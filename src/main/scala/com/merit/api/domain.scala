@@ -7,6 +7,7 @@ import com.merit.modules.products.{Currency,ProductDTO}
 import com.merit.modules.brands.BrandID
 import com.merit.modules.categories.CategoryID
 import com.merit.modules.inventoryCount.InventoryCountProductID
+import com.merit.modules.sales.PaymentMethod
 case class LoginRequest(
   email: String,
   password: String
@@ -15,6 +16,8 @@ case class LoginRequest(
 case class CreateSaleRequest(
   total: Currency,
   discount: Currency,
+  description: Option[String],
+  paymentMethod: Option[PaymentMethod.Value],
   products: Seq[ProductDTO]
 )
 

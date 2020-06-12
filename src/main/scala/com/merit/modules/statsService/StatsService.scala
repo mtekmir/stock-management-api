@@ -10,6 +10,7 @@ import java.lang.Math.floorMod
 import com.merit.modules.sales.SaleStatus
 import com.merit.modules.sales.SaleRow
 import com.merit.modules.sales.SaleOutlet
+import com.merit.modules.sales.PaymentMethod
 
 trait StatsService {
   def getTopSellingProducts(
@@ -82,7 +83,10 @@ object StatsService {
         def getMonthDiff(start: DateTime, end: DateTime): Int =
           end.getMonth - start.getMonth + getYearDiff(start, end, 12)
 
-        def calcTotal(sales: Seq[SaleRow]): Currency = Currency(sales.map(_.total.value).sum)
+        def calcTotal(sales: Seq[SaleRow]): Currency =
+          Currency(
+            sales.filter(_.paymentMethod != PaymentMethod.OnCredit).map(_.total.value).sum
+          )
         def toPoint(date: String, sales: Seq[SaleRow]): Point =
           Point(
             date,

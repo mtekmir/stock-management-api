@@ -15,6 +15,7 @@ import com.merit.modules.products.ProductRow
 import com.merit.modules.sales.WebSaleSummary
 import com.merit.modules.sales.WebSaleSummaryProduct
 import com.merit.modules.excel.ExcelInventoryCountRow
+import com.merit.modules.sales.PaymentMethod
 
 object ExcelTestUtils {
   private def randomFrom(col: Seq[String]) = col.drop(Random.nextInt(col.size)).head
@@ -86,6 +87,7 @@ object ExcelTestUtils {
           randomBetween(10000).toString,
           Currency(randomBetween(10000)),
           Currency(randomBetween(100)),
+          PaymentMethod.CreditCard,
           DateTime.now(),
           SaleStatus.trStatuses.toList(randomBetween(SaleStatus.trStatuses.size))._2,
           randomProductName,
@@ -141,6 +143,7 @@ object ExcelTestUtils {
         discount,
         createdAt,
         status,
+        paymentMethod,
         Seq(WebSaleSummaryProduct(sku.get, barcode.get, qty))
       )
     }

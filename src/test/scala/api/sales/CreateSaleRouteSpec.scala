@@ -28,18 +28,26 @@ import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.users.UserID
 import com.merit.modules.sales.SaleDTO
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSupport {
   "Sale route" >> {
     "should return error when no products in create sale req" in new RouteScope {
-      val createSaleReq = CreateSaleRequest(total, discount, Seq())
+      val createSaleReq =
+        CreateSaleRequest(total, discount, Some("asd"), PaymentMethod.OnCredit, Seq())
       Post("/sales", createSaleReq.asJsonObject) ~> Route.seal(saleRoute) ~> check {
-        responseAs[String] === "Products must not be empty"
         status === StatusCodes.BadRequest
+        responseAs[String] === "Sale with no products cannot be completed with on credit payment"
       }
 
       "should return ok with summary" in new RouteScope {
-        val createSaleReq = CreateSaleRequest(total, discount, Seq(rowToDTO(createProduct)))
+        val createSaleReq = CreateSaleRequest(
+          total,
+          discount,
+          Some("asd"),
+          PaymentMethod.CreditCard,
+          Seq(rowToDTO(createProduct))
+        )
         Post("/sales", createSaleReq.asJsonObject) ~> saleRoute ~> check {
           status === StatusCodes.OK
           val summary = responseAs[SaleSummary]
@@ -59,7 +67,7 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
     val discount      = Currency(10.37)
     val userId        = UserID.random
     val products      = Seq(productRowToSaleDTOProduct(createProduct, 5))
-    (saleService.create _) expects (*, *, *, *) returning (Future(
+    (saleService.create _) expects (*, *, *, *, *, *) returning (Future(
       Some(
         SaleDTO(
           SaleID(1),
@@ -69,6 +77,8 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
           None,
           total,
           discount,
+          None,
+          PaymentMethod.Cash,
           products
         )
       )

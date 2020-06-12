@@ -4,6 +4,7 @@ import com.merit.modules.products.Currency
 import scala.util.Try
 import org.joda.time.format.DateTimeFormat
 import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.PaymentMethod
 
 trait ExcelParser {
   def parseProductRows(rows: Seq[(Seq[String], Int)]): Seq[ExcelProductRow]
@@ -94,18 +95,19 @@ object ExcelParser {
       rows.map {
         case (row, idx) =>
           ExcelWebSaleRow(
-            row(1),                             // order no
-            Currency.fromOrZero(row(10)),       // total
-            Currency.fromOrZero(row(11)),       // discount
-            formatter.parseDateTime(row(17)),   // order date
-            SaleStatus.parseFromExcel(row(18)), // status
-            row(46),                            // product name
-            Option(row(47)).filter(_.nonEmpty), // sku
-            row(48),                            // brand
-            Option(row(50)).filter(_.nonEmpty), // barcode
-            row(52).toInt,                      // qty
-            Currency.fromOrZero(row(54)),       // price
-            row(56).toInt                       // tax
+            row(1),                                // order no
+            Currency.fromOrZero(row(10)),          // total
+            Currency.fromOrZero(row(11)),          // discount
+            PaymentMethod.parseFromExcel(row(13)), // payment method
+            formatter.parseDateTime(row(17)),      // order date
+            SaleStatus.parseFromExcel(row(18)),    // status
+            row(46),                               // product name
+            Option(row(47)).filter(_.nonEmpty),    // sku
+            row(48),                               // brand
+            Option(row(50)).filter(_.nonEmpty),    // barcode
+            row(52).toInt,                         // qty
+            Currency.fromOrZero(row(54)),          // price
+            row(56).toInt                          // tax
           )
       }
     }

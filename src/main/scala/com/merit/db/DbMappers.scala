@@ -8,7 +8,7 @@ import com.merit.modules.inventoryCount.InventoryCountStatus
 import com.merit.modules.sales.SaleOutlet
 import com.merit.modules.salesEvents.SaleEventType
 import db.Schema
-import com.merit.modules.sales.SaleStatus
+import com.merit.modules.sales.{SaleStatus, PaymentMethod}
 
 trait DbMappers { this: Schema =>
   import profile.api._
@@ -39,8 +39,14 @@ trait DbMappers { this: Schema =>
     s => SaleStatus.withName(s)
   )
 
-  implicit val inventoryCountStatusMapper = MappedColumnType.base[InventoryCountStatus, String](
-    s => InventoryCountStatus.toString(s),
-    s => InventoryCountStatus.fromString(s)
+  implicit val inventoryCountStatusMapper =
+    MappedColumnType.base[InventoryCountStatus, String](
+      s => InventoryCountStatus.toString(s),
+      s => InventoryCountStatus.fromString(s)
+    )
+
+  implicit val paymentMethodMapper = MappedColumnType.base[PaymentMethod.Value, String](
+    m => m.toString(),
+    m => PaymentMethod.withName(m)
   )
 }

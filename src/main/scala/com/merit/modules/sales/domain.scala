@@ -31,11 +31,12 @@ object SaleStatus extends Enumeration {
   val OrderAccepted            = Value("Order Accepted")
   val OrderAwaitingFulfillment = Value("Order Awaiting Fulfillment")
 
-  val SaleCompleted            = Value("Sale Completed")
-  val SaleReturned             = Value("Sale Returned")
-  val SalePartiallyReturned    = Value("Sale Partially Returned")
+  val SaleCompleted         = Value("Sale Completed")
+  val SaleReturned          = Value("Sale Returned")
+  val SalePartiallyReturned = Value("Sale Partially Returned")
 
-  val fulfilledSaleStatuses = List(OrderShipped, OrderPickedUp, OrderAwaitingShipment, SaleCompleted)
+  val fulfilledSaleStatuses =
+    List(OrderShipped, OrderPickedUp, OrderAwaitingShipment, SaleCompleted)
   val trStatuses = Map(
     "Sipariş Alındı"       -> OrderPlaced,
     "Paketleniyor"         -> OrderAwaitingShipment,
@@ -55,6 +56,20 @@ object SaleStatus extends Enumeration {
   def parseFromExcel(s: String): SaleStatus.Value = trStatuses.get(s).getOrElse(SaleCompleted)
 }
 
+object PaymentMethod extends Enumeration {
+  type PaymentMethod = Value
+  val Cash       = Value("Cash")
+  val CreditCard = Value("CreditCard")
+  val OnCredit   = Value("OnCredit")
+
+  val trPaymentMethods = Map(
+    "IyziPay" -> CreditCard,
+    "Havale"  -> Cash
+  )
+
+  def parseFromExcel(s: String) = trPaymentMethods.get(s).getOrElse(CreditCard)
+}
+
 case class SaleRow(
   createdAt: DateTime = DateTime.now(),
   total: Currency,
@@ -62,6 +77,8 @@ case class SaleRow(
   outlet: SaleOutlet.Value = SaleOutlet.Store,
   status: SaleStatus.Value = SaleStatus.SaleCompleted,
   orderNo: Option[String] = None,
+  description: Option[String] = None,
+  paymentMethod: PaymentMethod.Value = PaymentMethod.Cash,
   id: SaleID = SaleID(0L)
 )
 
@@ -73,6 +90,8 @@ case class SaleDTO(
   orderNo: Option[String],
   total: Currency,
   discount: Currency,
+  description: Option[String],
+  paymentMethod: PaymentMethod.Value,
   products: Seq[SaleDTOProduct]
 )
 
@@ -140,6 +159,8 @@ case class SaleSummary(
   discount: Currency,
   outlet: SaleOutlet.Value,
   status: SaleStatus.Value,
+  description: Option[String],
+  paymentMethod: PaymentMethod.Value,
   products: Seq[SaleSummaryProduct]
 )
 
@@ -159,6 +180,7 @@ case class WebSaleRow(
   discount: Currency,
   createdAt: DateTime,
   status: SaleStatus.Value,
+  paymentMethod: PaymentMethod.Value,
   products: Seq[WebSaleRowProduct]
 )
 
@@ -178,11 +200,12 @@ case class WebSaleSummary(
   discount: Currency,
   createdAt: DateTime,
   status: SaleStatus.Value,
+  paymentMethod: PaymentMethod.Value,
   products: Seq[WebSaleSummaryProduct]
 )
 
 case class WebSaleSummaryProduct(
   sku: String,
   barcode: String,
-  qty: Int,
+  qty: Int
 )
