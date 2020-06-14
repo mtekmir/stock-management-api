@@ -34,7 +34,7 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
   "Sale route" >> {
     "should return error when no products in create sale req" in new RouteScope {
       val createSaleReq =
-        CreateSaleRequest(total, discount, Some("asd"), PaymentMethod.OnCredit, Seq())
+        CreateSaleRequest(total, discount, Some("asd"), Some(PaymentMethod.OnCredit), Seq())
       Post("/sales", createSaleReq.asJsonObject) ~> Route.seal(saleRoute) ~> check {
         status === StatusCodes.BadRequest
         responseAs[String] === "Sale with no products cannot be completed with on credit payment"
@@ -45,7 +45,7 @@ class SalesRoutesSpec extends Specification with Specs2RouteTest with JsonSuppor
           total,
           discount,
           Some("asd"),
-          PaymentMethod.CreditCard,
+          Some(PaymentMethod.CreditCard),
           Seq(rowToDTO(createProduct))
         )
         Post("/sales", createSaleReq.asJsonObject) ~> saleRoute ~> check {

@@ -130,5 +130,7 @@ case class PaginatedInventoryCountBatchesResponse(
 case class PaginatedInventoryCountProductsResponse(
   counted: Int,
   uncounted: Int,
+  synced: Int,
+  notSynced: Int,
   products: Seq[InventoryCountProductDTO]
 )

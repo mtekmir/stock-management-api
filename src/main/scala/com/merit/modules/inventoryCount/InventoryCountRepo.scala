@@ -49,7 +49,8 @@ trait InventoryCountRepo[DbTask[_]] {
     batchId: InventoryCountBatchID,
     status: InventoryCountProductStatus,
     page: Int,
-    rowsPerPage: Int
+    rowsPerPage: Int,
+    synced: Option[Boolean] = None
   ): DbTask[Seq[InventoryCountProductDTO]]
   def searchBatchProducts(
     batchId: InventoryCountBatchID,
@@ -68,6 +69,7 @@ trait InventoryCountRepo[DbTask[_]] {
   ): DbTask[Int]
   def deleteBatch(id: InventoryCountBatchID): DbTask[Int]
   def syncProduct(id: InventoryCountProductID, synced: Boolean): DbTask[Int]
+  def syncedProductCount(id: InventoryCountBatchID, synced: Boolean): DbTask[Int]
 }
 
 object InventoryCountRepo {
@@ -84,6 +86,15 @@ object InventoryCountRepo {
       def productCount(batchId: InventoryCountBatchID, counted: Boolean): DBIO[Int] =
         inventoryCountProducts
           .filter(p => p.batchId === batchId && p.counted.isDefined === counted)
+          .length
+          .result
+
+      def syncedProductCount(
+        id: InventoryCountBatchID,
+        synced: Boolean
+      ): slick.dbio.DBIO[Int] =
+        inventoryCountProducts
+          .filter(p => p.batchId === id && p.synced === synced)
           .length
           .result
 
@@ -166,7 +177,8 @@ object InventoryCountRepo {
         batchId: InventoryCountBatchID,
         status: InventoryCountProductStatus,
         page: Int,
-        rowsPerPage: Int
+        rowsPerPage: Int,
+        synced: Option[Boolean] = None
       ): DBIO[Seq[InventoryCountProductDTO]] =
         inventoryCountProducts
           .filter(_.batchId === batchId)
@@ -176,6 +188,14 @@ object InventoryCountRepo {
                 case InventoryCountProductStatus.Counted   => p.counted.isDefined
                 case InventoryCountProductStatus.UnCounted => p.counted.isEmpty
                 case _                                     => p.counted.isEmpty || p.counted.isDefined
+              }
+          )
+          .filter(
+            p =>
+              synced match {
+                case Some(true)  => p.synced
+                case Some(false) => !p.synced
+                case None        => p.synced || !p.synced
               }
           )
           .sortBy(_.updatedAt.desc)

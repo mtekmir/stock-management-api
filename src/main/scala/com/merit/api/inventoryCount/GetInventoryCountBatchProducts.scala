@@ -13,14 +13,18 @@ object GetInventoryCountBatchProducts extends Directives with JsonSupport {
       LongNumber.map(InventoryCountBatchID(_))
 
     (path(batchIdMatcher / "products") &
-      parameters('page ? 1, 'rowsPerPage ? 10, 'status ? "all")) {
-      (batchId, page, rowsPerPage, status) =>
+      parameters('page ? 1, 'rowsPerPage ? 10, 'status ? "all", 'synced.?)) {
+      (batchId, page, rowsPerPage, status, synced) =>
         complete(
           inventoryCountService.getBatchProducts(
             batchId,
             InventoryCountProductStatus.fromString(status),
             page,
-            rowsPerPage
+            rowsPerPage,
+            synced.map {
+              case "true"  => true
+              case "false" => false
+            }
           )
         )
     }

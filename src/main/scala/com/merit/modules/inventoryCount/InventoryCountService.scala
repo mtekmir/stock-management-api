@@ -40,7 +40,8 @@ trait InventoryCountService {
     batchId: InventoryCountBatchID,
     status: InventoryCountProductStatus,
     page: Int,
-    rowsPerPage: Int
+    rowsPerPage: Int,
+    synced: Option[Boolean] = None
   ): Future[PaginatedInventoryCountProductsResponse]
   def searchBatchProducts(
     batchId: InventoryCountBatchID,
@@ -134,15 +135,25 @@ object InventoryCountService {
         batchId: InventoryCountBatchID,
         status: InventoryCountProductStatus,
         page: Int,
-        rowsPerPage: Int
+        rowsPerPage: Int,
+        synced: Option[Boolean] = None
       ): Future[PaginatedInventoryCountProductsResponse] =
         for {
           products <- db.run(
-            inventoryCountRepo.getBatchProducts(batchId, status, page, rowsPerPage)
+            inventoryCountRepo.getBatchProducts(batchId, status, page, rowsPerPage, synced)
           )
           counted   <- db.run(inventoryCountRepo.productCount(batchId, counted = true))
           uncounted <- db.run(inventoryCountRepo.productCount(batchId, counted = false))
-        } yield PaginatedInventoryCountProductsResponse(counted, uncounted, products)
+          synced    <- db.run(inventoryCountRepo.syncedProductCount(batchId, synced = true))
+          notSynced <- db.run(inventoryCountRepo.syncedProductCount(batchId, synced = false))
+        } yield
+          PaginatedInventoryCountProductsResponse(
+            counted,
+            uncounted,
+            synced,
+            notSynced,
+            products
+          )
 
       def searchBatchProducts(
         batchId: InventoryCountBatchID,
