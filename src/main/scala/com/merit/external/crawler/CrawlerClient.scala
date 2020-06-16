@@ -79,7 +79,7 @@ object CrawlerClient {
         products: Seq[InventoryCountProductDTO]
       ): Future[(Seq[SyncInventoryCountMessage], Seq[SendMessageResponse])] = {
         val messages = products
-          .sliding(100, 100)
+          .sliding(30, 30)
           .map(
             products =>
               SyncInventoryCountMessage(
